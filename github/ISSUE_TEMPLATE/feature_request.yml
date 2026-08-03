@@ -1,0 +1,30 @@
+name: Feature request
+about: Propose a bounded feature with measurable value
+labels: [enhancement, needs-scope]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User or research problem
+      description: Describe the unmet need without prescribing a solution first.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: How will this be verified?
+      placeholder: Tests, metrics, failure conditions, and acceptance threshold.
+    validations:
+      required: true
+  - type: textarea
+    id: boundary
+    attributes:
+      label: Deliberate non-goals
+    validations:
+      required: true

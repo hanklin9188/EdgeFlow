@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="zh-Hant" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>EdgeFlow · Performance Observatory</title>
+  <meta name="description" content="Static design prototype for the EdgeFlow evidence-backed LLM inference tuner." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-source-type="demo">
+  <a class="skip-link" href="#main">跳到主要內容</a>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Primary navigation">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M8 31.5c6.5-15 13.5-20 32-20" />
+          <path d="M8 37c10-10 18-12.5 32-11" />
+          <circle cx="9" cy="31.5" r="3" />
+          <circle cx="39" cy="11.5" r="3" />
+          <circle cx="39" cy="26" r="3" />
+        </svg>
+        <div>
+          <strong>EdgeFlow</strong>
+          <span>Performance Observatory</span>
+        </div>
+      </div>
+
+      <nav class="nav-list">
+        <a class="nav-item active" href="#overview" aria-current="page">
+          <span class="nav-icon">⌁</span><span>Overview</span>
+        </a>
+        <a class="nav-item" href="#policy"><span class="nav-icon">◇</span><span>Policy</span></a>
+        <a class="nav-item" href="#evidence"><span class="nav-icon">↳</span><span>Evidence</span></a>
+        <a class="nav-item" href="#runs"><span class="nav-icon">▦</span><span>Runs</span></a>
+        <a class="nav-item" href="#quality"><span class="nav-icon">◌</span><span>Quality</span></a>
+      </nav>
+
+      <div class="sidebar-spacer"></div>
+
+      <div class="environment-card">
+        <div class="eyebrow">Active environment</div>
+        <div class="env-title">RTX 4080 SUPER</div>
+        <div class="env-meta">16 GB · CUDA · WSL2</div>
+        <div class="fingerprint"><span></span> DEMO-FP-89A2</div>
+      </div>
+
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="切換深色模式">
+        <span class="theme-icon" aria-hidden="true">◐</span>
+        <span id="themeLabel">Dark mode</span>
+      </button>
+    </aside>
+
+    <main id="main" class="main-content">
+      <header class="topbar">
+        <div>
+          <div class="crumb">Local workspace / <strong>Overview</strong></div>
+          <h1>Inference performance, with evidence.</h1>
+        </div>
+        <div class="top-actions">
+          <span class="demo-badge">DEMO DATA</span>
+          <button class="ghost-button" type="button" id="copyCommand">Copy reproduce command</button>
+          <button class="primary-button" type="button" id="newTune">New tune</button>
+        </div>
+      </header>
+
+      <section class="notice" aria-label="Demo notice">
+        <div class="notice-icon">i</div>
+        <div>
+          <strong>Design prototype only.</strong>
+          All numerical values below are illustrative and intentionally marked as demo. The production UI must load validated artifacts and expose run-level provenance.
+        </div>
+        <button type="button" class="notice-dismiss" aria-label="關閉提示">×</button>
+      </section>
+
+      <section id="overview" class="overview-grid" aria-label="Overview metrics">
+        <article class="metric-card accent-teal">
+          <div class="metric-head"><span>Validated runs</span><span class="status-pill pass">✓ schema demo</span></div>
+          <div class="metric-value">248</div>
+          <div class="metric-foot">Across 4 runtime adapters</div>
+          <div class="spark-bars" aria-hidden="true"><i style="--h:32%"></i><i style="--h:54%"></i><i style="--h:46%"></i><i style="--h:68%"></i><i style="--h:74%"></i><i style="--h:91%"></i></div>
+        </article>
+
+        <article class="metric-card accent-indigo">
+          <div class="metric-head"><span>Active policy</span><span class="status-pill neutral">3 rules</span></div>
+          <div class="metric-value metric-text">Session-aware</div>
+          <div class="metric-foot">Prompt · concurrency · request count</div>
+          <div class="rule-mini"><span></span><span></span><span></span></div>
+        </article>
+
+        <article class="metric-card accent-green">
+          <div class="metric-head"><span>Quality gate</span><span class="status-pill pass">PASS</span></div>
+          <div class="metric-value">0.6<span class="metric-unit">%</span></div>
+          <div class="metric-foot">Illustrative relative degradation</div>
+          <div class="quality-track"><span style="width:60%"></span><b>limit 1.0%</b></div>
+        </article>
+
+        <article class="metric-card accent-amber">
+          <div class="metric-head"><span>Open hypotheses</span><span class="status-pill warn">needs intervention</span></div>
+          <div class="metric-value">3</div>
+          <div class="metric-foot">1 launch · 1 memory · 1 scheduler</div>
+          <div class="dot-row" aria-hidden="true"><i></i><i></i><i></i><i class="muted"></i><i class="muted"></i></div>
+        </article>
+      </section>
+
+      <section class="section-grid policy-layout" id="policy">
+        <article class="panel policy-panel">
+          <div class="panel-heading">
+            <div>
+              <div class="eyebrow">Workload-conditioned policy</div>
+              <h2>Best plan depends on the session.</h2>
+            </div>
+            <div class="segmented" role="group" aria-label="Select workload">
+              <button class="segment active" data-profile="chat" type="button">Chat</button>
+              <button class="segment" data-profile="document" type="button">Document</button>
+              <button class="segment" data-profile="batch" type="button">Batch</button>
+            </div>
+          </div>
+
+          <div class="policy-body">
+            <div class="workload-summary">
+              <div class="workload-orb"><span id="orbValue">1×</span></div>
+              <div>
+                <div class="workload-name" id="workloadName">Interactive chat</div>
+                <div class="workload-meta" id="workloadMeta">P50 1,024 prompt · 128 output · concurrency 1</div>
+              </div>
+            </div>
+
+            <div class="selected-plan">
+              <div class="plan-ribbon">Selected plan</div>
+              <div class="plan-main">
+                <div class="runtime-logo" id="runtimeLogo">TC</div>
+                <div>
+                  <h3 id="planName">PyTorch · reduce-overhead</h3>
+                  <p id="planDetail">BF16 · static bucket · CUDA Graph</p>
+                </div>
+                <div class="confidence"><span>Policy confidence</span><strong id="confidenceValue">High</strong></div>
+              </div>
+              <div class="plan-metrics">
+                <div><span>Session cost</span><strong id="sessionCost">−14.8%</strong><small>vs best fixed</small></div>
+                <div><span>Startup</span><strong id="startupCost">8.4 s</strong><small>demo</small></div>
+                <div><span>Peak VRAM</span><strong id="vramValue">8.7 GB</strong><small>demo</small></div>
+                <div><span>Quality</span><strong id="qualityValue">Within gate</strong><small>balanced</small></div>
+              </div>
+            </div>
+
+            <div class="scope-row">
+              <div><span class="scope-dot measured"></span><b>Measured scope</b><small id="scopeText">Prompt ≤ 1536 · C=1 · 20+ requests</small></div>
+              <div><span class="scope-dot fallback"></span><b>Fallback</b><small id="fallbackText">PyTorch eager BF16</small></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel amortization-panel">
+          <div class="panel-heading compact">
+            <div>
+              <div class="eyebrow">Amortization view</div>
+              <h2>Cold winner ≠ steady winner</h2>
+            </div>
+            <span class="status-pill neutral">N requests</span>
+          </div>
+          <div class="chart-wrap" role="img" aria-label="Illustrative total session cost by request count">
+            <svg viewBox="0 0 560 250" class="line-chart" aria-hidden="true">
+              <g class="grid-lines">
+                <line x1="44" y1="24" x2="44" y2="214" />
+                <line x1="44" y1="214" x2="536" y2="214" />
+                <line x1="44" y1="166" x2="536" y2="166" />
+                <line x1="44" y1="118" x2="536" y2="118" />
+                <line x1="44" y1="70" x2="536" y2="70" />
+              </g>
+              <path class="area teal" d="M44 180 C140 174 220 156 304 127 S456 72 536 52 L536 214 L44 214 Z" />
+              <path class="line teal" d="M44 180 C140 174 220 156 304 127 S456 72 536 52" />
+              <path class="line indigo" d="M44 72 C145 90 231 113 320 143 S458 184 536 197" />
+              <circle class="point teal" cx="304" cy="127" r="5" />
+              <line class="break-line" x1="304" y1="34" x2="304" y2="214" />
+              <text class="chart-label" x="316" y="48">break-even</text>
+              <text class="axis-label" x="40" y="235">1</text><text class="axis-label" x="292" y="235">20</text><text class="axis-label" x="520" y="235">1000</text>
+            </svg>
+          </div>
+          <div class="chart-legend">
+            <span><i class="legend-line teal"></i>Compiled plan</span>
+            <span><i class="legend-line indigo"></i>Low-startup plan</span>
+          </div>
+          <p class="microcopy">Illustrative shape only. Production charts show confidence intervals, run IDs, and exact cost definitions.</p>
+        </article>
+      </section>
+
+      <section class="section-grid evidence-layout" id="evidence">
+        <article class="panel evidence-panel">
+          <div class="panel-heading">
+            <div>
+              <div class="eyebrow">Causal evidence chain</div>
+              <h2>Why did the plan improve?</h2>
+            </div>
+            <span class="status-pill warn">E3 · intervention supported</span>
+          </div>
+
+          <div class="evidence-chain">
+            <button class="evidence-node measured-node" type="button" data-detail="Observation: profiler summary shows a large share of decode wall time between short GPU kernels.">
+              <span class="node-kicker">01 · measured</span>
+              <strong>Launch gaps observed</strong>
+              <small>Gap ratio 27% · median kernel 8.1 μs</small>
+            </button>
+            <div class="chain-arrow" aria-hidden="true">→</div>
+            <button class="evidence-node hypothesis-node" type="button" data-detail="Hypothesis: CPU submission overhead is limiting batch-1 decode. This statement required a matched intervention.">
+              <span class="node-kicker">02 · hypothesis</span>
+              <strong>CPU launch bound</strong>
+              <small>Alternative: thermal or graph mismatch</small>
+            </button>
+            <div class="chain-arrow" aria-hidden="true">→</div>
+            <button class="evidence-node intervention-node" type="button" data-detail="Intervention: only CUDA Graph / reduce-overhead is changed. Prompt IDs, model, dtype, temperature, and cache state are held fixed.">
+              <span class="node-kicker">03 · intervention</span>
+              <strong>Enable graph capture</strong>
+              <small>Randomized paired block</small>
+            </button>
+            <div class="chain-arrow" aria-hidden="true">→</div>
+            <button class="evidence-node outcome-node" type="button" data-detail="Outcome: the mediator and request metric moved in the predicted direction. Values shown are demo placeholders.">
+              <span class="node-kicker">04 · outcome</span>
+              <strong>Gap and TPOT fall</strong>
+              <small>Scope: batch 1 · P≤1024</small>
+            </button>
+          </div>
+          <div class="evidence-detail" id="evidenceDetail">
+            <span>Selected evidence</span>
+            <p>Choose any node to inspect the difference between a measured fact, a hypothesis, an intervention, and a supported outcome.</p>
+          </div>
+        </article>
+
+        <article class="panel quality-panel" id="quality">
+          <div class="panel-heading compact">
+            <div>
+              <div class="eyebrow">Latency × quality</div>
+              <h2>Pareto candidates</h2>
+            </div>
+            <button class="icon-button" type="button" aria-label="More options">···</button>
+          </div>
+          <div class="scatter" role="img" aria-label="Illustrative latency versus quality scatter">
+            <div class="axis-y">Quality ↑</div>
+            <div class="axis-x">Session cost →</div>
+            <span class="pareto-line"></span>
+            <button class="dot d1 valid" style="--x:18%;--y:32%" title="llama.cpp Q4 · demo"><i></i><b>Q4</b></button>
+            <button class="dot d2 valid" style="--x:36%;--y:58%" title="llama.cpp Q6 · demo"><i></i><b>Q6</b></button>
+            <button class="dot d3 selected" style="--x:57%;--y:76%" title="compile · demo"><i></i><b>Selected</b></button>
+            <button class="dot d4" style="--x:78%;--y:83%" title="eager · demo"><i></i><b>Eager</b></button>
+            <button class="dot d5 invalid" style="--x:12%;--y:16%" title="quality fail · demo"><i></i><b>Quality fail</b></button>
+          </div>
+          <div class="quality-legend"><span><i class="legend-dot selected"></i>policy</span><span><i class="legend-dot valid"></i>valid</span><span><i class="legend-dot invalid"></i>outside gate</span></div>
+        </article>
+      </section>
+
+      <section class="panel runs-panel" id="runs">
+        <div class="panel-heading runs-heading">
+          <div>
+            <div class="eyebrow">Run explorer</div>
+            <h2>Every recommendation resolves to an artifact.</h2>
+          </div>
+          <div class="filter-row">
+            <label class="search-field"><span>⌕</span><input id="runSearch" type="search" placeholder="Filter run ID or backend" /></label>
+            <select id="statusFilter" aria-label="Filter by validation status"><option value="all">All verdicts</option><option value="pass">Pass</option><option value="conditional">Conditional</option><option value="fail">Fail</option></select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Run</th><th>Backend</th><th>Workload</th><th>Source</th><th>Verdict</th><th>Primary metric</th><th>Evidence</th></tr></thead>
+            <tbody id="runTable">
+              <tr data-status="pass"><td><code>demo-e05-014</code><small>3 min ago</small></td><td>torch.compile</td><td>P1024 · O128 · C1</td><td><span class="source demo">DEMO</span></td><td><span class="status-pill pass">PASS</span></td><td>TPOT <b>12.8 ms</b></td><td><a href="#evidence">E3 chain</a></td></tr>
+              <tr data-status="pass"><td><code>demo-e07-022</code><small>18 min ago</small></td><td>llama.cpp Q6</td><td>P2048 · O128 · C1</td><td><span class="source demo">DEMO</span></td><td><span class="status-pill pass">PASS</span></td><td>Session <b>4.2 s</b></td><td><a href="#policy">Policy rule</a></td></tr>
+              <tr data-status="conditional"><td><code>demo-e08-009</code><small>44 min ago</small></td><td>vLLM</td><td>P512 · O64 · C4</td><td><span class="source demo">DEMO</span></td><td><span class="status-pill warn">CONDITIONAL</span></td><td>Req/s <b>3.7</b></td><td><a href="#">Missing holdout</a></td></tr>
+              <tr data-status="fail"><td><code>demo-e22-031</code><small>1 hr ago</small></td><td>Triton kernel</td><td>H3072 · R1 · BF16</td><td><span class="source demo">DEMO</span></td><td><span class="status-pill fail">FAIL</span></td><td>Error <b>shape rejected</b></td><td><a href="#">Fallback trace</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="table-footer"><span id="rowCount">4 demo records</span><span>Production: pagination + artifact drawer + CSV export</span></div>
+      </section>
+
+      <footer class="footer">
+        <span>EdgeFlow UI specification · calm technical observatory</span>
+        <span>Static prototype · no model inference in browser</span>
+      </footer>
+    </main>
+  </div>
+
+  <dialog id="tuneDialog" class="tune-dialog">
+    <form method="dialog">
+      <button class="dialog-close" value="cancel" aria-label="Close">×</button>
+      <div class="eyebrow">New tune request</div>
+      <h2>Describe the workload, not the winner.</h2>
+      <p>EdgeFlow will compare only validated, capability-compatible plans.</p>
+      <div class="form-grid">
+        <label>Model<select><option>Ministral 3 3B Instruct</option><option>Llama 3.2 3B Instruct</option><option>Qwen3.5 4B</option></select></label>
+        <label>Objective<select><option>Total session latency</option><option>Interactive latency</option><option>Throughput</option><option>Memory first</option></select></label>
+        <label>Median prompt<input type="number" value="1024" min="1" /></label>
+        <label>Output tokens<input type="number" value="128" min="1" /></label>
+        <label>Concurrency<input type="number" value="1" min="1" /></label>
+        <label>Requests/session<input type="number" value="20" min="1" /></label>
+      </div>
+      <div class="dialog-note">Prototype action only. A production request becomes a versioned <code>WorkloadSpec</code>, not free-form shell.</div>
+      <div class="dialog-actions"><button value="cancel" class="ghost-button">Cancel</button><button value="default" class="primary-button">Create workload spec</button></div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">Command copied</div>
+  <script src="app.js"></script>
+</body>
+</html>

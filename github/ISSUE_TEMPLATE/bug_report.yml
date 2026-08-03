@@ -1,0 +1,54 @@
+name: Bug report
+about: Report a reproducible failure in EdgeFlow
+labels: [bug, needs-reproduction]
+body:
+  - type: markdown
+    attributes:
+      value: "Do not paste tokens, private prompts, model weights, or full profiler traces containing private paths."
+  - type: input
+    id: version
+    attributes:
+      label: EdgeFlow version or commit
+      placeholder: commit SHA / tag
+    validations:
+      required: true
+  - type: input
+    id: run_id
+    attributes:
+      label: Run ID
+      description: Use a compact sanitized artifact when available.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options: [hardware-inspector, workload-builder, pytorch, torch-compile, llama-cpp, vllm, triton-kernel, profiler, validator, policy, dashboard, copilot]
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and minimal logs
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproduction
+      render: shell
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission checks
+      options:
+        - label: I ran the current validation/preflight command.
+          required: true
+        - label: I removed credentials, private text, and restricted artifacts.
+          required: true

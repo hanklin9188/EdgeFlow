@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "plan_id": "pt-compile-reduce-overhead-bf16-v1",
+  "model_id": "ministral3-3b-instruct-2512",
+  "backend": "torch_compile",
+  "model_format": "safetensors",
+  "dtype": "bf16",
+  "quantization": null,
+  "compile_mode": "reduce-overhead",
+  "dynamic_shapes": false,
+  "fullgraph": false,
+  "cuda_graph": true,
+  "max_num_batched_tokens": null,
+  "max_num_seqs": null,
+  "kv_cache_dtype": "auto",
+  "flash_attention": true,
+  "custom_kernels": [],
+  "backend_args": {
+    "cache_dir": "${EDGEFLOW_CACHE_DIR}",
+    "attn_implementation": "sdpa"
+  },
+  "canonical_sha256": null,
+  "support_status": "pending"
+}

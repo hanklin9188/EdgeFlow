@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "fingerprint_id": "demo-rtx4080super-wsl2",
+  "captured_at": "2026-08-03T00:00:00Z",
+  "host": {
+    "os": "Ubuntu under WSL2",
+    "execution_mode": "wsl2",
+    "wsl_version": "DEMO",
+    "kernel": "DEMO",
+    "cpu": "REPLACE_AT_CAPTURE",
+    "physical_cores": null,
+    "logical_cores": null,
+    "ram_bytes": 34359738368
+  },
+  "gpu": {
+    "vendor": "NVIDIA",
+    "name": "NVIDIA GeForce RTX 4080 SUPER",
+    "uuid": "DEMO_UUID",
+    "compute_capability": "8.9",
+    "vram_bytes": 17179869184,
+    "driver_version": "REPLACE_AT_CAPTURE",
+    "power_limit_w": null,
+    "persistence_mode": null
+  },
+  "software": {
+    "python": "REPLACE",
+    "pytorch": "REPLACE",
+    "cuda_runtime": "REPLACE",
+    "cuda_toolkit": null,
+    "transformers": "REPLACE",
+    "triton": "REPLACE",
+    "vllm": null,
+    "llama_cpp_commit": null,
+    "nsight_systems": null,
+    "nsight_compute": null
+  },
+  "measurement_controls": {
+    "gpu_idle_threshold_pct": 2.0,
+    "temperature_ceiling_c": 75.0,
+    "background_gpu_processes": []
+  },
+  "git": null,
+  "sha256": "DEMO_FINGERPRINT_HASH"
+}

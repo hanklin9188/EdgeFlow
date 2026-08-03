@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edgeflow.dev/schemas/deployment_policy.schema.json",
+  "title": "EdgeFlow DeploymentPolicy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "policy_id",
+    "hardware_fingerprint_sha256",
+    "model_id",
+    "objective",
+    "quality_constraint",
+    "rules",
+    "fallback_plan_id",
+    "holdout_validation"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "policy_id": {
+      "type": "string"
+    },
+    "hardware_fingerprint_sha256": {
+      "type": "string"
+    },
+    "model_id": {
+      "type": "string"
+    },
+    "objective": {
+      "type": "object"
+    },
+    "quality_constraint": {
+      "type": "object"
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "priority",
+          "predicate",
+          "plan_id",
+          "evidence_ids"
+        ],
+        "properties": {
+          "priority": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "predicate": {
+            "type": "object"
+          },
+          "plan_id": {
+            "type": "string"
+          },
+          "evidence_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "expected_metrics": {
+            "type": "object"
+          },
+          "scope_notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "fallback_plan_id": {
+      "type": "string"
+    },
+    "holdout_validation": {
+      "type": "object"
+    },
+    "created_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "expires_on_environment_change": {
+      "type": "boolean"
+    }
+  }
+}

@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv*/
+
+# Build and caches
+build/
+dist/
+*.egg-info/
+.cache/
+cache/
+.cmake/
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+credentials.json
+token.json
+*.pem
+*.key
+
+# Model and dataset artifacts
+models/
+datasets/
+*.safetensors
+*.gguf
+*.bin
+*.pt
+*.pth
+*.ckpt
+
+# EdgeFlow raw/private outputs
+runs/raw/
+traces/private/
+artifacts/private/
+*.nsys-rep
+*.ncu-rep
+*.sqlite-wal
+*.sqlite-shm
+
+# Keep compact validated public artifacts only
+!results/processed/
+!results/manifests/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

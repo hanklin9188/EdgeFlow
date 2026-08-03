@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edgeflow.dev/schemas/workload.schema.json",
+  "title": "EdgeFlow WorkloadSpec",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "workload_id", "model_id", "prompt_source",
+    "prompt_tokens", "output_tokens", "batch_size", "concurrency",
+    "arrival_pattern", "sampling", "seed", "streaming", "session_requests"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "workload_id": {"type": "string", "minLength": 3},
+    "model_id": {"type": "string", "minLength": 1},
+    "prompt_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "revision"],
+      "properties": {
+        "type": {"enum": ["synthetic", "dataset", "trace"]},
+        "name": {"type": ["string", "null"]},
+        "revision": {"type": "string"},
+        "split": {"type": ["string", "null"]},
+        "sample_ids_sha256": {"type": ["string", "null"]}
+      }
+    },
+    "prompt_tokens": {
+      "oneOf": [
+        {"type": "integer", "minimum": 1},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["distribution", "values"],
+          "properties": {
+            "distribution": {"enum": ["categorical", "empirical"]},
+            "values": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["tokens", "probability"],
+                "properties": {
+                  "tokens": {"type": "integer", "minimum": 1},
+                  "probability": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "output_tokens": {"type": "integer", "minimum": 1},
+    "batch_size": {"type": "integer", "minimum": 1},
+    "concurrency": {"type": "integer", "minimum": 1},
+    "arrival_pattern": {"enum": ["closed_loop", "poisson", "burst", "trace_replay"]},
+    "request_rate": {"type": ["number", "null"], "exclusiveMinimum": 0},
+    "sampling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["strategy", "temperature", "top_p"],
+      "properties": {
+        "strategy": {"enum": ["greedy", "sampling"]},
+        "temperature": {"type": "number", "minimum": 0},
+        "top_p": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "top_k": {"type": ["integer", "null"], "minimum": 0},
+        "ignore_eos": {"type": "boolean"}
+      }
+    },
+    "seed": {"type": "integer", "minimum": 0},
+    "streaming": {"type": "boolean"},
+    "session_requests": {"type": "integer", "minimum": 1},
+    "quality_profile": {"enum": ["strict", "balanced", "memory_first", "custom"]},
+    "notes": {"type": "string"}
+  }
+}

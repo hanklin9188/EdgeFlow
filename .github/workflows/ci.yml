@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.7"
+          enable-cache: true
+      - run: uv sync --extra dev
+      - run: uv run ruff check src tests
+      - run: uv run pytest -q
+      - run: uv run python scripts/validate_package.py
+      - run: uv run python scripts/verify_results.py
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject secrets, model weights, and profiler binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -f .env
+          test ! -f credentials.json
+          test ! -f token.json
+          if find . -type f \( -name '*.safetensors' -o -name '*.gguf' -o -name '*.pt' -o -name '*.pth' -o -name '*.nsys-rep' -o -name '*.ncu-rep' \) | grep -q .; then
+            echo 'Private/model/profiler artifact found in repository.' >&2
+            exit 1
+          fi

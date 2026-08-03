@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "workload_id": "interactive-chat-p1024-o128-c1-v1",
+  "model_id": "ministral3-3b-instruct-2512",
+  "prompt_source": {
+    "type": "synthetic",
+    "name": "edgeflow-synthetic-v1",
+    "revision": "1.0",
+    "split": null,
+    "sample_ids_sha256": "DEMO_SAMPLE_HASH"
+  },
+  "prompt_tokens": 1024,
+  "output_tokens": 128,
+  "batch_size": 1,
+  "concurrency": 1,
+  "arrival_pattern": "closed_loop",
+  "request_rate": null,
+  "sampling": {
+    "strategy": "greedy",
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "top_k": null,
+    "ignore_eos": true
+  },
+  "seed": 42,
+  "streaming": true,
+  "session_requests": 20,
+  "quality_profile": "balanced",
+  "notes": "DEMO schema example; not a measured result."
+}

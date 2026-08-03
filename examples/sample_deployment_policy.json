@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "policy_id": "demo-policy-0001",
+  "hardware_fingerprint_sha256": "DEMO_HW_HASH",
+  "model_id": "ministral3-3b-instruct-2512",
+  "objective": {
+    "name": "session_latency",
+    "session_requests": 20,
+    "weights": {
+      "ttft": 0.3,
+      "tpot": 0.4,
+      "startup": 0.2,
+      "memory": 0.1
+    }
+  },
+  "quality_constraint": {
+    "profile": "balanced",
+    "max_relative_degradation": 0.01
+  },
+  "rules": [
+    {
+      "priority": 10,
+      "predicate": {
+        "prompt_tokens_lte": 1024,
+        "concurrency_eq": 1
+      },
+      "plan_id": "pt-compile-reduce-overhead-bf16-v1",
+      "evidence_ids": [
+        "evidence-demo-launch-overhead-01"
+      ],
+      "expected_metrics": {},
+      "scope_notes": "DEMO rule; requires holdout confirmation."
+    }
+  ],
+  "fallback_plan_id": "pytorch-eager-bf16-safe-v1",
+  "holdout_validation": {
+    "status": "NOT_RUN",
+    "run_ids": []
+  },
+  "created_at": "2026-08-03T00:10:00Z",
+  "expires_on_environment_change": true
+}

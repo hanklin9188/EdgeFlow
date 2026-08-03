@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use EdgeFlow, cite this software release."
+title: "EdgeFlow: Causal, Workload-Conditioned Autotuning for Local LLM Inference"
+type: software
+authors:
+  - family-names: "Lin"
+    given-names: "Hank"
+repository-code: "https://github.com/hanklin9188/EdgeFlow"
+url: "https://github.com/hanklin9188/EdgeFlow"
+license: "Apache-2.0"
+version: "0.1.0"
+date-released: "2026-08-04"

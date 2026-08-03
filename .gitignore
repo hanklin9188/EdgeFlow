@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.cache/
+.coverage
+htmlcov/
+.venv/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+credentials.json
+token.json
+
+# EdgeFlow generated data
+artifacts/
+data/
+models/
+results/private/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Model and profiler artifacts
+*.safetensors
+*.gguf
+*.pt
+*.pth
+*.bin
+*.nsys-rep
+*.ncu-rep
+*.sqlite-export
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "run_id": "demo-run-0001",
+  "experiment_id": "E05",
+  "block_id": "block-demo-01",
+  "paired_group_id": "pair-demo-01",
+  "run_type": "performance_unprofiled",
+  "status": "PASSED",
+  "created_at": "2026-08-03T00:00:00Z",
+  "completed_at": "2026-08-03T00:03:00Z",
+  "hardware_fingerprint_sha256": "DEMO_HW_HASH",
+  "model_id": "ministral3-3b-instruct-2512",
+  "model_revision": "PINNED_EXAMPLE_REVISION",
+  "model_files_sha256": [
+    "DEMO_MODEL_FILE_HASH"
+  ],
+  "tokenizer_revision": "PINNED_EXAMPLE_REVISION",
+  "workload_id": "interactive-chat-p1024-o128-c1-v1",
+  "workload_sha256": "DEMO_WORKLOAD_HASH",
+  "plan_id": "pt-compile-reduce-overhead-bf16-v1",
+  "plan_sha256": "DEMO_PLAN_HASH",
+  "protocol_version": "edgeflow-bench-1.0",
+  "git_commit": "DEMO_GIT_COMMIT",
+  "git_dirty": false,
+  "command": [
+    "edgeflow",
+    "benchmark",
+    "--config",
+    "examples/sample_workload.json"
+  ],
+  "seed": 42,
+  "profiler_level": "none",
+  "source_type": "demo",
+  "artifact_files": [
+    "metrics.jsonl",
+    "stdout.log",
+    "validation_verdict.json"
+  ],
+  "supersedes_run_id": null,
+  "notes": "DEMO only. All numerical values must be replaced by measured artifacts."
+}

@@ -1,0 +1,23 @@
+name: Experiment request
+description: Propose a controlled, evidence-producing experiment
+title: "[experiment] "
+labels: [experiment]
+body:
+  - type: textarea
+    id: hypothesis
+    attributes:
+      label: Preregistered hypothesis
+    validations:
+      required: true
+  - type: textarea
+    id: intervention
+    attributes:
+      label: Intervention and mediator
+    validations:
+      required: true
+  - type: textarea
+    id: controls
+    attributes:
+      label: Controlled variables and negative control
+    validations:
+      required: true

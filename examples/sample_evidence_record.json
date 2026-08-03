@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "evidence_id": "evidence-demo-launch-overhead-01",
+  "hypothesis": "Batch-1 decode is dominated by CPU-to-GPU launch overhead in the observed scope.",
+  "status": "PENDING",
+  "observations": [
+    {
+      "metric": "kernel_gap_ratio",
+      "value": null,
+      "source": "replace_with_profile_run"
+    }
+  ],
+  "intervention": {
+    "name": "enable_cuda_graph",
+    "changed_variables": {
+      "cuda_graph": [
+        false,
+        true
+      ]
+    },
+    "negative_control": "repeat baseline in randomized block"
+  },
+  "controlled_variables": {
+    "model": "same",
+    "prompt_tokens": 1024,
+    "output_tokens": 128,
+    "batch_size": 1,
+    "dtype": "bf16"
+  },
+  "mediator_results": [],
+  "outcome_results": [],
+  "supporting_run_ids": [
+    "demo-run-0001"
+  ],
+  "scope": {
+    "hardware": "RTX 4080 SUPER",
+    "backend": "torch_compile",
+    "workload": "p1024-o128-c1"
+  },
+  "evidence_level": "E0",
+  "alternative_explanations": [
+    "thermal drift",
+    "compile cache state",
+    "different graph specialization"
+  ],
+  "reviewed_by": null
+}

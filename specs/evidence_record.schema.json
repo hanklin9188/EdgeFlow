@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edgeflow.dev/schemas/evidence_record.schema.json",
+  "title": "EdgeFlow EvidenceRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "evidence_id", "hypothesis", "status", "observations",
+    "intervention", "controlled_variables", "mediator_results", "outcome_results",
+    "supporting_run_ids", "scope", "evidence_level"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "evidence_id": {"type": "string"},
+    "hypothesis": {"type": "string", "minLength": 5},
+    "status": {"enum": ["SUPPORTED", "REJECTED", "INCONCLUSIVE", "PENDING"]},
+    "observations": {"type": "array", "minItems": 1, "items": {"type": "object"}},
+    "intervention": {
+      "type": "object",
+      "required": ["name", "changed_variables"],
+      "properties": {
+        "name": {"type": "string"},
+        "changed_variables": {"type": "object"},
+        "negative_control": {"type": ["string", "null"]}
+      }
+    },
+    "controlled_variables": {"type": "object"},
+    "mediator_results": {"type": "array", "items": {"type": "object"}},
+    "outcome_results": {"type": "array", "items": {"type": "object"}},
+    "supporting_run_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "scope": {"type": "object"},
+    "evidence_level": {"enum": ["E0", "E1", "E2", "E3", "E4", "E5"]},
+    "alternative_explanations": {"type": "array", "items": {"type": "string"}},
+    "reviewed_by": {"type": ["string", "null"]}
+  }
+}

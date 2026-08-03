@@ -1,0 +1,18 @@
+flowchart TB
+    A[Run artifact] --> B{Schema & checksums}
+    B -->|fail| X[INVALID]
+    B -->|pass| C{Environment & workload parity}
+    C -->|fail| X
+    C -->|pass| D{Correctness}
+    D -->|fail| F[FAIL · never rank]
+    D -->|pass| E{Timing integrity}
+    E -->|fail| X
+    E -->|pass| G{Stability & statistics}
+    G -->|fail| I[INCONCLUSIVE / rerun]
+    G -->|pass| H{Quality constraint}
+    H -->|fail| F
+    H -->|pass| J{Provenance complete}
+    J -->|warn| K[CONDITIONAL PASS]
+    J -->|pass| L[PASS]
+    L --> M[Policy eligible]
+    K --> N[Exploratory only]

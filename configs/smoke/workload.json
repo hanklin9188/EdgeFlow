@@ -1,0 +1,30 @@
+{
+  "arrival_pattern": "closed_loop",
+  "batch_size": 1,
+  "concurrency": 1,
+  "model_id": "smollm2-360m-instruct",
+  "notes": "Small exact-token smoke workload; not a headline benchmark.",
+  "output_tokens": 8,
+  "prompt_source": {
+    "name": "edgeflow-synthetic-v1",
+    "revision": "1.0",
+    "sample_ids_sha256": "recomputed-by-workload-builder-for-formal-runs",
+    "split": null,
+    "type": "synthetic"
+  },
+  "prompt_tokens": 32,
+  "quality_profile": "balanced",
+  "request_rate": null,
+  "sampling": {
+    "ignore_eos": true,
+    "strategy": "greedy",
+    "temperature": 0.0,
+    "top_k": null,
+    "top_p": 1.0
+  },
+  "schema_version": "1.0",
+  "seed": 42,
+  "session_requests": 30,
+  "streaming": true,
+  "workload_id": "smoke-p32-o8-c1-v1"
+}

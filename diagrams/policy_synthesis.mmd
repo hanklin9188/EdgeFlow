@@ -1,0 +1,17 @@
+flowchart LR
+    T[Measured workload trace] --> B[Train / calibration buckets]
+    T --> H[Untouched holdout]
+    B --> C[Validated candidate plans]
+    C --> P[Pareto pruning]
+    P --> S[Piecewise policy synthesis]
+    S --> R{Dispatch rule}
+    R -->|short prompt · c=1| A[Plan A]
+    R -->|long prompt · c=1| D[Plan B]
+    R -->|concurrent| V[Plan C]
+    R -->|unsupported / drift| F[Correctness-proven fallback]
+    S --> E[Amortization model]
+    E --> S
+    H --> Q[Holdout regret + quality audit]
+    S --> Q
+    Q -->|pass| O[Versioned deployment policy]
+    Q -->|fail| B

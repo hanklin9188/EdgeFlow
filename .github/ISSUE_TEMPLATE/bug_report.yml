@@ -1,0 +1,25 @@
+name: Bug report
+description: Report a reproducible EdgeFlow defect
+title: "[bug] "
+labels: [bug]
+body:
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Observed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Remove tokens, private prompts, model weights, and gated data.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Fingerprint
+      description: Attach the redacted output of `edgeflow inspect --json`.
+    validations:
+      required: true

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-Hant" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="EdgeFlow validated run and policy observatory">
+  <title>EdgeFlow · Evidence Observatory</title>
+  <link rel="stylesheet" href="/dashboard/assets/styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">跳到主要內容</a>
+  <aside>
+    <div class="brand"><span>⌁</span><div><strong>EdgeFlow</strong><small>Evidence Observatory</small></div></div>
+    <nav><a href="#overview">Overview</a><a href="#runs">Runs</a><a href="#policies">Policies</a><a href="/docs">API</a></nav>
+    <button id="theme" type="button">◐ Theme</button>
+  </aside>
+  <main id="main">
+    <header><div><p class="eyebrow">Local RTX control plane</p><h1>Inference performance, with evidence.</h1><p>所有 recommendation 都必須回溯至 raw artifact 與 validation gate。</p></div><span id="health" class="pill neutral">connecting</span></header>
+    <section id="overview" class="cards" aria-label="Environment summary">
+      <article><span>GPU</span><strong id="gpu">—</strong><small id="fingerprint">awaiting inspect</small></article>
+      <article><span>Indexed runs</span><strong id="runCount">0</strong><small>measured and diagnostic</small></article>
+      <article><span>Policy eligible</span><strong id="eligibleCount">0</strong><small>G0–G8 passed</small></article>
+      <article><span>Active policies</span><strong id="policyCount">0</strong><small>environment-scoped</small></article>
+    </section>
+    <section class="panel" id="runs">
+      <div class="heading"><div><p class="eyebrow">Run explorer</p><h2>Raw evidence before summary.</h2></div><input id="search" type="search" placeholder="Filter run or backend" aria-label="Filter runs"></div>
+      <div id="empty" class="empty"><b>No indexed runs yet.</b><span>Run <code>edgeflow benchmark run</code>; demo data is intentionally not shown here.</span></div>
+      <div class="table-wrap"><table hidden><thead><tr><th>Run</th><th>Backend</th><th>Experiment</th><th>Source</th><th>Verdict</th><th>Eligibility</th></tr></thead><tbody id="rows"></tbody></table></div>
+    </section>
+    <section class="panel" id="policies">
+      <div class="heading"><div><p class="eyebrow">Deployment policy</p><h2>Measured scope, explicit fallback.</h2></div></div>
+      <div id="policyEmpty" class="empty"><b>No validated policy.</b><span>A policy appears only after eligible measured runs and supporting evidence exist.</span></div>
+      <div id="policyList" class="policy-list"></div>
+    </section>
+    <footer>EdgeFlow v0.1 · no mock values on production surfaces · <a href="/openapi.json">OpenAPI</a></footer>
+  </main>
+  <script src="/dashboard/assets/app.js"></script>
+</body>
+</html>

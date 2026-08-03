@@ -1,0 +1,222 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edgeflow.dev/schemas/hardware_fingerprint.schema.json",
+  "title": "EdgeFlow HardwareFingerprint",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "fingerprint_id",
+    "captured_at",
+    "host",
+    "gpu",
+    "software",
+    "measurement_controls",
+    "sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "fingerprint_id": {
+      "type": "string"
+    },
+    "captured_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "host": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "os",
+        "execution_mode",
+        "cpu",
+        "ram_bytes"
+      ],
+      "properties": {
+        "os": {
+          "type": "string"
+        },
+        "execution_mode": {
+          "enum": [
+            "windows_native",
+            "wsl2",
+            "linux_native"
+          ]
+        },
+        "wsl_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "kernel": {
+          "type": "string"
+        },
+        "cpu": {
+          "type": "string"
+        },
+        "physical_cores": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "logical_cores": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "ram_bytes": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "gpu": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vendor",
+        "name",
+        "uuid",
+        "compute_capability",
+        "vram_bytes",
+        "driver_version",
+        "power_limit_w"
+      ],
+      "properties": {
+        "vendor": {
+          "const": "NVIDIA"
+        },
+        "name": {
+          "type": "string"
+        },
+        "uuid": {
+          "type": "string"
+        },
+        "compute_capability": {
+          "type": "string"
+        },
+        "vram_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "driver_version": {
+          "type": "string"
+        },
+        "power_limit_w": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "exclusiveMinimum": 0
+        },
+        "persistence_mode": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "software": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "python",
+        "pytorch",
+        "cuda_runtime",
+        "transformers",
+        "triton"
+      ],
+      "properties": {
+        "python": {
+          "type": "string"
+        },
+        "pytorch": {
+          "type": "string"
+        },
+        "cuda_runtime": {
+          "type": "string"
+        },
+        "cuda_toolkit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "transformers": {
+          "type": "string"
+        },
+        "triton": {
+          "type": "string"
+        },
+        "vllm": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "llama_cpp_commit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nsight_systems": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nsight_compute": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "measurement_controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gpu_idle_threshold_pct",
+        "temperature_ceiling_c",
+        "background_gpu_processes"
+      ],
+      "properties": {
+        "gpu_idle_threshold_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "temperature_ceiling_c": {
+          "type": "number",
+          "minimum": 0
+        },
+        "background_gpu_processes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "git": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "sha256": {
+      "type": "string",
+      "minLength": 16
+    }
+  }
+}

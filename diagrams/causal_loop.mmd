@@ -1,0 +1,18 @@
+stateDiagram-v2
+    [*] --> Observe
+    Observe --> Diagnose: normalized trace summary
+    Diagnose --> Preregister: hypothesis + mediator + controls
+    Preregister --> Intervene: one intended factor
+    Intervene --> Validate: matched randomized block
+    Validate --> Supported: outcome + mediator pass
+    Validate --> Rejected: predicted effect absent/reversed
+    Validate --> Inconclusive: unstable, confounded, underpowered
+    Supported --> UpdateEvidence
+    Rejected --> UpdateEvidence
+    Inconclusive --> Redesign
+    Redesign --> Preregister
+    UpdateEvidence --> SynthesizePolicy
+    SynthesizePolicy --> Holdout
+    Holdout --> Release: regret and quality pass
+    Holdout --> Observe: drift or failure
+    Release --> [*]

@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "run_id": "demo-profile-0001",
+  "profiler": "nsys",
+  "scope": "decode",
+  "source_type": "demo",
+  "timeline": {
+    "duration_ms": null,
+    "cpu_cuda_api_ms": null,
+    "gpu_kernel_ms": null
+  },
+  "kernel_summary": [],
+  "diagnostic_features": {
+    "kernel_gap_ratio": null,
+    "median_kernel_us": null,
+    "gpu_active_ratio": null,
+    "dram_throughput_pct_peak": null,
+    "tensor_core_utilization_pct": null
+  },
+  "trace_artifacts": [
+    "trace/demo-profile-0001.nsys-rep"
+  ],
+  "notes": "Structure-only example."
+}

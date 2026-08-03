@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "run_id": "demo-run-0001",
+  "verdict": "CONDITIONAL_PASS",
+  "policy_eligible": false,
+  "public_claim_eligible": false,
+  "quality_pass": null,
+  "evidence_level": "E1",
+  "checks": [
+    {
+      "gate": "schema",
+      "name": "required_artifacts",
+      "status": "PASS",
+      "message": "All demo artifacts are structurally present.",
+      "artifact": "sample_run_manifest.json"
+    },
+    {
+      "gate": "provenance",
+      "name": "source_label",
+      "status": "WARN",
+      "message": "This record is DEMO data and cannot support a public performance claim.",
+      "artifact": null
+    }
+  ],
+  "issues": [
+    {
+      "severity": "warning",
+      "code": "DEMO_NOT_MEASURED",
+      "message": "Replace with measured run before policy ranking."
+    }
+  ],
+  "scope": {
+    "allowed_use": [
+      "schema_test",
+      "ui_mock"
+    ],
+    "forbidden_use": [
+      "headline_metric",
+      "policy_selection"
+    ]
+  },
+  "validated_at": "2026-08-03T00:05:00Z",
+  "validator_version": "1.0.0"
+}

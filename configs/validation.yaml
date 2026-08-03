@@ -1,0 +1,19 @@
+schema_version: "1.0"
+timing:
+  first_last_third_drift_max: 0.03
+  robust_cv_max: 0.10
+  background_gpu_utilization_pct_max: 5
+statistics:
+  engine_repetitions_min: 30
+  microbenchmark_iterations_min: 100
+  online_requests_min: 200
+  bootstrap_resamples: 10000
+  practical_improvement_pct_min: 2.0
+correctness:
+  fp32: {atol: 1.0e-4, rtol: 1.0e-4}
+  fp16: {atol: 2.0e-2, rtol: 2.0e-2}
+  bf16: {atol: 5.0e-2, rtol: 5.0e-2}
+quality:
+  strict: {arc_c_drop_pp_max: 0.5, ppl_ratio_max: 1.02}
+  balanced: {arc_c_drop_pp_max: 1.0, ppl_ratio_max: 1.05}
+  memory_first: {arc_c_drop_pp_max: 2.0, ppl_ratio_max: 1.10}

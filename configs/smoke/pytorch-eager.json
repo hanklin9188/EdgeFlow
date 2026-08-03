@@ -1,0 +1,24 @@
+{
+  "backend": "pytorch_eager",
+  "backend_args": {
+    "attn_implementation": "sdpa",
+    "revision": "a10cc1512eabd3dde888204e902eca88bddb4951"
+  },
+  "canonical_sha256": null,
+  "compile_mode": null,
+  "cuda_graph": false,
+  "custom_kernels": [],
+  "dtype": "bf16",
+  "dynamic_shapes": null,
+  "flash_attention": true,
+  "fullgraph": null,
+  "kv_cache_dtype": "auto",
+  "max_num_batched_tokens": null,
+  "max_num_seqs": null,
+  "model_format": "safetensors",
+  "model_id": "smollm2-360m-instruct",
+  "plan_id": "smollm2-pytorch-eager-bf16-v1",
+  "quantization": null,
+  "schema_version": "1.0",
+  "support_status": "experimental"
+}

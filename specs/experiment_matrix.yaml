@@ -1,0 +1,66 @@
+schema_version: "1.0"
+strategy:
+  stages: [screening, focused_sweep, confirmatory]
+  screening:
+    prompt_tokens: [128, 1024, 4096]
+    output_tokens: [32, 128]
+    concurrency: [1, 4]
+    repetitions_engine: 12
+  focused_sweep:
+    prompt_tokens: [128, 512, 1024, 2048, 4096]
+    output_tokens: [32, 128, 512]
+    concurrency: [1, 2, 4, 8]
+    repetitions_engine: 30
+  confirmatory:
+    holdout_prompts: true
+    repetitions_engine: 30
+    online_requests_min: 200
+    bootstrap_resamples: 10000
+
+experiments:
+  E04:
+    name: pytorch_eager_baseline
+    models: [ministral3-3b-instruct-2512, llama-3.2-3b-instruct]
+    backends: [pytorch_eager]
+    dtypes: [bf16]
+
+  E05:
+    name: torch_compile_modes
+    models: [ministral3-3b-instruct-2512, llama-3.2-3b-instruct]
+    backends: [torch_compile]
+    compile_modes: [default, reduce-overhead, max-autotune, max-autotune-no-cudagraphs]
+    dynamic_shapes: [false, auto, true]
+
+  E07:
+    name: llama_cpp_quantization
+    models: [ministral3-3b-instruct-2512, ministral3-8b-instruct-2512-gguf]
+    backends: [llama_cpp]
+    quantizations: [Q8_0, Q6_K, Q5_K_M, Q4_K_M]
+
+  E08:
+    name: vllm_scheduler
+    models: [ministral3-3b-instruct-2512, llama-3.2-3b-instruct]
+    backends: [vllm]
+    max_num_batched_tokens: [1024, 2048, 4096, 8192]
+    max_num_seqs: [1, 4, 8, 16]
+
+  E10:
+    name: fixed_plan_dominance
+    input: validated_pareto_plans
+
+  E13:
+    name: launch_overhead_intervention
+    triggers:
+      kernel_gap_ratio_min: 0.15
+      median_kernel_us_max: 15
+    interventions: [reduce_overhead, cuda_graph, operator_fusion, batch_increase]
+
+  E19:
+    name: session_break_even
+    session_requests: [1, 5, 20, 100, 1000]
+
+  E22:
+    name: triton_correctness
+    hidden_sizes: [768, 1024, 1536, 2048, 3072, 4096]
+    token_rows: [1, 2, 4, 8, 16, 32, 128, 512]
+    dtypes: [fp32, fp16, bf16]

@@ -1,0 +1,35 @@
+flowchart LR
+    classDef input fill:#EEF3F0,stroke:#6B7F76,color:#22322B,stroke-width:1.2px
+    classDef core fill:#F8F4EC,stroke:#9B8260,color:#352E25,stroke-width:1.2px
+    classDef data fill:#F0EEF7,stroke:#7D7196,color:#2D2940,stroke-width:1.2px
+    classDef safe fill:#EDF5F4,stroke:#4E807A,color:#183936,stroke-width:1.2px
+    classDef output fill:#F8EFF0,stroke:#9A696F,color:#42282C,stroke-width:1.2px
+
+    H[Hardware fingerprint]:::input
+    M[Model registry]:::input
+    W[Workload distribution]:::input
+    P[Candidate plans]:::input
+
+    O[Run orchestrator]:::core
+    A[Runtime adapters\nPyTorch · compile · llama.cpp · vLLM]:::core
+    G[RTX 4080 SUPER]:::core
+
+    R[(Raw metrics + traces)]:::data
+    V[Validation gate]:::safe
+    E[(Evidence graph)]:::data
+    S[Policy synthesizer]:::safe
+    D[Dashboard / CLI / Serve]:::output
+    C[Optional performance copilot]:::output
+
+    H --> O
+    M --> O
+    W --> O
+    P --> O
+    O --> A --> G
+    G --> R
+    R --> V
+    V -->|valid| E
+    V -->|invalid, preserved| R
+    E --> S --> D
+    E --> C
+    C -. structured requests only .-> O

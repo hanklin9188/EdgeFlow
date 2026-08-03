@@ -1,0 +1,54 @@
+name: Experiment request
+about: Propose a falsifiable EdgeFlow experiment
+labels: [experiment, needs-design-review]
+body:
+  - type: input
+    id: question
+    attributes:
+      label: Decision question
+      placeholder: What uncertainty will this experiment resolve?
+    validations:
+      required: true
+  - type: textarea
+    id: hypothesis
+    attributes:
+      label: Directional hypothesis and null
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Hardware, model, backend, workload scope
+    validations:
+      required: true
+  - type: input
+    id: primary
+    attributes:
+      label: One primary outcome
+    validations:
+      required: true
+  - type: input
+    id: mediator
+    attributes:
+      label: Proposed mediator / mechanism metric
+  - type: textarea
+    id: intervention
+    attributes:
+      label: Matched intervention and controlled variables
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Preregistered acceptance, rejection, and inconclusive criteria
+    validations:
+      required: true
+  - type: checkboxes
+    id: ethics
+    attributes:
+      label: Data and claim checks
+      options:
+        - label: Dataset/model terms permit the proposed use.
+          required: true
+        - label: The experiment will publish failures and slower regions.
+          required: true

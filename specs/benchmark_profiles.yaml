@@ -1,0 +1,71 @@
+schema_version: "1.0"
+profiles:
+  interactive_chat:
+    objective:
+      ttft: 0.35
+      tpot: 0.35
+      p95_itl: 0.15
+      peak_vram: 0.10
+      startup: 0.05
+    workload:
+      prompt_tokens: [128, 512, 1024, 2048]
+      output_tokens: [32, 128, 512]
+      concurrency: [1]
+      arrival_pattern: closed_loop
+      session_requests: [5, 20, 100]
+    quality_profile: balanced
+
+  local_agent:
+    objective:
+      ttft: 0.30
+      tpot: 0.35
+      p95_itl: 0.20
+      peak_vram: 0.10
+      startup: 0.05
+    workload:
+      prompt_tokens: [512, 1024, 2048, 4096]
+      output_tokens: [32, 128]
+      concurrency: [1, 2]
+      arrival_pattern: closed_loop
+      session_requests: [20, 100]
+    quality_profile: strict
+
+  batch_evaluation:
+    objective:
+      throughput: 0.60
+      p95_latency: 0.20
+      peak_vram: 0.15
+      failure: 0.05
+    workload:
+      prompt_tokens: [128, 512, 1024]
+      output_tokens: [1, 32, 128]
+      batch_size: [4, 8, 16]
+      concurrency: [1]
+      arrival_pattern: closed_loop
+    quality_profile: strict
+
+  concurrent_service:
+    objective:
+      throughput: 0.45
+      ttft_p95: 0.25
+      itl_p95: 0.20
+      peak_vram: 0.10
+    workload:
+      prompt_tokens: [128, 1024, 4096]
+      output_tokens: [32, 128]
+      concurrency: [2, 4, 8]
+      arrival_pattern: [poisson, burst]
+    quality_profile: balanced
+
+  memory_first:
+    objective:
+      peak_vram: 0.45
+      tpot: 0.25
+      ttft: 0.15
+      quality_penalty: 0.15
+    workload:
+      prompt_tokens: [1024, 2048, 4096, 8192]
+      output_tokens: [128]
+      concurrency: [1, 2, 4]
+      arrival_pattern: closed_loop
+    quality_profile: memory_first

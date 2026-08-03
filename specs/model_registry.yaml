@@ -1,0 +1,112 @@
+schema_version: "1.0"
+models:
+  - model_id: ministral3-3b-instruct-2512
+    role: primary_cross_runtime
+    architecture_family: mistral3
+    parameter_tier: 3b
+    text_only_protocol: true
+    sources:
+      safetensors:
+        repo: mistralai/Ministral-3-3B-Instruct-2512-BF16
+        revision: b6d637bef2393152b3da2b2fde72eecdee30557e
+      gguf:
+        repo: mistralai/Ministral-3-3B-Instruct-2512-GGUF
+        revision: eb599d408350ea2bb60452cb86be7c7b2fc28227
+        quantizations: [BF16, Q8_0, Q6_K, Q5_K_M, Q4_K_M]
+    license: apache-2.0
+    gated: false
+    expected_fit_rtx4080s:
+      bf16: verify_text_only_loading
+      gguf: true
+    backends:
+      pytorch_eager: pending
+      torch_compile: pending
+      llama_cpp: pending
+      vllm: pending
+    notes:
+      - Includes a vision encoder; first release benchmarks text-only behavior.
+      - Audit whether each backend loads the vision component and account for VRAM differences.
+
+  - model_id: llama-3.2-3b-instruct
+    role: secondary_architecture
+    architecture_family: llama
+    parameter_tier: 3b
+    text_only_protocol: true
+    sources:
+      safetensors:
+        repo: meta-llama/Llama-3.2-3B-Instruct
+        revision: 0cb88a4f764b7a12671c53f0838cd831a0843b95
+      gguf:
+        conversion: Convert locally from pinned original weights with pinned llama.cpp commit.
+    license: llama3.2
+    gated: true
+    expected_fit_rtx4080s:
+      bf16: true
+      gguf: true
+    backends:
+      pytorch_eager: pending
+      torch_compile: pending
+      llama_cpp: pending
+      vllm: pending
+
+  - model_id: qwen3.5-4b
+    role: modern_reasoning_stress
+    architecture_family: qwen3.5
+    parameter_tier: 4b
+    text_only_protocol: true
+    reasoning_modes:
+      primary: thinking_disabled
+      secondary: thinking_enabled
+    sources:
+      safetensors:
+        repo: Qwen/Qwen3.5-4B
+        revision: 851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a
+    license: apache-2.0
+    gated: false
+    expected_fit_rtx4080s:
+      bf16: verify
+      quantized: verify
+    backends:
+      pytorch_eager: pending
+      torch_compile: pending
+      llama_cpp: capability_probe
+      vllm: pending
+    notes:
+      - Never compare thinking-enabled and thinking-disabled latency in one protocol.
+
+  - model_id: ministral3-8b-instruct-2512-gguf
+    role: memory_pressure_quantized
+    architecture_family: mistral3
+    parameter_tier: 8b
+    text_only_protocol: true
+    sources:
+      gguf:
+        repo: mistralai/Ministral-3-8B-Instruct-2512-GGUF
+        revision: 0102285ad796bd99af90f58de616092e5630e970
+        quantizations: [Q8_0, Q6_K, Q5_K_M, Q4_K_M]
+    license: apache-2.0
+    gated: false
+    expected_fit_rtx4080s:
+      gguf: true
+      fp8: capability_probe_only
+    backends:
+      pytorch_eager: not_primary
+      torch_compile: not_primary
+      llama_cpp: pending
+      vllm: experimental_if_fp8_supported
+
+  - model_id: smollm2-360m-instruct
+    role: ci_smoke
+    architecture_family: smollm2
+    parameter_tier: 360m
+    sources:
+      safetensors:
+        repo: HuggingFaceTB/SmolLM2-360M-Instruct
+        revision: a10cc1512eabd3dde888204e902eca88bddb4951
+    license: apache-2.0
+    gated: false
+    backends:
+      pytorch_eager: required
+      torch_compile: optional
+      llama_cpp: optional
+      vllm: optional

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edgeflow.dev/schemas/run_manifest.schema.json",
+  "title": "EdgeFlow RunManifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "run_id", "experiment_id", "run_type", "status",
+    "created_at", "hardware_fingerprint_sha256", "model_revision",
+    "workload_id", "plan_id", "protocol_version", "command",
+    "seed", "artifact_files", "source_type"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "run_id": {"type": "string"},
+    "experiment_id": {"type": "string"},
+    "block_id": {"type": ["string", "null"]},
+    "paired_group_id": {"type": ["string", "null"]},
+    "run_type": {
+      "enum": [
+        "performance_unprofiled", "performance_profiled", "quality",
+        "kernel_correctness", "kernel_microbenchmark", "causal_intervention",
+        "startup_amortization", "policy_holdout"
+      ]
+    },
+    "status": {
+      "enum": [
+        "PLANNED", "PRECHECK_FAILED", "PREPARING", "WARMING", "RUNNING",
+        "PROFILED", "VALIDATING", "PASSED", "CONDITIONAL_PASS", "FAILED",
+        "INVALID", "CANCELLED", "SKIPPED"
+      ]
+    },
+    "created_at": {"type": "string", "format": "date-time"},
+    "completed_at": {"type": ["string", "null"], "format": "date-time"},
+    "hardware_fingerprint_sha256": {"type": "string"},
+    "model_id": {"type": "string"},
+    "model_revision": {"type": "string"},
+    "model_files_sha256": {"type": "array", "items": {"type": "string"}},
+    "tokenizer_revision": {"type": ["string", "null"]},
+    "workload_id": {"type": "string"},
+    "workload_sha256": {"type": ["string", "null"]},
+    "plan_id": {"type": "string"},
+    "plan_sha256": {"type": ["string", "null"]},
+    "protocol_version": {"type": "string"},
+    "git_commit": {"type": ["string", "null"]},
+    "git_dirty": {"type": "boolean"},
+    "command": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "seed": {"type": "integer", "minimum": 0},
+    "profiler_level": {"enum": ["none", "torch", "nsys", "ncu"]},
+    "source_type": {"enum": ["measured", "demo", "estimated"]},
+    "artifact_files": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "supersedes_run_id": {"type": ["string", "null"]},
+    "notes": {"type": "string"}
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "EdgeFlow Calm Observatory",
+  "light": {
+    "canvas": "#F5F7F5",
+    "surface": "#FFFFFF",
+    "surfaceMuted": "#EEF2EF",
+    "ink": "#17212B",
+    "mutedInk": "#62707D",
+    "border": "#DCE4E0",
+    "primary": "#0F766E",
+    "secondary": "#4F46E5",
+    "warning": "#B7791F",
+    "success": "#2F855A",
+    "danger": "#B54747"
+  },
+  "dark": {
+    "canvas": "#0E151B",
+    "surface": "#151F27",
+    "surfaceMuted": "#1B2832",
+    "ink": "#E8EFEC",
+    "mutedInk": "#9FB0B7",
+    "border": "#2B3A43",
+    "primary": "#5CC8BC",
+    "secondary": "#8D8AF7",
+    "warning": "#E4B65C",
+    "success": "#6BC49A",
+    "danger": "#E07A7A"
+  },
+  "radius": {"small": 8, "medium": 14, "large": 22},
+  "shadow": {"card": "0 10px 30px rgba(23,33,43,0.07)"},
+  "spacing": {"xs": 4, "sm": 8, "md": 16, "lg": 24, "xl": 36}
+}

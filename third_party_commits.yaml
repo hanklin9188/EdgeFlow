@@ -1,0 +1,14 @@
+schema_version: "1.0"
+captured_at: "2026-08-04"
+models:
+  smollm2_360m_instruct: a10cc1512eabd3dde888204e902eca88bddb4951
+  ministral3_3b_bf16: b6d637bef2393152b3da2b2fde72eecdee30557e
+  ministral3_3b_gguf: eb599d408350ea2bb60452cb86be7c7b2fc28227
+  llama_3_2_3b_instruct: 0cb88a4f764b7a12671c53f0838cd831a0843b95
+  qwen3_5_4b: 851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a
+  ministral3_8b_gguf: 0102285ad796bd99af90f58de616092e5630e970
+runtimes:
+  llama_cpp: PIN_IN_ISOLATED_RUNTIME_ENV_BEFORE_E07
+  vllm: PIN_IN_ISOLATED_RUNTIME_ENV_BEFORE_E08
+policy:
+  formal_runs_refuse_unpinned_entries: true

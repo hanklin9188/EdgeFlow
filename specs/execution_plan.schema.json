@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edgeflow.dev/schemas/execution_plan.schema.json",
+  "title": "EdgeFlow ExecutionPlan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "plan_id", "model_id", "backend", "model_format",
+    "custom_kernels", "backend_args"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "plan_id": {"type": "string", "minLength": 3},
+    "model_id": {"type": "string"},
+    "backend": {"enum": ["pytorch_eager", "torch_compile", "llama_cpp", "vllm"]},
+    "model_format": {"enum": ["safetensors", "gguf", "fp8", "other"]},
+    "dtype": {"type": ["string", "null"], "enum": ["fp32", "fp16", "bf16", "fp8", null]},
+    "quantization": {"type": ["string", "null"]},
+    "compile_mode": {
+      "type": ["string", "null"],
+      "enum": ["default", "reduce-overhead", "max-autotune", "max-autotune-no-cudagraphs", null]
+    },
+    "dynamic_shapes": {"type": ["boolean", "null"]},
+    "fullgraph": {"type": ["boolean", "null"]},
+    "cuda_graph": {"type": ["boolean", "null"]},
+    "max_num_batched_tokens": {"type": ["integer", "null"], "minimum": 1},
+    "max_num_seqs": {"type": ["integer", "null"], "minimum": 1},
+    "kv_cache_dtype": {"type": ["string", "null"]},
+    "flash_attention": {"type": ["boolean", "null"]},
+    "custom_kernels": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "backend_args": {"type": "object"},
+    "canonical_sha256": {"type": ["string", "null"]},
+    "support_status": {"enum": ["verified", "experimental", "pending", "unsupported"]}
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "run_id": "demo-run-0001",
+  "request_id": "demo-request-0001",
+  "source_type": "demo",
+  "phase": "end_to_end",
+  "iteration": 0,
+  "prompt_tokens": 1024,
+  "output_tokens": 128,
+  "metrics": {
+    "wall_ms": null,
+    "ttft_ms": null,
+    "tpot_ms": null,
+    "request_latency_ms": null,
+    "prompt_tokens_per_s": null,
+    "generation_tokens_per_s": null,
+    "requests_per_s": null,
+    "queue_ms": null,
+    "peak_vram_bytes": null,
+    "gpu_energy_j": null,
+    "temperature_c": null,
+    "sm_clock_mhz": null,
+    "memory_clock_mhz": null
+  },
+  "token_timestamps_ms": [],
+  "fallbacks": [],
+  "notes": "Null-valued DEMO example; never show as measured."
+}

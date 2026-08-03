@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edgeflow.dev/schemas/profiler_summary.schema.json",
+  "title": "EdgeFlow ProfilerSummary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "profiler",
+    "scope",
+    "source_type",
+    "timeline",
+    "kernel_summary",
+    "diagnostic_features"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "profiler": {
+      "enum": [
+        "torch",
+        "nsys",
+        "ncu"
+      ]
+    },
+    "scope": {
+      "enum": [
+        "prefill",
+        "decode",
+        "end_to_end",
+        "kernel"
+      ]
+    },
+    "source_type": {
+      "enum": [
+        "measured",
+        "demo",
+        "estimated"
+      ]
+    },
+    "timeline": {
+      "type": "object"
+    },
+    "kernel_summary": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "diagnostic_features": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "kernel_gap_ratio": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "median_kernel_us": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "gpu_active_ratio": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "dram_throughput_pct_peak": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "tensor_core_utilization_pct": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        }
+      }
+    },
+    "trace_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

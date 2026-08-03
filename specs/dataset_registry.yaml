@@ -1,0 +1,121 @@
+schema_version: "1.0"
+datasets:
+  - dataset_id: edgeflow-synthetic-v1
+    role: controlled_workload
+    source: generated
+    revision: "1.0"
+    license: project_source_text_licenses
+    public_raw: true
+    usage:
+      latency: required
+      quality: false
+      training: false
+    preprocessing:
+      - Tokenize with the target model tokenizer.
+      - Pack to exact token buckets.
+      - Save token IDs hash and seed.
+
+  - dataset_id: ultrachat-200k
+    role: real_chat_distribution
+    source: HuggingFaceH4/ultrachat_200k
+    revision: PIN_AT_IMPLEMENTATION
+    split: test_sft
+    license: CHECK_DATASET_CARD_AT_PIN
+    public_raw: false
+    usage:
+      latency: external_validity
+      quality: false
+      training: false
+    preprocessing:
+      - Extract user prompts.
+      - Stratify by target tokenizer length.
+      - Save row IDs and hashes, not full public copies.
+
+  - dataset_id: lmsys-chat-1m
+    role: optional_real_world_distribution
+    source: lmsys/lmsys-chat-1m
+    revision: PIN_AT_IMPLEMENTATION
+    split: train
+    license: gated_dataset_agreement
+    gated: true
+    public_raw: false
+    usage:
+      latency: optional_external_validity
+      quality: false
+      training: false
+    preprocessing:
+      - Use only after accepting the agreement.
+      - Do not redistribute raw conversations.
+      - Filter and hash selected samples.
+
+  - dataset_id: wikitext-2-raw
+    role: perplexity_quality_gate
+    source: Salesforce/wikitext
+    config: wikitext-2-raw-v1
+    revision: PIN_AT_IMPLEMENTATION
+    split: test
+    license: cc-by-sa/gfdl-see-card
+    public_raw: via_upstream
+    usage:
+      latency: false
+      quality: required
+      training: false
+
+  - dataset_id: arc-challenge
+    role: multiple_choice_quality_gate
+    source: allenai/ai2_arc
+    config: ARC-Challenge
+    revision: PIN_AT_IMPLEMENTATION
+    split: test
+    license: CHECK_DATASET_CARD_AT_PIN
+    usage:
+      latency: false
+      quality: required
+      training: false
+    protocol:
+      scoring: candidate_log_likelihood
+      length_normalization: fixed_by_experiment
+
+  - dataset_id: gsm8k-main
+    role: reasoning_quality_extension
+    source: openai/gsm8k
+    config: main
+    revision: PIN_AT_IMPLEMENTATION
+    split: test
+    license: mit
+    usage:
+      latency: realistic_extension
+      quality: extended
+      training: false
+    protocol:
+      decoding: greedy
+      answer_extraction: final_numeric_answer
+
+  - dataset_id: humaneval
+    role: code_quality_extension
+    source: openai/openai_humaneval
+    revision: PIN_AT_IMPLEMENTATION
+    split: test
+    license: mit
+    usage:
+      latency: realistic_extension
+      quality: optional
+      training: false
+    security:
+      execute_in_sandbox: true
+      network: disabled
+      timeout_required: true
+
+  - dataset_id: edgeflow-run-db
+    role: optional_learned_components
+    source: measured_edgeflow_runs
+    revision: database_snapshot_hash
+    license: project_generated_metadata
+    usage:
+      latency: false
+      quality: false
+      training: optional_cost_model_and_classifier
+    requirements:
+      unique_points_min: 2000
+      no_repetition_as_independent_row: true
+      validation_status: [PASS, CONDITIONAL_PASS]
