@@ -15,7 +15,7 @@ from edgeflow.api.schemas import BenchmarkSubmission  # noqa: E402
 from edgeflow.core.models import utc_now  # noqa: E402
 from edgeflow.core.serialization import read_json, write_json  # noqa: E402
 from edgeflow.experiments import BenchmarkConfig, RunOrchestrator  # noqa: E402
-from edgeflow.experiments.matrix import pytorch_matrix_cases  # noqa: E402
+from edgeflow.experiments.matrix import matrix_progress_status, pytorch_matrix_cases  # noqa: E402
 from edgeflow.models import ModelRegistry  # noqa: E402
 from edgeflow.quality import find_compatible_quality_report  # noqa: E402
 
@@ -41,22 +41,15 @@ def _save_progress(
     total_case_count: int,
 ) -> None:
     failed = sum(row["status"] == "FAILED" for row in cases)
-    running = any(row["status"] == "RUNNING" for row in cases)
-    completed = len(cases) == total_case_count and not running
+    status, passed = matrix_progress_status(cases, total_case_count=total_case_count)
     payload = {
         "schema_version": "1.0",
         "experiment_id": experiment_id,
         "model_id": model_id,
         "source_type": "measured",
         "protocol_status": "DEVELOPMENT" if quick else "FORMAL",
-        "status": (
-            "RUNNING"
-            if running or not completed
-            else "COMPLETE_WITH_FAILURES"
-            if failed
-            else "PASS"
-        ),
-        "pass": completed and not failed and bool(cases),
+        "status": status,
+        "pass": passed,
         "updated_at": utc_now(),
         "case_count": len(cases),
         "failed_case_count": failed,
@@ -101,7 +94,7 @@ def main() -> int:
         else {
             row["case_id"]: row
             for row in previous.get("cases", [])
-            if row.get("status") != "FAILED"
+            if row.get("status") == "COMPLETED"
         }
     )
     orchestrator = RunOrchestrator(root=ROOT, artifact_root=ROOT / "artifacts")
@@ -205,6 +198,16 @@ def main() -> int:
             cases=results,
             total_case_count=len(cases),
         )
+    # Always normalize the aggregate state. This also repairs a stale RUNNING marker
+    # after an interrupted process when every recorded case has already settled.
+    _save_progress(
+        output,
+        experiment_id=arguments.experiment_id,
+        model_id=arguments.model_id,
+        quick=arguments.quick,
+        cases=results,
+        total_case_count=len(cases),
+    )
     print(json.dumps({"output": str(output), "completed": len(results), "total": len(cases)}))
     return 1 if any(row["status"] == "FAILED" for row in results) else 0
 

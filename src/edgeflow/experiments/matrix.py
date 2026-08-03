@@ -4,6 +4,24 @@ import itertools
 from typing import Any
 
 
+def matrix_progress_status(
+    cases: list[dict[str, Any]], *, total_case_count: int
+) -> tuple[str, bool]:
+    """Return a truthful resumable-matrix status and aggregate pass flag."""
+
+    failed = any(row.get("status") == "FAILED" for row in cases)
+    running = any(row.get("status") == "RUNNING" for row in cases)
+    settled = all(row.get("status") in {"COMPLETED", "FAILED"} for row in cases)
+    complete = len(cases) == total_case_count and settled
+    if running:
+        return "RUNNING", False
+    if not complete:
+        return "PARTIAL", False
+    if failed:
+        return "COMPLETE_WITH_FAILURES", False
+    return "PASS", bool(cases)
+
+
 def pytorch_matrix_cases(experiment_id: str, *, quick: bool = False) -> list[dict[str, Any]]:
     """Expand the preregistered E04/E05 matrix without silently dropping failed candidates."""
 
@@ -27,19 +45,20 @@ def pytorch_matrix_cases(experiment_id: str, *, quick: bool = False) -> list[dic
     if experiment_id == "E05":
         prompts = [128] if quick else [128, 1024]
         outputs = [32] if quick else [32, 128]
-        modes = ["default"] if quick else [
-            "default",
-            "reduce-overhead",
-            "max-autotune",
-            "max-autotune-no-cudagraphs",
-        ]
+        modes = (
+            ["default"]
+            if quick
+            else [
+                "default",
+                "reduce-overhead",
+                "max-autotune",
+                "max-autotune-no-cudagraphs",
+            ]
+        )
         dynamic_values = [False] if quick else [False, True]
         return [
             {
-                "case_id": (
-                    f"E05-p{prompt}-o{output}-{mode}-"
-                    f"{'dynamic' if dynamic else 'static'}"
-                ),
+                "case_id": (f"E05-p{prompt}-o{output}-{mode}-{'dynamic' if dynamic else 'static'}"),
                 "backend": "torch_compile",
                 "prompt_tokens": prompt,
                 "output_tokens": output,

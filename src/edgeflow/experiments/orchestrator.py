@@ -35,6 +35,28 @@ from edgeflow.validation import validate_run
 from edgeflow.workloads.builder import build_exact_token_ids, choose_prompt_tokens
 
 
+def _prompt_counts_for_group(
+    workload: WorkloadSpec,
+    *,
+    iteration: int,
+    request_group_size: int,
+    grouping_kind: str,
+) -> list[int]:
+    """Choose exact prompt sizes while preserving each runtime's grouping semantics."""
+
+    if grouping_kind == "batch":
+        # The PyTorch adapter stacks inputs into a dense tensor, so all members of
+        # one true batch must share a sequence length.
+        count = choose_prompt_tokens(workload, iteration)
+        return [count] * request_group_size
+    # An HTTP concurrency group represents independent requests and must preserve
+    # the registered distribution within a group instead of cloning one prompt.
+    return [
+        choose_prompt_tokens(workload, iteration * request_group_size + member)
+        for member in range(request_group_size)
+    ]
+
+
 def _gpu_telemetry() -> dict[str, float | None]:
     try:
         result = subprocess.run(
@@ -183,9 +205,16 @@ class RunOrchestrator:
             "profiler_level": "none",
             "source_type": config.source_type.value,
             "artifact_files": [
-                "run_manifest.json", "workload.json", "execution_plan.json",
-                "hardware_fingerprint.json", "metrics.jsonl", "stdout.log", "stderr.log",
-                "monitor.jsonl", "validation_verdict.json", "VALIDATION.md",
+                "run_manifest.json",
+                "workload.json",
+                "execution_plan.json",
+                "hardware_fingerprint.json",
+                "metrics.jsonl",
+                "stdout.log",
+                "stderr.log",
+                "monitor.jsonl",
+                "validation_verdict.json",
+                "VALIDATION.md",
                 "correctness.json",
                 "quality.json",
             ],
@@ -222,7 +251,9 @@ class RunOrchestrator:
             raise RuntimeUnavailable("; ".join(report.reasons))
         utilization = _gpu_utilization()
         if config.enforce_idle and utilization is not None and utilization >= 5.0:
-            raise RuntimeError(f"GPU precheck failed: utilization is {utilization:.1f}% (must be <5%)")
+            raise RuntimeError(
+                f"GPU precheck failed: utilization is {utilization:.1f}% (must be <5%)"
+            )
         hardware = inspect_hardware(self.root)
         run_id = f"run-{time.strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:6]}"
         self.artifact_root.mkdir(parents=True, exist_ok=True)
@@ -266,15 +297,25 @@ class RunOrchestrator:
             )
             append(
                 MetricRecord(
-                    run_id=run_id, request_id=None, source_type=config.source_type, phase="load", iteration=0,
-                    metrics=MetricValues(wall_ms=runtime.load_ms), notes="Model and tokenizer preparation.",
+                    run_id=run_id,
+                    request_id=None,
+                    source_type=config.source_type,
+                    phase="load",
+                    iteration=0,
+                    metrics=MetricValues(wall_ms=runtime.load_ms),
+                    notes="Model and tokenizer preparation.",
                 )
             )
             if runtime.compile_ms > 0:
                 append(
                     MetricRecord(
-                        run_id=run_id, request_id=None, source_type=config.source_type, phase="compile", iteration=0,
-                        metrics=MetricValues(wall_ms=runtime.compile_ms), notes="torch.compile wrapper construction; first graph compile appears in warmup.",
+                        run_id=run_id,
+                        request_id=None,
+                        source_type=config.source_type,
+                        phase="compile",
+                        iteration=0,
+                        metrics=MetricValues(wall_ms=runtime.compile_ms),
+                        notes="torch.compile wrapper construction; first graph compile appears in warmup.",
                     )
                 )
             monitor.start()
@@ -282,10 +323,15 @@ class RunOrchestrator:
             write_json(temporary / "run_manifest.json", manifest)
             warmup_latencies: list[float] = []
             if plan.backend == "torch_compile":
-                count = choose_prompt_tokens(workload, -10_000)
+                prompt_counts = _prompt_counts_for_group(
+                    workload,
+                    iteration=-10_000,
+                    request_group_size=request_group_size,
+                    grouping_kind=grouping_kind,
+                )
                 token_groups = [
                     build_exact_token_ids(tokenizer, count, seed=workload.seed + member)
-                    for member in range(request_group_size)
+                    for member, count in enumerate(prompt_counts)
                 ]
                 first_compiled = runtime.generate_batch(token_groups, workload.output_tokens)[0]
                 append(
@@ -295,7 +341,7 @@ class RunOrchestrator:
                         source_type=config.source_type,
                         phase="compile",
                         iteration=1,
-                        prompt_tokens=count,
+                        prompt_tokens=prompt_counts[0],
                         output_tokens=len(first_compiled.output_token_ids),
                         metrics=MetricValues(wall_ms=first_compiled.wall_ms),
                         token_timestamps_ms=first_compiled.token_timestamps_ms,
@@ -305,14 +351,19 @@ class RunOrchestrator:
             maximum_warmup = max(config.warmup_requests, 50)
             warmup_converged = False
             for iteration in range(maximum_warmup):
-                count = choose_prompt_tokens(workload, -iteration - 1)
+                prompt_counts = _prompt_counts_for_group(
+                    workload,
+                    iteration=-iteration - 1,
+                    request_group_size=request_group_size,
+                    grouping_kind=grouping_kind,
+                )
                 token_groups = [
                     build_exact_token_ids(
                         tokenizer,
                         count,
                         seed=workload.seed + iteration * request_group_size + member,
                     )
-                    for member in range(request_group_size)
+                    for member, count in enumerate(prompt_counts)
                 ]
                 warmup_started = time.perf_counter_ns()
                 warmup_results = runtime.generate_batch(token_groups, workload.output_tokens)
@@ -324,9 +375,16 @@ class RunOrchestrator:
                 warmup_latencies.append(warmup_engine_ms)
                 append(
                     MetricRecord(
-                        run_id=run_id, request_id=f"warmup-{iteration:04d}", source_type=config.source_type,
-                        phase="warmup", iteration=iteration, prompt_tokens=count, output_tokens=len(result.output_token_ids),
-                        metrics=MetricValues(wall_ms=warmup_wall_ms, ttft_ms=result.ttft_ms, tpot_ms=result.tpot_ms),
+                        run_id=run_id,
+                        request_id=f"warmup-{iteration:04d}",
+                        source_type=config.source_type,
+                        phase="warmup",
+                        iteration=iteration,
+                        prompt_tokens=prompt_counts[0],
+                        output_tokens=len(result.output_token_ids),
+                        metrics=MetricValues(
+                            wall_ms=warmup_wall_ms, ttft_ms=result.ttft_ms, tpot_ms=result.tpot_ms
+                        ),
                         token_timestamps_ms=result.token_timestamps_ms,
                         notes=f"Excluded from steady-state summary; {grouping_kind}={request_group_size}.",
                     )
@@ -343,14 +401,19 @@ class RunOrchestrator:
                     " Warmup did not satisfy the registered 2% median-drift and 10% robust-CV "
                     f"threshold within {maximum_warmup} request groups; validation must decide eligibility."
                 )
-            correctness_count = choose_prompt_tokens(workload, -20_000)
+            correctness_counts = _prompt_counts_for_group(
+                workload,
+                iteration=-20_000,
+                request_group_size=request_group_size,
+                grouping_kind=grouping_kind,
+            )
             correctness_ids = [
                 build_exact_token_ids(
                     tokenizer,
-                    correctness_count,
+                    count,
                     seed=workload.seed + 20_000 + member,
                 )
-                for member in range(request_group_size)
+                for member, count in enumerate(correctness_counts)
             ]
             correctness_a = runtime.generate_batch(correctness_ids, workload.output_tokens)
             correctness_b = runtime.generate_batch(correctness_ids, workload.output_tokens)
@@ -373,7 +436,8 @@ class RunOrchestrator:
                     "pass": correctness_pass,
                     "nan_count": 0,
                     "reference_type": "pinned_runtime_deterministic_repeat",
-                    "prompt_tokens": correctness_count,
+                    "prompt_tokens": correctness_counts[0],
+                    "prompt_token_counts": correctness_counts,
                     "requested_output_tokens": workload.output_tokens,
                     "request_group_size": request_group_size,
                     "grouping_kind": grouping_kind,
@@ -396,14 +460,19 @@ class RunOrchestrator:
             order = list(range(config.repetitions))
             random.Random(workload.seed).shuffle(order)
             for execution_index, prompt_index in enumerate(order):
-                count = choose_prompt_tokens(workload, prompt_index)
+                prompt_counts = _prompt_counts_for_group(
+                    workload,
+                    iteration=prompt_index,
+                    request_group_size=request_group_size,
+                    grouping_kind=grouping_kind,
+                )
                 token_groups = [
                     build_exact_token_ids(
                         tokenizer,
                         count,
                         seed=workload.seed + prompt_index * request_group_size + member,
                     )
-                    for member in range(request_group_size)
+                    for member, count in enumerate(prompt_counts)
                 ]
                 group_started = time.perf_counter_ns()
                 results = runtime.generate_batch(token_groups, workload.output_tokens)
@@ -421,7 +490,7 @@ class RunOrchestrator:
                             source_type=config.source_type,
                             phase="end_to_end",
                             iteration=execution_index * request_group_size + member,
-                            prompt_tokens=count,
+                            prompt_tokens=prompt_counts[member],
                             output_tokens=len(result.output_token_ids),
                             metrics=MetricValues(
                                 wall_ms=result.wall_ms,
@@ -458,8 +527,12 @@ class RunOrchestrator:
         except Exception as exc:
             manifest["status"] = "FAILED"
             manifest["completed_at"] = utc_now()
-            manifest["notes"] = f"Run failed and raw artifacts were preserved: {type(exc).__name__}."
-            (temporary / "stderr.log").write_text(f"{type(exc).__name__}: {exc}\n", encoding="utf-8")
+            manifest["notes"] = (
+                f"Run failed and raw artifacts were preserved: {type(exc).__name__}."
+            )
+            (temporary / "stderr.log").write_text(
+                f"{type(exc).__name__}: {exc}\n", encoding="utf-8"
+            )
             write_json(temporary / "run_manifest.json", manifest)
             monitor.stop()
             (temporary / "monitor.jsonl").write_text(

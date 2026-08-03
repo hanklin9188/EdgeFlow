@@ -89,7 +89,7 @@ experiments:
     name: cross_runtime_fairness_audit
     phase: runtime_baselines
     kind: audit
-    engineering_status: partial
+    engineering_status: implemented
 
   E10:
     name: fixed_plan_dominance
@@ -135,7 +135,8 @@ experiments:
     name: scheduler_bound_mixed_workload
     phase: policy_causal
     kind: intervention
-    engineering_status: planned
+    engineering_status: partial
+    support: heterogeneous_prompt_buckets_within_http_concurrency_groups
   E18:
     name: negative_control_diagnosis
     phase: policy_causal

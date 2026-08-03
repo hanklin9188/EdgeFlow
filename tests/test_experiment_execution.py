@@ -6,7 +6,7 @@ from typing import Any
 
 from edgeflow.core.models import CapabilityReport, ExecutionPlan
 from edgeflow.experiments import BenchmarkConfig, RunOrchestrator
-from edgeflow.experiments.matrix import pytorch_matrix_cases
+from edgeflow.experiments.matrix import matrix_progress_status, pytorch_matrix_cases
 from edgeflow.kernels.rmsnorm import dispatch
 from edgeflow.runtimes.base import GenerationResult
 from edgeflow.workloads import create_workload
@@ -26,11 +26,13 @@ class FakeRuntime:
 
     def __init__(self) -> None:
         self.group_sizes: list[int] = []
+        self.group_prompt_lengths: list[tuple[int, ...]] = []
 
     def generate_batch(
         self, token_id_batches: list[list[int]], output_tokens: int
     ) -> list[GenerationResult]:
         self.group_sizes.append(len(token_id_batches))
+        self.group_prompt_lengths.append(tuple(len(batch) for batch in token_id_batches))
         timestamps = tuple(float(index + 1) for index in range(output_tokens))
         return [
             GenerationResult(
@@ -126,6 +128,77 @@ def test_orchestrator_preserves_true_batch_groups(tmp_path: Path, monkeypatch: A
     assert correctness["grouping_kind"] == "batch"
     assert len(measured) == 9
     assert set(runtime.group_sizes) == {3}
+    assert all(len(set(lengths)) == 1 for lengths in runtime.group_prompt_lengths)
+
+
+def test_orchestrator_preserves_mixed_http_concurrency(tmp_path: Path, monkeypatch: Any) -> None:
+    runtime = FakeRuntime()
+    monkeypatch.setattr(
+        RunOrchestrator,
+        "adapter_for",
+        staticmethod(lambda _plan: FakeAdapter(runtime)),
+    )
+    monkeypatch.setattr("edgeflow.experiments.orchestrator._gpu_utilization", lambda: 0.0)
+    monkeypatch.setattr(
+        "edgeflow.experiments.orchestrator._gpu_telemetry",
+        lambda: {
+            "temperature_c": 50.0,
+            "sm_clock_mhz": 2000.0,
+            "memory_clock_mhz": 10000.0,
+            "gpu_utilization_pct": 90.0,
+            "power_w": 200.0,
+        },
+    )
+    monkeypatch.setattr(
+        "edgeflow.experiments.orchestrator.inspect_hardware",
+        lambda _root: {
+            "fingerprint_id": "hw-test",
+            "captured_at": "2026-08-04T00:00:00Z",
+            "sha256": "a" * 64,
+            "git": {"commit": "abc", "dirty": False},
+        },
+    )
+    monkeypatch.setattr(
+        "edgeflow.experiments.orchestrator.validate_run",
+        lambda run_dir, **_kwargs: {
+            "run_id": json.loads((run_dir / "run_manifest.json").read_text())["run_id"],
+            "verdict": "CONDITIONAL_PASS",
+            "policy_eligible": False,
+            "public_claim_eligible": False,
+        },
+    )
+    workload = create_workload(
+        workload_id="concurrency-mix-test",
+        model_id="model",
+        prompt_distribution="8:0.5,16:0.5",
+        output_tokens=2,
+        batch_size=1,
+        concurrency=4,
+        session_requests=3,
+    )
+    plan = ExecutionPlan(
+        plan_id="vllm-concurrency-test",
+        model_id="model",
+        backend="vllm",
+        model_format="safetensors",
+        dtype="bf16",
+        backend_args={"revision": "abc"},
+    )
+    output = RunOrchestrator(root=tmp_path, artifact_root=tmp_path / "artifacts").run(
+        model_ref="model",
+        workload=workload,
+        plan=plan,
+        config=BenchmarkConfig(repetitions=3, warmup_requests=1),
+    )
+    correctness = json.loads((output / "correctness.json").read_text())
+    rows = [json.loads(line) for line in (output / "metrics.jsonl").read_text().splitlines()]
+    measured = [row for row in rows if row["phase"] == "end_to_end"]
+
+    assert correctness["grouping_kind"] == "concurrency"
+    assert correctness["prompt_token_counts"] != [correctness["prompt_tokens"]] * 4
+    assert len(measured) == 12
+    assert {row["prompt_tokens"] for row in measured} == {8, 16}
+    assert any(len(set(lengths)) > 1 for lengths in runtime.group_prompt_lengths)
 
 
 def test_kernel_dispatch_cache_only_enables_measured_winners(
@@ -162,3 +235,20 @@ def test_registered_pytorch_matrices_expand_without_duplicates() -> None:
     assert len(e04) == 12
     assert len(e05) == 32
     assert len({row["case_id"] for row in e04 + e05}) == 44
+
+
+def test_matrix_progress_distinguishes_partial_from_running() -> None:
+    partial = [{"case_id": "one", "status": "COMPLETED"}]
+    running = [*partial, {"case_id": "two", "status": "RUNNING"}]
+    pending = [*partial, {"case_id": "two", "status": "PENDING"}]
+    failed = [*partial, {"case_id": "two", "status": "FAILED"}]
+    passed = [*partial, {"case_id": "two", "status": "COMPLETED"}]
+
+    assert matrix_progress_status(partial, total_case_count=2) == ("PARTIAL", False)
+    assert matrix_progress_status(running, total_case_count=2) == ("RUNNING", False)
+    assert matrix_progress_status(pending, total_case_count=2) == ("PARTIAL", False)
+    assert matrix_progress_status(failed, total_case_count=2) == (
+        "COMPLETE_WITH_FAILURES",
+        False,
+    )
+    assert matrix_progress_status(passed, total_case_count=2) == ("PASS", True)
