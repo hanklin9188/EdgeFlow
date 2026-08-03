@@ -113,6 +113,7 @@ def test_llama_integration_matches_model_and_rolls_back_on_reference_path() -> N
 
     torch.testing.assert_close(actual, baseline, atol=1e-5, rtol=1e-5)
     assert integration.summary()["fallback_calls"] == 2
+    assert integration.summary()["cached_dispatch_scope_count"] == 1
     assert dispatch_decision(values.reshape(-1, 8), values.reshape(-1, 8), torch.ones(8))[
         "reason"
     ] == "cpu_reference"

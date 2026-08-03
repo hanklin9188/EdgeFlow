@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -56,8 +57,9 @@ def dispatch_decision(x: Any, residual: Any, weight: Any) -> dict[str, Any]:
     }
 
 
-def _load_cache() -> dict[str, Any]:
-    path = _cache_path()
+@lru_cache(maxsize=8)
+def _load_json_cache(path_text: str) -> dict[str, Any]:
+    path = Path(path_text)
     if not path.exists():
         return {}
     try:
@@ -65,23 +67,26 @@ def _load_cache() -> dict[str, Any]:
         return value if isinstance(value, dict) else {}
     except (OSError, json.JSONDecodeError):
         return {}
+
+
+def _load_cache() -> dict[str, Any]:
+    return _load_json_cache(str(_cache_path()))
 
 
 def _load_performance_cache() -> dict[str, Any]:
-    path = _performance_cache_path()
-    if not path.exists():
-        return {}
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-        return value if isinstance(value, dict) else {}
-    except (OSError, json.JSONDecodeError):
-        return {}
+    return _load_json_cache(str(_performance_cache_path()))
+
+
+def clear_dispatch_caches() -> None:
+    """Invalidate process-local cache after a calibration artifact changes."""
+
+    _load_json_cache.cache_clear()
 
 
 def record_performance_decisions(rows: list[dict[str, Any]]) -> dict[str, Any]:
     """Persist measured dispatch decisions; unmeasured shapes remain on the reference path."""
 
-    cache = _load_performance_cache()
+    cache = dict(_load_performance_cache())
     for row in rows:
         shape = row.get("shape", [])
         dtype = row.get("dtype")
@@ -99,6 +104,7 @@ def record_performance_decisions(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "minimum_practical_speedup": MIN_PRACTICAL_SPEEDUP,
         }
     write_json(_performance_cache_path(), cache)
+    clear_dispatch_caches()
     return cache
 
 
@@ -133,9 +139,10 @@ def validate_shape(x: Any, residual: Any, weight: Any, eps: float = 1e-6) -> dic
         "max_abs_error": maximum,
         "error": error,
     }
-    cache = _load_cache()
+    cache = dict(_load_cache())
     cache[_key(x)] = result
     write_json(_cache_path(), cache)
+    clear_dispatch_caches()
     return result
 
 
@@ -146,12 +153,13 @@ def fused_residual_rmsnorm(
     eps: float = 1e-6,
     *,
     force_reference: bool = False,
+    _decision: dict[str, Any] | None = None,
 ) -> Any:
     """Use Triton only for a shape that passed validation on this exact GPU."""
 
     if force_reference or not getattr(x, "is_cuda", False):
         return reference_residual_rmsnorm(x, residual, weight, eps)
-    decision = dispatch_decision(x, residual, weight)
+    decision = _decision or dispatch_decision(x, residual, weight)
     if not decision["use_triton"]:
         return reference_residual_rmsnorm(x, residual, weight, eps)
     try:

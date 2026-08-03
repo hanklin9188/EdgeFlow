@@ -19,6 +19,9 @@ class LlamaRMSNormIntegration:
         }
     )
     fallback_reasons: dict[str, int] = field(default_factory=dict)
+    decision_cache: dict[tuple[str, str, int, int], dict[str, Any]] = field(
+        default_factory=dict
+    )
     _originals: list[tuple[Any, Any]] = field(default_factory=list)
 
     def enable(self) -> LlamaRMSNormIntegration:
@@ -63,7 +66,16 @@ class LlamaRMSNormIntegration:
                 flat_attention = attention_output.reshape(-1, attention_output.shape[-1]).contiguous()
                 flat_residual = residual.reshape(-1, residual.shape[-1]).contiguous()
                 weight = decoder_layer.post_attention_layernorm.weight.contiguous()
-                decision = dispatch_decision(flat_attention, flat_residual, weight)
+                decision_key = (
+                    str(flat_attention.device),
+                    str(flat_attention.dtype),
+                    int(flat_attention.shape[0]),
+                    int(flat_attention.shape[1]),
+                )
+                decision = _edgeflow_integration.decision_cache.get(decision_key)
+                if decision is None:
+                    decision = dispatch_decision(flat_attention, flat_residual, weight)
+                    _edgeflow_integration.decision_cache[decision_key] = decision
                 _edgeflow_integration.counters["calls"] += 1
                 if decision["use_triton"] and not _edgeflow_integration.force_reference:
                     _edgeflow_integration.counters["triton_calls"] += 1
@@ -83,6 +95,7 @@ class LlamaRMSNormIntegration:
                     weight,
                     float(decoder_layer.post_attention_layernorm.variance_epsilon),
                     force_reference=_edgeflow_integration.force_reference,
+                    _decision=decision,
                 ).view_as(attention_output)
                 hidden_states = decoder_layer.mlp(normalized)
                 return combined + hidden_states
@@ -100,6 +113,7 @@ class LlamaRMSNormIntegration:
             **self.counters,
             "fallback_reasons": dict(sorted(self.fallback_reasons.items())),
             "patched_layer_count": len(self._originals),
+            "cached_dispatch_scope_count": len(self.decision_cache),
             "force_reference": self.force_reference,
             "rollback_available": True,
         }

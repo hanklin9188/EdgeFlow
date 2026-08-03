@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "package": "EdgeFlow",
-  "generated_at": "2026-08-03T21:48:51.905824+00:00",
+  "generated_at": "2026-08-03T21:51:07.011120+00:00",
   "file_count": 195,
-  "total_bytes": 1516943,
+  "total_bytes": 1518762,
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
@@ -652,13 +652,13 @@
     },
     {
       "path": "src/edgeflow/kernels/rmsnorm/dispatch.py",
-      "bytes": 5397,
-      "sha256": "df093e994847e92612b08f4af84e5ea7342bdf3f126a7018cf6924f6909f491b"
+      "bytes": 5630,
+      "sha256": "ebdf8a14b25a37681caf8c71895f08e076d948c09fff56d2b619bc0e0819d10e"
     },
     {
       "path": "src/edgeflow/kernels/rmsnorm/integration.py",
-      "bytes": 4643,
-      "sha256": "de7b12b3b3f85897a6c9a22bbbd530409215c06baf29064c1033a6021c1981e8"
+      "bytes": 5315,
+      "sha256": "6afa3c5da6496674e1267eca0aa4f18056097f3dabba35883059d9f4f098df4e"
     },
     {
       "path": "src/edgeflow/kernels/rmsnorm/kernel.py",
@@ -902,8 +902,8 @@
     },
     {
       "path": "tests/test_experiment_execution.py",
-      "bytes": 12308,
-      "sha256": "11a5d6fca4828257d845c7adee06a716b721962dd468be18130b5532a16d7596"
+      "bytes": 13153,
+      "sha256": "3d0ebbe96b7574452240a841b6f4a86d2b551bf342f09134054ddc4358501fc6"
     },
     {
       "path": "tests/test_fairness_audit.py",
@@ -937,8 +937,8 @@
     },
     {
       "path": "tests/test_storage_api_kernel.py",
-      "bytes": 4429,
-      "sha256": "127c02f2670c17f2e2637657d2557123759ad03870c7d4601724ce0e761fa15d"
+      "bytes": 4498,
+      "sha256": "373e3d4e6ba1e626c2bf8a27958f76102cfa8e55ab2df7b6f0c8b5d77b9284a5"
     },
     {
       "path": "tests/test_validation.py",

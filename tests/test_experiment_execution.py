@@ -281,6 +281,24 @@ def test_kernel_dispatch_cache_only_enables_measured_winners(
     assert cache[f"{dispatch.KERNEL_VERSION}|GPU-test|torch.float16|4x1024"]["enabled"] is False
 
 
+def test_dispatch_cache_reads_calibration_once(tmp_path: Path, monkeypatch: Any) -> None:
+    performance_path = tmp_path / "performance.json"
+    validation_path = tmp_path / "validation.json"
+    performance_path.write_text("{}", encoding="utf-8")
+    validation_path.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(dispatch, "_cache_path", lambda: validation_path)
+    monkeypatch.setattr(dispatch, "_performance_cache_path", lambda: performance_path)
+    dispatch.clear_dispatch_caches()
+
+    first = dispatch._load_performance_cache()
+    performance_path.write_text('{"changed": true}', encoding="utf-8")
+
+    assert dispatch._load_performance_cache() is first
+    assert "changed" not in dispatch._load_performance_cache()
+    dispatch.clear_dispatch_caches()
+    assert dispatch._load_performance_cache()["changed"] is True
+
+
 def test_registered_pytorch_matrices_expand_without_duplicates() -> None:
     e04 = pytorch_matrix_cases("E04")
     e05 = pytorch_matrix_cases("E05")
