@@ -25,7 +25,7 @@ def find_compatible_quality_report(
         except (OSError, ValueError):
             continue
         scope = report.get("scope", {})
-        if not report.get("pass"):
+        if not report.get("pass") or report.get("protocol_status") != "FORMAL":
             continue
         if scope.get("model_id") != model_id or scope.get("model_revision") != model_revision:
             continue

@@ -38,6 +38,7 @@ def test_quality_gate_is_hard_constraint() -> None:
 def test_quality_registry_requires_exact_runtime_scope(tmp_path: Path) -> None:
     report = {
         "pass": True,
+        "protocol_status": "FORMAL",
         "scope": {
             "model_id": "model",
             "model_revision": "revision",

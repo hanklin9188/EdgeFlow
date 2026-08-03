@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "package": "EdgeFlow",
-  "generated_at": "2026-08-03T19:29:20.396718+00:00",
+  "generated_at": "2026-08-03T19:31:12.583522+00:00",
   "file_count": 181,
-  "total_bytes": 1396434,
+  "total_bytes": 1396713,
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
@@ -692,13 +692,13 @@
     },
     {
       "path": "src/edgeflow/quality/hf_reference.py",
-      "bytes": 8167,
-      "sha256": "44bf42b31b47135e7c8309db52e6a00b8e5c05bc402e1d79184b8e0ecdca9cd1"
+      "bytes": 8364,
+      "sha256": "176428c6dc882b07e619b0a99950c5ff084e2404435260a7cb78eab3d6077599"
     },
     {
       "path": "src/edgeflow/quality/registry.py",
-      "bytes": 1342,
-      "sha256": "dfe2dd931f4a4ab3cab1d4f3533bb70f65760409f3edd6e05c65d89bed4683c7"
+      "bytes": 1387,
+      "sha256": "4bd97213bb9d6b9d316eb18dc5c121ec51b2f5a9ab78e6778388e6c03127988a"
     },
     {
       "path": "src/edgeflow/reports/__init__.py",
@@ -857,8 +857,8 @@
     },
     {
       "path": "tests/test_quality_registry_report.py",
-      "bytes": 3038,
-      "sha256": "9ffaaa6a6694a7034b477c361fcc3913fe6a4b551f6e61732d720ef9420aad3b"
+      "bytes": 3075,
+      "sha256": "4c0e62800f616947afe700381c8f8af8a40210a2295a943ac4cbcefe411fa2e3"
     },
     {
       "path": "tests/test_statistics.py",

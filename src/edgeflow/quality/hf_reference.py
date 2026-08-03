@@ -179,6 +179,9 @@ def evaluate_hf_reference_quality(
     payload = {
         "schema_version": "1.0",
         "pass": bool(math.isfinite(perplexity) and perplexity > 0 and 0 <= arc_accuracy <= 1),
+        "protocol_status": (
+            "FORMAL" if wikitext_token_limit >= 8192 and arc_samples >= 50 else "DEVELOPMENT"
+        ),
         "quality_role": "bf16_transformers_reference",
         "source_type": "measured",
         "created_at": utc_now(),
@@ -200,6 +203,7 @@ def evaluate_hf_reference_quality(
                 "dataset_id": wiki["dataset_id"],
                 "revision": wiki["revision"],
                 "split": wiki["split"],
+                "requested_token_limit": wikitext_token_limit,
                 "scored_tokens": scored_tokens,
             },
             "arc_challenge": {
