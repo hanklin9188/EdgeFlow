@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "package": "EdgeFlow",
-  "generated_at": "2026-08-03T21:10:46.308910+00:00",
+  "generated_at": "2026-08-03T21:14:25.150125+00:00",
   "file_count": 195,
-  "total_bytes": 1511207,
+  "total_bytes": 1512379,
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
@@ -67,8 +67,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 11643,
-      "sha256": "f04ec16d4040962cd95b2888da658b7e733b0f588d1017b80a46c796277753ea"
+      "bytes": 11764,
+      "sha256": "5aea09e3ee16c4002ffd36898b6903374cc180ee241f295b2221813da988ee93"
     },
     {
       "path": "SECURITY.md",
@@ -617,8 +617,8 @@
     },
     {
       "path": "src/edgeflow/experiments/orchestrator.py",
-      "bytes": 29053,
-      "sha256": "119d45f08bbc8178f50f57b263b2ec5399463bc522edb04a9a28983c90dbcc7e"
+      "bytes": 29506,
+      "sha256": "b08a34dbbe5f9376cef3524314cd0e855e1d9d695373d495a2e97c63afb2b82e"
     },
     {
       "path": "src/edgeflow/hardware/__init__.py",
@@ -902,8 +902,8 @@
     },
     {
       "path": "tests/test_experiment_execution.py",
-      "bytes": 11710,
-      "sha256": "0541ee771ca1dc8e00724a743edb004653a2a4822fb10b064c106f5867cf2374"
+      "bytes": 12308,
+      "sha256": "11a5d6fca4828257d845c7adee06a716b721962dd468be18130b5532a16d7596"
     },
     {
       "path": "tests/test_fairness_audit.py",

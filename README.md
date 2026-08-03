@@ -128,7 +128,7 @@ python scripts/run_pytorch_matrix.py E05 --model-id llama-3.2-3b-instruct
 ```
 
 正式模式會拒絕 dirty checkout 與缺少 exact-scope quality report 的模型；`--quick` 只用於工程 regression，永遠標為 `DEVELOPMENT`。
-固定 prompt bucket 會在 warmup、correctness 與所有 repetitions 重用完全相同的 token IDs；只有已註冊的 distribution replay 才會依 request 改變 deterministic sample。
+固定 prompt bucket 會在 warmup、correctness 與所有 repetitions 重用完全相同的 token IDs；只有已註冊的 distribution replay 才會依 request 改變 deterministic sample。GPU telemetry 在同步 engine timer 關閉後取樣，避免 `nvidia-smi` driver query 干擾 latency-critical window。
 
 E06、正式分析／prerequisite audit 與 E24 end-to-end integration：
 

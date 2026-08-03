@@ -123,29 +123,37 @@ def _gpu_utilization() -> float | None:
 
 
 class TelemetryMonitor:
-    """Sample nvidia-smi off the latency-critical request path."""
+    """Collect telemetry without querying the driver during timed GPU work."""
 
-    def __init__(self, interval_seconds: float = 1.0) -> None:
+    def __init__(self, interval_seconds: float = 1.0, *, background: bool = False) -> None:
         self.interval_seconds = interval_seconds
+        self.background = background
         self.samples: list[dict[str, Any]] = []
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._run, name="edgeflow-gpu-monitor", daemon=True)
         self._started = False
 
     def start(self) -> None:
-        self._thread.start()
         self._started = True
+        if self.background:
+            self._thread.start()
 
     def _run(self) -> None:
         while not self._stop.is_set():
-            self.samples.append({"monotonic_ns": time.monotonic_ns(), **_gpu_telemetry()})
+            self.sample()
             self._stop.wait(self.interval_seconds)
+
+    def sample(self) -> dict[str, float | None]:
+        values = _gpu_telemetry()
+        self.samples.append({"monotonic_ns": time.monotonic_ns(), **values})
+        return values
 
     def stop(self) -> None:
         if not self._started:
             return
         self._stop.set()
-        self._thread.join(timeout=3)
+        if self.background:
+            self._thread.join(timeout=3)
 
     def latest(self) -> dict[str, float | None]:
         if not self.samples:
@@ -391,6 +399,7 @@ class RunOrchestrator:
                     )
                 )
             monitor.start()
+            monitor.sample()
             manifest["status"] = "WARMING"
             write_json(temporary / "run_manifest.json", manifest)
             warmup_latencies: list[float] = []
@@ -573,7 +582,9 @@ class RunOrchestrator:
                 group_started = time.perf_counter_ns()
                 results = runtime.generate_batch(token_groups, workload.output_tokens)
                 group_wall_ms = (time.perf_counter_ns() - group_started) / 1_000_000
-                telemetry = monitor.latest()
+                # Querying nvidia-smi can serialize driver work on WSL/consumer GPUs.
+                # Sample only after the synchronized engine timer has closed.
+                telemetry = monitor.sample()
                 group_output_tokens = sum(len(result.output_token_ids) for result in results)
                 generation_rate = (
                     group_output_tokens / (group_wall_ms / 1000.0) if group_wall_ms > 0 else None

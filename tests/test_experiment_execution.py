@@ -12,7 +12,7 @@ from edgeflow.experiments.matrix import (
     matrix_progress_status,
     pytorch_matrix_cases,
 )
-from edgeflow.experiments.orchestrator import _prompt_seed
+from edgeflow.experiments.orchestrator import TelemetryMonitor, _prompt_seed
 from edgeflow.kernels.rmsnorm import dispatch
 from edgeflow.runtimes.base import GenerationResult
 from edgeflow.workloads import create_workload
@@ -93,6 +93,25 @@ def test_fixed_prompt_scope_reuses_exact_token_seed() -> None:
     assert _prompt_seed(
         mixed, prompt_index=0, request_group_size=1, member=0
     ) != _prompt_seed(mixed, prompt_index=29, request_group_size=1, member=0)
+
+
+def test_telemetry_defaults_to_post_request_sampling(monkeypatch: Any) -> None:
+    monkeypatch.setattr(
+        "edgeflow.experiments.orchestrator._gpu_telemetry",
+        lambda: {
+            "temperature_c": 50.0,
+            "sm_clock_mhz": 2000.0,
+            "memory_clock_mhz": 10000.0,
+            "gpu_utilization_pct": 90.0,
+            "power_w": 200.0,
+        },
+    )
+    monitor = TelemetryMonitor()
+    monitor.start()
+    assert monitor.samples == []
+    assert monitor.sample()["temperature_c"] == 50.0
+    assert len(monitor.samples) == 1
+    monitor.stop()
 
 
 def test_orchestrator_preserves_true_batch_groups(tmp_path: Path, monkeypatch: Any) -> None:
