@@ -94,6 +94,7 @@ def _worker(mode: str, model_id: str, repetitions: int, output_tokens: int) -> d
     )
     observations: list[dict[str, Any]] = []
     output_hashes: dict[str, str] = {}
+    output_token_ids: dict[str, list[int]] = {}
     try:
         token_ids = {
             prompt: build_exact_token_ids(tokenizer, prompt, seed=workload.seed + prompt)
@@ -106,6 +107,7 @@ def _worker(mode: str, model_id: str, repetitions: int, output_tokens: int) -> d
                 host_ms = (time.perf_counter_ns() - started) / 1_000_000
                 if block == 0 and str(prompt) not in output_hashes:
                     output_hashes[str(prompt)] = sha256_value(list(result.output_token_ids))
+                    output_token_ids[str(prompt)] = list(result.output_token_ids)
                 observations.append(
                     {
                         "block": block,
@@ -131,6 +133,7 @@ def _worker(mode: str, model_id: str, repetitions: int, output_tokens: int) -> d
             "sequence": list(E06_SEQUENCE),
             "observations": observations,
             "output_hashes": output_hashes,
+            "output_token_ids": output_token_ids,
             "final_counters": _counter_snapshot(),
             "completed_at": utc_now(),
         }
@@ -160,6 +163,7 @@ def main() -> int:
     parser.add_argument("--model-id", default="llama-3.2-3b-instruct")
     parser.add_argument("--repetitions", type=int, default=30)
     parser.add_argument("--output-tokens", type=int, default=8)
+    parser.add_argument("--summarize-existing", action="store_true")
     parser.add_argument("--worker-mode", choices=E06_MODES, help=argparse.SUPPRESS)
     parser.add_argument("--worker-result", type=Path, help=argparse.SUPPRESS)
     arguments = parser.parse_args()
@@ -192,6 +196,23 @@ def main() -> int:
     output_root = ROOT / "artifacts" / "experiments" / "E06"
     worker_root = output_root / "workers"
     log_root = output_root / "logs"
+    if arguments.summarize_existing:
+        cases = [
+            read_json(worker_root / f"dynamic-{mode}.json")
+            for mode in E06_MODES
+            if (worker_root / f"dynamic-{mode}.json").is_file()
+        ]
+        previous = read_json(output_root / "result.json")
+        result = {
+            **previous,
+            **summarize_dynamic_shape_study(cases, repetitions=arguments.repetitions),
+            "cases": cases,
+            "created_at": utc_now(),
+        }
+        write_json(output_root / "result.json", result)
+        write_json(output_root / "progress.json", result)
+        print(json.dumps({"status": result["status"], "output": str(output_root / "result.json")}))
+        return 0 if result["pass"] else 1
     worker_root.mkdir(parents=True, exist_ok=True)
     log_root.mkdir(parents=True, exist_ok=True)
     cases: list[dict[str, Any]] = []

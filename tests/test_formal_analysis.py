@@ -157,3 +157,38 @@ def test_dynamic_shape_summary_requires_every_formal_mode() -> None:
     assert complete["status"] == "PASS"
     assert complete["shape_bucket_rule"]["strategy"] == "static_exact_buckets"
     assert incomplete["status"] == "INCOMPLETE"
+
+
+def test_dynamic_shape_summary_excludes_a_mismatched_mode() -> None:
+    cases = []
+    for mode in E06_MODES:
+        observations = [
+            {
+                "block": block,
+                "sequence_index": sequence_index,
+                "prompt_tokens": prompt,
+                "latency_ms": 10.0,
+                "peak_vram_bytes": 1024,
+            }
+            for block in range(30)
+            for sequence_index, prompt in enumerate(E06_SEQUENCE)
+        ]
+        hashes = {str(prompt): f"hash-{prompt}" for prompt in set(E06_SEQUENCE)}
+        if mode == "false":
+            hashes["2048"] = "mismatch"
+        cases.append(
+            {
+                "dynamic_mode": mode,
+                "status": "COMPLETED",
+                "observations": observations,
+                "output_hashes": hashes,
+                "final_counters": {"stats.unique_graphs": 2},
+            }
+        )
+
+    result = summarize_dynamic_shape_study(cases, repetitions=30)
+
+    assert result["status"] == "PASS"
+    assert result["cross_mode_correctness"] is False
+    assert result["excluded_modes"] == ["false"]
+    assert result["shape_bucket_rule"]["dynamic_mode"] in {"auto", "true"}

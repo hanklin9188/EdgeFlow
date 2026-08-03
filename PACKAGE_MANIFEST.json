@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "package": "EdgeFlow",
-  "generated_at": "2026-08-03T21:41:41.727734+00:00",
+  "generated_at": "2026-08-03T21:48:51.905824+00:00",
   "file_count": 195,
-  "total_bytes": 1513313,
+  "total_bytes": 1516943,
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
@@ -387,8 +387,8 @@
     },
     {
       "path": "scripts/run_dynamic_shape_study.py",
-      "bytes": 9387,
-      "sha256": "2b5e8aca8e9845f6b138370e09df6ac69a972f8f6aa228dab14280d967109256"
+      "bytes": 10378,
+      "sha256": "caf299cf7aeb080b0ff9b486de5c9fb7baf04f8bba3849e3157a88605d3ddc5d"
     },
     {
       "path": "scripts/run_e24_integration.py",
@@ -592,8 +592,8 @@
     },
     {
       "path": "src/edgeflow/experiments/dynamic_shapes.py",
-      "bytes": 5321,
-      "sha256": "0990915cdebd54267292aba63f44d17b421afb9ca51cc133f14e7b37068b5d77"
+      "bytes": 6765,
+      "sha256": "c26ee47af15d4fd285fd8e0c2b3796de1afa1d0f8e80f54e0f843e44d13a031e"
     },
     {
       "path": "src/edgeflow/experiments/fairness.py",
@@ -912,8 +912,8 @@
     },
     {
       "path": "tests/test_formal_analysis.py",
-      "bytes": 6030,
-      "sha256": "9b410ebec9c55eeb77985561ad92ffeb102df24db1bf0fa34f836cf759b7ecd2"
+      "bytes": 7225,
+      "sha256": "52025bfceb45a10a1ba8e43a5bd236341b10451227a61ee2de8fa94545a2503a"
     },
     {
       "path": "tests/test_local_web.py",

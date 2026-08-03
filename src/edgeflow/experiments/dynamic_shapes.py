@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import statistics
+from collections import Counter
 from typing import Any
 
 from edgeflow.metrics.statistics import robust_cv
@@ -17,8 +18,18 @@ def summarize_dynamic_shape_study(
 ) -> dict[str, Any]:
     summaries: list[dict[str, Any]] = []
     issues: list[str] = []
+    warnings: list[str] = []
     expected_observations = repetitions * len(sequence)
     completed = {str(case.get("dynamic_mode")): case for case in cases if case.get("status") == "COMPLETED"}
+    hashes_by_mode = {
+        mode: dict(case.get("output_hashes", {})) for mode, case in completed.items()
+    }
+    prompts = sorted({prompt for hashes in hashes_by_mode.values() for prompt in hashes})
+    consensus = {
+        prompt: Counter(hashes[prompt] for hashes in hashes_by_mode.values() if prompt in hashes)
+        .most_common(1)[0][0]
+        for prompt in prompts
+    }
     for mode in E06_MODES:
         case = completed.get(mode)
         if case is None:
@@ -54,6 +65,14 @@ def summarize_dynamic_shape_study(
             issues.append(
                 f"dynamic={mode} steady mixed-sequence robust CV is {steady_cv:.3%}; maximum is 10%"
             )
+        mode_hashes = hashes_by_mode.get(mode, {})
+        matches = sum(mode_hashes.get(prompt) == expected for prompt, expected in consensus.items())
+        agreement = matches / len(consensus) if consensus else 0.0
+        correctness_pass = agreement == 1.0 and len(mode_hashes) == len(consensus)
+        if not correctness_pass:
+            warnings.append(
+                f"dynamic={mode} exact greedy output agreement is {agreement:.1%}; mode is excluded"
+            )
         summaries.append(
             {
                 "dynamic_mode": mode,
@@ -64,6 +83,8 @@ def summarize_dynamic_shape_study(
                 "steady_sequence_median_ms": float(statistics.median(block_totals[1:])),
                 "steady_sequence_robust_cv": steady_cv,
                 "stability_pass": stable,
+                "correctness_pass": correctness_pass,
+                "exact_output_scope_agreement": agreement,
                 "maximum_first_shape_spike_ratio": max(spike_ratios.values(), default=1.0),
                 "first_shape_spike_ratios": spike_ratios,
                 "peak_vram_bytes": max(
@@ -77,13 +98,16 @@ def summarize_dynamic_shape_study(
         for case in completed.values()
     }
     cross_mode_correctness = len(output_sets) == 1 and len(completed) == len(E06_MODES)
-    if not cross_mode_correctness:
-        issues.append("greedy output hashes do not agree across all dynamic modes")
 
     shape_bucket_rule: dict[str, Any] | None = None
-    if summaries:
+    eligible_summaries = [
+        row for row in summaries if row["correctness_pass"] and row["stability_pass"]
+    ]
+    if len(eligible_summaries) < 2:
+        issues.append("fewer than two dynamic modes passed correctness and stability gates")
+    if eligible_summaries:
         winner = min(
-            summaries,
+            eligible_summaries,
             key=lambda row: (
                 float(row["steady_sequence_median_ms"]),
                 int(row["unique_graphs"]),
@@ -115,9 +139,16 @@ def summarize_dynamic_shape_study(
         "repetitions": repetitions,
         "sequence": list(sequence),
         "cross_mode_correctness": cross_mode_correctness,
+        "correctness_consensus_hashes": consensus,
         "mode_summaries": summaries,
+        "excluded_modes": [
+            row["dynamic_mode"]
+            for row in summaries
+            if not row["correctness_pass"] or not row["stability_pass"]
+        ],
         "shape_bucket_rule": shape_bucket_rule,
         "issues": issues,
+        "warnings": warnings,
         "claim_scope": (
             "Registered mixed-shape sequence on the pinned local model and hardware only."
             if passed
