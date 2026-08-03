@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "package": "EdgeFlow",
-  "generated_at": "2026-08-03T17:26:49.301976+00:00",
+  "generated_at": "2026-08-03T17:29:27.768581+00:00",
   "file_count": 159,
-  "total_bytes": 1022900,
+  "total_bytes": 1022920,
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
@@ -22,8 +22,8 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "bytes": 1159,
-      "sha256": "506b0fe826788eb8b3c362d1db381c21f03eff850a14093d71797452dd190a91"
+      "bytes": 1171,
+      "sha256": "bc1f4694a170bbcc069757237e0e618fef33450adca77448c0cb039ec2cfdfef"
     },
     {
       "path": ".gitignore",
@@ -302,8 +302,8 @@
     },
     {
       "path": "github/workflows/ci.yml",
-      "bytes": 1060,
-      "sha256": "73d375ec6c1ca4032067a058f088caeb93ba2e9ca7f2217f926d787d428cddad"
+      "bytes": 1068,
+      "sha256": "59e44676d4227d96c14e85dcaa00c3973f58aecb77dbcf0aac7b686b3b85c039"
     },
     {
       "path": "pyproject.toml",
