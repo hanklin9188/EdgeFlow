@@ -46,6 +46,7 @@ def _save_progress(
     total_case_count: int,
 ) -> None:
     failed = sum(row["status"] == "FAILED" for row in cases)
+    pruned = sum(row["status"] == "PRUNED" for row in cases)
     status, passed = matrix_progress_status(cases, total_case_count=total_case_count)
     payload = {
         "schema_version": "1.0",
@@ -58,6 +59,7 @@ def _save_progress(
         "updated_at": utc_now(),
         "case_count": len(cases),
         "failed_case_count": failed,
+        "pruned_case_count": pruned,
         "cases": cases,
         "claim_scope": "Matrix execution status only; individual validation verdicts govern claims.",
     }
@@ -75,9 +77,9 @@ def _execute_case(
     if case["compile_mode"] in {"reduce-overhead", "max-autotune"}:
         record.update(
             {
-                "status": "FAILED",
-                "error_type": "UnsupportedCompileMode",
-                "error": (
+                "status": "PRUNED",
+                "reason_type": "UnsupportedCompileMode",
+                "reason": (
                     f"{case['compile_mode']} is capability-pruned: its internal CUDA Graph "
                     "path is incompatible with the mutable token-by-token KV cache"
                 ),
@@ -218,6 +220,7 @@ def main() -> int:
     parser.add_argument("--allow-missing-quality", action="store_true")
     parser.add_argument("--rerun-completed", action="store_true")
     parser.add_argument("--rerun-failed", action="store_true")
+    parser.add_argument("--rerun-pruned", action="store_true")
     parser.add_argument("--rerun-case")
     parser.add_argument("--max-new-cases", type=int)
     parser.add_argument("--worker-case", help=argparse.SUPPRESS)
@@ -294,6 +297,7 @@ def main() -> int:
         and (
             (row.get("status") == "COMPLETED" and not arguments.rerun_completed)
             or (row.get("status") == "FAILED" and not arguments.rerun_failed)
+            or (row.get("status") == "PRUNED" and not arguments.rerun_pruned)
         )
     }
     results = list(settled.values())

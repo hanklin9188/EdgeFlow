@@ -250,6 +250,7 @@ def test_matrix_progress_distinguishes_partial_from_running() -> None:
     running = [*partial, {"case_id": "two", "status": "RUNNING"}]
     pending = [*partial, {"case_id": "two", "status": "PENDING"}]
     failed = [*partial, {"case_id": "two", "status": "FAILED"}]
+    pruned = [*partial, {"case_id": "two", "status": "PRUNED"}]
     passed = [*partial, {"case_id": "two", "status": "COMPLETED"}]
 
     assert matrix_progress_status(partial, total_case_count=2) == ("PARTIAL", False)
@@ -258,6 +259,10 @@ def test_matrix_progress_distinguishes_partial_from_running() -> None:
     assert matrix_progress_status(failed, total_case_count=2) == (
         "COMPLETE_WITH_FAILURES",
         False,
+    )
+    assert matrix_progress_status(pruned, total_case_count=2) == (
+        "COMPLETE_WITH_PRUNES",
+        True,
     )
     assert matrix_progress_status(passed, total_case_count=2) == ("PASS", True)
 

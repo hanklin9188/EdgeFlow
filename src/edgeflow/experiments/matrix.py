@@ -23,7 +23,8 @@ def matrix_progress_status(
 
     failed = any(row.get("status") == "FAILED" for row in cases)
     running = any(row.get("status") == "RUNNING" for row in cases)
-    settled = all(row.get("status") in {"COMPLETED", "FAILED"} for row in cases)
+    pruned = any(row.get("status") == "PRUNED" for row in cases)
+    settled = all(row.get("status") in {"COMPLETED", "FAILED", "PRUNED"} for row in cases)
     complete = len(cases) == total_case_count and settled
     if running:
         return "RUNNING", False
@@ -31,6 +32,8 @@ def matrix_progress_status(
         return "PARTIAL", False
     if failed:
         return "COMPLETE_WITH_FAILURES", False
+    if pruned:
+        return "COMPLETE_WITH_PRUNES", bool(cases)
     return "PASS", bool(cases)
 
 
