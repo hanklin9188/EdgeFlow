@@ -62,7 +62,7 @@ class PytorchRuntime(PreparedRuntime):
         if engine_start is not None:
             engine_start.record()
         past_key_values = None
-        if self.cuda_graph:
+        if self.compiled or self.cuda_graph:
             from transformers.cache_utils import StaticCache
 
             model_config = getattr(self.model, "config", None) or self.model._orig_mod.config

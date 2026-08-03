@@ -76,6 +76,7 @@ def main() -> int:
     parser.add_argument("--allow-download", action="store_true")
     parser.add_argument("--allow-busy-gpu", action="store_true")
     parser.add_argument("--allow-missing-quality", action="store_true")
+    parser.add_argument("--rerun-completed", action="store_true")
     arguments = parser.parse_args()
     if not arguments.quick and not _git_clean():
         print("Formal matrix requires a clean git checkout.", file=sys.stderr)
@@ -91,11 +92,15 @@ def main() -> int:
         / ("matrix-quick.json" if arguments.quick else "matrix.json")
     )
     previous: dict[str, Any] = read_json(output) if output.is_file() else {"cases": []}
-    completed: dict[str, dict[str, Any]] = {
-        row["case_id"]: row
-        for row in previous.get("cases", [])
-        if row.get("status") != "FAILED"
-    }
+    completed: dict[str, dict[str, Any]] = (
+        {}
+        if arguments.rerun_completed
+        else {
+            row["case_id"]: row
+            for row in previous.get("cases", [])
+            if row.get("status") != "FAILED"
+        }
+    )
     orchestrator = RunOrchestrator(root=ROOT, artifact_root=ROOT / "artifacts")
     results = list(completed.values())
     for case in cases:
