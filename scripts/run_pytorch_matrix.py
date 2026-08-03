@@ -16,7 +16,11 @@ from edgeflow.api.schemas import BenchmarkSubmission  # noqa: E402
 from edgeflow.core.models import utc_now  # noqa: E402
 from edgeflow.core.serialization import read_json, write_json  # noqa: E402
 from edgeflow.experiments import BenchmarkConfig, RunOrchestrator  # noqa: E402
-from edgeflow.experiments.matrix import matrix_progress_status, pytorch_matrix_cases  # noqa: E402
+from edgeflow.experiments.matrix import (  # noqa: E402
+    matrix_case_label,
+    matrix_progress_status,
+    pytorch_matrix_cases,
+)
 from edgeflow.models import ModelRegistry  # noqa: E402
 from edgeflow.quality import find_compatible_quality_report  # noqa: E402
 
@@ -82,7 +86,7 @@ def _execute_case(
         )
         return record
     submission = BenchmarkSubmission(
-        label=case["case_id"].lower(),
+        label=matrix_case_label(case["case_id"]),
         model_id=arguments.model_id,
         model_format="safetensors",
         backend=case["backend"],
@@ -239,7 +243,16 @@ def main() -> int:
         case = next((row for row in cases if row["case_id"] == arguments.worker_case), None)
         if case is None:
             parser.error(f"unknown worker case {arguments.worker_case}")
-        record = _execute_case(arguments, case, registry=registry, revision=revision)
+        try:
+            record = _execute_case(arguments, case, registry=registry, revision=revision)
+        except Exception as exc:
+            record = {
+                **case,
+                "status": "FAILED",
+                "error_type": type(exc).__name__,
+                "error": str(exc)[:1000],
+                "completed_at": utc_now(),
+            }
         write_json(arguments.worker_result, record)
         return 0 if record["status"] == "COMPLETED" else 1
 

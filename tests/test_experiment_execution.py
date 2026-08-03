@@ -7,7 +7,11 @@ from typing import Any
 
 from edgeflow.core.models import CapabilityReport, ExecutionPlan
 from edgeflow.experiments import BenchmarkConfig, RunOrchestrator
-from edgeflow.experiments.matrix import matrix_progress_status, pytorch_matrix_cases
+from edgeflow.experiments.matrix import (
+    matrix_case_label,
+    matrix_progress_status,
+    pytorch_matrix_cases,
+)
 from edgeflow.kernels.rmsnorm import dispatch
 from edgeflow.runtimes.base import GenerationResult
 from edgeflow.workloads import create_workload
@@ -236,6 +240,9 @@ def test_registered_pytorch_matrices_expand_without_duplicates() -> None:
     assert len(e04) == 12
     assert len(e05) == 32
     assert len({row["case_id"] for row in e04 + e05}) == 44
+    labels = [matrix_case_label(row["case_id"]) for row in e04 + e05]
+    assert all(len(label) <= 48 for label in labels)
+    assert len(labels) == len(set(labels))
 
 
 def test_matrix_progress_distinguishes_partial_from_running() -> None:

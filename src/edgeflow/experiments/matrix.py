@@ -1,7 +1,19 @@
 from __future__ import annotations
 
+import hashlib
 import itertools
 from typing import Any
+
+
+def matrix_case_label(case_id: str, *, maximum_length: int = 48) -> str:
+    """Create a bounded, deterministic, collision-resistant job label."""
+
+    slug = case_id.lower()
+    if len(slug) <= maximum_length:
+        return slug
+    digest = hashlib.sha256(slug.encode("utf-8")).hexdigest()[:8]
+    prefix_length = maximum_length - len(digest) - 1
+    return f"{slug[:prefix_length]}-{digest}"
 
 
 def matrix_progress_status(
