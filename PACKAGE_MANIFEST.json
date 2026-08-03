@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "package": "EdgeFlow",
-  "generated_at": "2026-08-03T17:29:27.768581+00:00",
+  "generated_at": "2026-08-03T17:30:47.693795+00:00",
   "file_count": 159,
-  "total_bytes": 1022920,
+  "total_bytes": 1022921,
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
@@ -27,8 +27,8 @@
     },
     {
       "path": ".gitignore",
-      "bytes": 444,
-      "sha256": "a85faaecf9e69aa9f7b573b5fa283a3bc74d5c01193b9a85b51e407d943af1ba"
+      "bytes": 445,
+      "sha256": "c86df3e03b6b2a4779a06dd38aa98a645d6c4b008fee2f88fedd4cddc4b55991"
     },
     {
       "path": "CITATION.cff",

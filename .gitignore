@@ -19,7 +19,7 @@ token.json
 # EdgeFlow generated data
 artifacts/
 data/
-models/
+/models/
 results/private/
 *.sqlite
 *.sqlite-shm
