@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "package": "EdgeFlow",
-  "generated_at": "2026-08-03T19:49:13.169568+00:00",
+  "generated_at": "2026-08-03T19:56:40.537850+00:00",
   "file_count": 186,
-  "total_bytes": 1428707,
+  "total_bytes": 1440143,
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
@@ -242,8 +242,8 @@
     },
     {
       "path": "docs/IMPLEMENTATION_STATUS.md",
-      "bytes": 5150,
-      "sha256": "9cb168aea3de0c8f871f3d4ec93a02ff7cb4e4955ac3379e3340c46290664af5"
+      "bytes": 5369,
+      "sha256": "4fd9f53112e3201b39ed594819b6b5a518b92b8700f87b17a5e5a23305d80e1e"
     },
     {
       "path": "environment.yml",
@@ -337,8 +337,8 @@
     },
     {
       "path": "scripts/README.md",
-      "bytes": 1085,
-      "sha256": "9ffdffc6bd9f2ccd952f6dab8aed2fd79c8a7224b260d8c2a14984e3f66290d7"
+      "bytes": 1149,
+      "sha256": "bbbb97c76e9bb53bd68a4156c4999ca96cfee94222e370d14e2d5a7603fc0cd7"
     },
     {
       "path": "scripts/audit_runtime_fairness.py",
@@ -382,8 +382,8 @@
     },
     {
       "path": "scripts/run_pytorch_matrix.py",
-      "bytes": 8236,
-      "sha256": "32b5c8126444d57e4c607cb6853985b286425ee89e22431bbfeadbbff23a394d"
+      "bytes": 13214,
+      "sha256": "a86433864f75e997a469760832227afd608f4bf111d915e6d2b99c144a0b96f2"
     },
     {
       "path": "scripts/start_llama_cpp_server.sh",
@@ -582,8 +582,8 @@
     },
     {
       "path": "src/edgeflow/experiments/orchestrator.py",
-      "bytes": 24744,
-      "sha256": "6d022a4a6256b3e8992aa35c4ae49d84293a9b19af79609b0edfc8e3c440efab"
+      "bytes": 27478,
+      "sha256": "0ffd929a5f3c9ace183b3d27cdee18ed640ffb1dbc58d42817a7f127dbbd54c3"
     },
     {
       "path": "src/edgeflow/hardware/__init__.py",
@@ -772,8 +772,8 @@
     },
     {
       "path": "src/edgeflow/validation/engine.py",
-      "bytes": 15951,
-      "sha256": "41e3e22e4d9c596f41e94053f8e608906057b8bb6e7453d40abf5d7bd5656652"
+      "bytes": 17823,
+      "sha256": "a0fd25b92aae4b893b8ded6feeb968a09c21dc9d7ad7ed4b2cd252f7bfe4184c"
     },
     {
       "path": "src/edgeflow/workloads/__init__.py",
@@ -862,8 +862,8 @@
     },
     {
       "path": "tests/test_experiment_execution.py",
-      "bytes": 9260,
-      "sha256": "801c174743c64f2b2a351c07fd3177520c947b6b6bd42500ffb01789fdc9e5bc"
+      "bytes": 10344,
+      "sha256": "1537bdb5b3750fb837da6a92b2ee96b3098d48cd431f9a012e37a327495dabfa"
     },
     {
       "path": "tests/test_fairness_audit.py",
@@ -897,8 +897,8 @@
     },
     {
       "path": "tests/test_validation.py",
-      "bytes": 1305,
-      "sha256": "8587d056620cd3e5be2997e33f0f871c8c01d1724ceabbd965da23f3fa560440"
+      "bytes": 1790,
+      "sha256": "589532c5260f7d1bb0224effb60954f84dd4143b7e52b929c81201171a3149c0"
     },
     {
       "path": "third_party_commits.yaml",

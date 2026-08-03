@@ -63,7 +63,9 @@ class ValidationEngine:
         if errors:
             first = errors[0]
             location = "/".join(str(value) for value in first.path) or "<root>"
-            collector.add("G0", f"schema_{artifact}", "FAIL", f"{location}: {first.message}", artifact)
+            collector.add(
+                "G0", f"schema_{artifact}", "FAIL", f"{location}: {first.message}", artifact
+            )
         else:
             collector.add("G0", f"schema_{artifact}", "PASS", f"Matches {schema_name}.", artifact)
 
@@ -74,7 +76,9 @@ class ValidationEngine:
         for filename, schema in self.required.items():
             path = run_dir / filename
             if not path.exists():
-                collector.add("G0", f"required_{filename}", "FAIL", "Required artifact is missing.", filename)
+                collector.add(
+                    "G0", f"required_{filename}", "FAIL", "Required artifact is missing.", filename
+                )
                 continue
             try:
                 parsed[filename] = read_json(path)
@@ -84,13 +88,24 @@ class ValidationEngine:
 
         manifest = parsed.get("run_manifest.json", {})
         run_id = str(manifest.get("run_id", run_dir.name))
+        execution_status = manifest.get("status")
+        if execution_status in {"FAILED", "CANCELLED", "PRECHECK_FAILED"}:
+            collector.add(
+                "G0",
+                "execution_status",
+                "FAIL",
+                f"Runtime execution ended with {execution_status}; partial metrics cannot validate it.",
+                "run_manifest.json",
+            )
         metrics_path = run_dir / "metrics.jsonl"
         metric_rows: list[dict[str, Any]] = []
         if not metrics_path.exists():
             collector.add("G0", "raw_metrics", "FAIL", "metrics.jsonl is missing.", "metrics.jsonl")
         else:
             try:
-                for number, line in enumerate(metrics_path.read_text(encoding="utf-8").splitlines(), start=1):
+                for number, line in enumerate(
+                    metrics_path.read_text(encoding="utf-8").splitlines(), start=1
+                ):
                     if not line.strip():
                         continue
                     value = json.loads(line)
@@ -102,7 +117,13 @@ class ValidationEngine:
                     metric_rows.append(value)
                 if not metric_rows:
                     raise ValueError("no metric records")
-                collector.add("G0", "raw_metrics", "PASS", f"Parsed {len(metric_rows)} raw records.", "metrics.jsonl")
+                collector.add(
+                    "G0",
+                    "raw_metrics",
+                    "PASS",
+                    f"Parsed {len(metric_rows)} raw records.",
+                    "metrics.jsonl",
+                )
             except (ValueError, json.JSONDecodeError) as exc:
                 collector.add("G0", "raw_metrics", "FAIL", str(exc), "metrics.jsonl")
 
@@ -117,16 +138,25 @@ class ValidationEngine:
                     manifest.get("workload_id") == workload.get("workload_id"),
                 ]
             )
-            collector.add("G0", "id_consistency", "PASS" if ids_match else "FAIL", "Artifact IDs agree." if ids_match else "Artifact IDs disagree.")
+            collector.add(
+                "G0",
+                "id_consistency",
+                "PASS" if ids_match else "FAIL",
+                "Artifact IDs agree." if ids_match else "Artifact IDs disagree.",
+            )
             plan_for_hash = dict(plan)
             plan_for_hash.pop("canonical_sha256", None)
             if "custom_kernels" in plan_for_hash:
                 plan_for_hash["custom_kernels"] = sorted(plan_for_hash["custom_kernels"])
-            hash_ok = (
-                manifest.get("plan_sha256") == sha256_value(plan_for_hash)
-                and manifest.get("workload_sha256") == sha256_value(workload)
+            hash_ok = manifest.get("plan_sha256") == sha256_value(plan_for_hash) and manifest.get(
+                "workload_sha256"
+            ) == sha256_value(workload)
+            collector.add(
+                "G0",
+                "content_hashes",
+                "PASS" if hash_ok else "FAIL",
+                "Plan/workload hashes match." if hash_ok else "Plan or workload hash mismatch.",
             )
-            collector.add("G0", "content_hashes", "PASS" if hash_ok else "FAIL", "Plan/workload hashes match." if hash_ok else "Plan or workload hash mismatch.")
 
         background = hardware.get("measurement_controls", {}).get("background_gpu_processes", [])
         backend = str(plan.get("backend", ""))
@@ -135,9 +165,7 @@ class ValidationEngine:
             "vllm": "VLLM::EngineCore",
         }.get(backend)
         selected_runtime_only = bool(
-            runtime_marker
-            and len(background) == 1
-            and runtime_marker in str(background[0])
+            runtime_marker and len(background) == 1 and runtime_marker in str(background[0])
         )
         background_ok = not background or selected_runtime_only
         if not background:
@@ -149,22 +177,39 @@ class ValidationEngine:
         else:
             background_message = f"Unexpected background GPU processes: {background}"
         collector.add(
-            "G1", "background_gpu",
+            "G1",
+            "background_gpu",
             "PASS" if background_ok else "FAIL",
             background_message,
             "hardware_fingerprint.json",
         )
         expected_gpu = "RTX 4080 SUPER" in hardware.get("gpu", {}).get("name", "")
-        collector.add("G1", "target_gpu", "PASS" if expected_gpu else "WARN", hardware.get("gpu", {}).get("name", "unknown"))
+        collector.add(
+            "G1",
+            "target_gpu",
+            "PASS" if expected_gpu else "WARN",
+            hardware.get("gpu", {}).get("name", "unknown"),
+        )
 
         correctness_path = run_dir / "correctness.json"
         correctness: dict[str, Any] | None = None
         if correctness_path.exists():
             correctness = read_json(correctness_path)
             correct = bool(correctness.get("pass")) and correctness.get("nan_count", 0) == 0
-            collector.add("G2", "functional_correctness", "PASS" if correct else "FAIL", correctness.get("summary", "Correctness report loaded."), "correctness.json")
+            collector.add(
+                "G2",
+                "functional_correctness",
+                "PASS" if correct else "FAIL",
+                correctness.get("summary", "Correctness report loaded."),
+                "correctness.json",
+            )
         else:
-            collector.add("G2", "functional_correctness", "WARN", "No reference correctness artifact; run cannot enter policy.")
+            collector.add(
+                "G2",
+                "functional_correctness",
+                "WARN",
+                "No reference correctness artifact; run cannot enter policy.",
+            )
 
         measured_rows = [row for row in metric_rows if row.get("phase") == "end_to_end"]
         timing_ok = bool(measured_rows)
@@ -181,12 +226,20 @@ class ValidationEngine:
         profiler_clean = manifest.get("profiler_level") == "none" if manifest else False
         timing_ok = timing_ok and profiler_clean
         collector.add(
-            "G3", "timing_integrity", "PASS" if timing_ok else "FAIL",
-            "Positive monotonic unprofiled timing boundaries." if timing_ok else "Timing boundary missing, impossible, or profiler-contaminated.",
+            "G3",
+            "timing_integrity",
+            "PASS" if timing_ok else "FAIL",
+            "Positive monotonic unprofiled timing boundaries."
+            if timing_ok
+            else "Timing boundary missing, impossible, or profiler-contaminated.",
             "metrics.jsonl",
         )
 
-        latency = [float(row["metrics"]["request_latency_ms"]) for row in measured_rows if row.get("metrics", {}).get("request_latency_ms") is not None]
+        latency = [
+            float(row["metrics"]["request_latency_ms"])
+            for row in measured_rows
+            if row.get("metrics", {}).get("request_latency_ms") is not None
+        ]
         stable = False
         statistics: dict[str, Any] = {}
         if latency:
@@ -210,12 +263,12 @@ class ValidationEngine:
             statistics["active_clock_samples"] = len(clocks)
             statistics["temperature_range_c"] = temperature_range
             stable = (
-                drift <= 0.03
-                and float(statistics["robust_cv"]) <= 0.10
-                and clock_ratio >= 0.85
+                drift <= 0.03 and float(statistics["robust_cv"]) <= 0.10 and clock_ratio >= 0.85
             )
             collector.add(
-                "G4", "stability", "PASS" if stable else "WARN",
+                "G4",
+                "stability",
+                "PASS" if stable else "WARN",
                 f"drift={drift:.3%}, robust_cv={float(statistics['robust_cv']):.3%}, "
                 f"active_clock_ratio={clock_ratio:.3f} ({len(clocks)} samples), "
                 f"temp_range={temperature_range:.1f}°C",
@@ -227,7 +280,9 @@ class ValidationEngine:
         required_repetitions = 100 if manifest.get("run_type") == "kernel_microbenchmark" else 30
         enough = len(measured_rows) >= required_repetitions
         collector.add(
-            "G5", "repetitions", "PASS" if enough else "WARN",
+            "G5",
+            "repetitions",
+            "PASS" if enough else "WARN",
             f"{len(measured_rows)} measured repetitions; protocol requires {required_repetitions}.",
         )
 
@@ -236,35 +291,70 @@ class ValidationEngine:
         if quality_path.exists():
             quality = read_json(quality_path)
             quality_pass = bool(quality.get("pass"))
-            collector.add("G6", "quality_gate", "PASS" if quality_pass else "FAIL", quality.get("summary", "Quality report loaded."), "quality.json")
+            collector.add(
+                "G6",
+                "quality_gate",
+                "PASS" if quality_pass else "FAIL",
+                quality.get("summary", "Quality report loaded."),
+                "quality.json",
+            )
         elif plan.get("quantization"):
-            collector.add("G6", "quality_gate", "WARN", "Quantized plan lacks required quality report.")
+            collector.add(
+                "G6", "quality_gate", "WARN", "Quantized plan lacks required quality report."
+            )
         else:
-            collector.add("G6", "quality_gate", "WARN", "Quality was not evaluated in this performance block.")
+            collector.add(
+                "G6", "quality_gate", "WARN", "Quality was not evaluated in this performance block."
+            )
 
         source_type = manifest.get("source_type")
-        pinned = bool(manifest.get("model_revision")) and manifest.get("model_revision") not in {"unknown", "main", "latest"}
+        pinned = bool(manifest.get("model_revision")) and manifest.get("model_revision") not in {
+            "unknown",
+            "main",
+            "latest",
+        }
         clean_git = not bool(manifest.get("git_dirty", True))
         exact_command = bool(manifest.get("command"))
         provenance_ok = pinned and exact_command
         collector.add(
-            "G7", "provenance", "PASS" if provenance_ok else "WARN",
+            "G7",
+            "provenance",
+            "PASS" if provenance_ok else "WARN",
             f"model_pinned={pinned}, exact_command={exact_command}, git_clean={clean_git}, source={source_type}",
         )
         collector.add(
-            "G7", "source_label", "PASS" if source_type == "measured" else "WARN",
-            "Measured source." if source_type == "measured" else "Demo/estimated source cannot support public claims.",
+            "G7",
+            "source_label",
+            "PASS" if source_type == "measured" else "WARN",
+            "Measured source."
+            if source_type == "measured"
+            else "Demo/estimated source cannot support public claims.",
         )
 
-        hard_fail = any(check["status"] == "FAIL" for check in collector.checks if check["gate"] in {"G0", "G1", "G3"})
-        correctness_fail = any(check["status"] == "FAIL" for check in collector.checks if check["gate"] in {"G2", "G6"})
+        hard_fail = any(
+            check["status"] == "FAIL"
+            for check in collector.checks
+            if check["gate"] in {"G0", "G1", "G3"}
+        )
+        correctness_fail = any(
+            check["status"] == "FAIL" for check in collector.checks if check["gate"] in {"G2", "G6"}
+        )
         if manifest.get("status") == "SKIPPED":
             verdict = Verdict.SKIPPED
         elif hard_fail:
             verdict = Verdict.INVALID
         elif correctness_fail:
             verdict = Verdict.FAIL
-        elif not all([correctness is not None, stable, enough, provenance_ok, clean_git, quality_pass is True]):
+        elif not all(
+            [
+                correctness is not None,
+                stable,
+                enough,
+                provenance_ok,
+                clean_git,
+                quality_pass is True,
+            ]
+        ):
             verdict = Verdict.CONDITIONAL_PASS
         else:
             verdict = Verdict.PASS
@@ -272,8 +362,12 @@ class ValidationEngine:
         policy_eligible = verdict == Verdict.PASS and source_type == "measured"
         public_claim_eligible = policy_eligible and clean_git
         collector.add(
-            "G8", "policy_eligibility", "PASS" if policy_eligible else "WARN",
-            "Run may enter policy synthesis." if policy_eligible else "Run remains exploratory/diagnostic and is excluded from policy ranking.",
+            "G8",
+            "policy_eligibility",
+            "PASS" if policy_eligible else "WARN",
+            "Run may enter policy synthesis."
+            if policy_eligible
+            else "Run remains exploratory/diagnostic and is excluded from policy ranking.",
         )
         result = {
             "schema_version": "1.0",
@@ -295,7 +389,9 @@ class ValidationEngine:
             "validated_at": utc_now(),
             "validator_version": __version__,
         }
-        self._validate_schema(collector, result, "validation_verdict.schema.json", "validation_verdict.json")
+        self._validate_schema(
+            collector, result, "validation_verdict.schema.json", "validation_verdict.json"
+        )
         # Include the verdict-schema check itself after validation.
         result["checks"] = collector.checks
         result["issues"] = collector.issues
@@ -307,14 +403,31 @@ class ValidationEngine:
     @staticmethod
     def render_markdown(verdict: dict[str, Any]) -> str:
         lines = [
-            f"# Validation: {verdict['run_id']}", "", "## Verdict", "",
-            f"**{verdict['verdict']}** — policy eligible: `{str(verdict['policy_eligible']).lower()}`", "",
-            "## Gate Summary", "", "| Gate | Check | Status | Evidence |", "|---|---|---|---|",
+            f"# Validation: {verdict['run_id']}",
+            "",
+            "## Verdict",
+            "",
+            f"**{verdict['verdict']}** — policy eligible: `{str(verdict['policy_eligible']).lower()}`",
+            "",
+            "## Gate Summary",
+            "",
+            "| Gate | Check | Status | Evidence |",
+            "|---|---|---|---|",
         ]
         for check in verdict["checks"]:
             message = str(check["message"]).replace("|", "\\|")
             lines.append(f"| {check['gate']} | {check['name']} | {check['status']} | {message} |")
-        lines.extend(["", "## Eligibility", "", f"Public claim eligible: `{str(verdict['public_claim_eligible']).lower()}`", "", "## Issues and Required Actions", ""])
+        lines.extend(
+            [
+                "",
+                "## Eligibility",
+                "",
+                f"Public claim eligible: `{str(verdict['public_claim_eligible']).lower()}`",
+                "",
+                "## Issues and Required Actions",
+                "",
+            ]
+        )
         if verdict["issues"]:
             lines.extend(f"- `{issue['code']}` — {issue['message']}" for issue in verdict["issues"])
         else:

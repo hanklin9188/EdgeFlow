@@ -30,3 +30,15 @@ def test_profiled_latency_is_invalid(valid_run_dir: Path) -> None:
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     verdict = ValidationEngine().validate(valid_run_dir, write=False)
     assert verdict["verdict"] == "INVALID"
+
+
+def test_failed_execution_cannot_validate_from_partial_metrics(valid_run_dir: Path) -> None:
+    manifest_path = valid_run_dir / "run_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["status"] = "FAILED"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    verdict = ValidationEngine().validate(valid_run_dir, write=False)
+
+    assert verdict["verdict"] == "INVALID"
+    assert verdict["policy_eligible"] is False

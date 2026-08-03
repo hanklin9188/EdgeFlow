@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -252,3 +253,25 @@ def test_matrix_progress_distinguishes_partial_from_running() -> None:
         False,
     )
     assert matrix_progress_status(passed, total_case_count=2) == ("PASS", True)
+
+
+def test_orchestrator_recovers_native_worker_partial(tmp_path: Path, valid_run_dir: Path) -> None:
+    artifact_root = tmp_path / "recovered-artifacts"
+    partial = artifact_root / ".run-test.partial"
+    shutil.copytree(valid_run_dir, partial)
+    manifest_path = partial / "run_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["status"] = "WARMING"
+    manifest["completed_at"] = None
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    orchestrator = RunOrchestrator(artifact_root=artifact_root)
+
+    recovered = orchestrator.recover_interrupted_run(partial, reason="SIGSEGV test")
+
+    recovered_manifest = json.loads((recovered / "run_manifest.json").read_text())
+    verdict = json.loads((recovered / "validation_verdict.json").read_text())
+    assert recovered == artifact_root / "run-test"
+    assert not partial.exists()
+    assert recovered_manifest["status"] == "INVALID"
+    assert verdict["policy_eligible"] is False
+    assert "SIGSEGV test" in (recovered / "stderr.log").read_text()

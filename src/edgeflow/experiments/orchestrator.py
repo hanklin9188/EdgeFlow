@@ -222,6 +222,58 @@ class RunOrchestrator:
             "notes": "Production timing uses synchronized engine boundaries; warmup is stored separately.",
         }
 
+    def recover_interrupted_run(self, partial: Path, *, reason: str) -> Path:
+        """Promote an orphaned partial run into an auditable failed run.
+
+        Native CUDA/PyTorch failures can terminate a worker before Python's exception
+        handlers run. The supervising matrix process uses this method after a non-zero
+        worker exit so the raw observations are retained and indexed as ineligible.
+        """
+
+        partial = partial.resolve()
+        if partial.parent != self.artifact_root or not partial.name.endswith(".partial"):
+            raise ValueError("partial run must be an immediate artifact-root child")
+        manifest_path = partial / "run_manifest.json"
+        if not manifest_path.is_file():
+            raise ValueError("partial run has no manifest")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        run_id = str(manifest["run_id"])
+        expected_name = f".{run_id}.partial"
+        if partial.name != expected_name:
+            raise ValueError("partial directory name does not match its run manifest")
+        manifest["status"] = "FAILED"
+        manifest["completed_at"] = utc_now()
+        manifest["notes"] = f"Supervising process recovered a native worker failure: {reason}"
+        write_json(manifest_path, manifest)
+        stderr_path = partial / "stderr.log"
+        prior_stderr = stderr_path.read_text(encoding="utf-8") if stderr_path.is_file() else ""
+        stderr_path.write_text(f"{prior_stderr}{reason}\n", encoding="utf-8")
+        monitor_path = partial / "monitor.jsonl"
+        monitor_path.touch(exist_ok=True)
+        final = self.artifact_root / run_id
+        if final.exists():
+            raise FileExistsError(f"cannot recover over existing artifact {final}")
+        os.replace(partial, final)
+        verdict = validate_run(final, root=self.root, write=True)
+        manifest["status"] = verdict["verdict"]
+        write_json(final / "run_manifest.json", manifest)
+
+        hardware = json.loads((final / "hardware_fingerprint.json").read_text(encoding="utf-8"))
+        workload = json.loads((final / "workload.json").read_text(encoding="utf-8"))
+        plan = json.loads((final / "execution_plan.json").read_text(encoding="utf-8"))
+        records = [
+            json.loads(line)
+            for line in (final / "metrics.jsonl").read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        self.db.save_hardware(hardware)
+        self.db.save_workload(workload, manifest["workload_sha256"])
+        self.db.save_plan(plan, manifest["plan_sha256"])
+        self.db.save_run(manifest, final)
+        self.db.save_metrics(run_id, records)
+        self.db.save_validation(verdict)
+        return final
+
     def run(
         self,
         *,
