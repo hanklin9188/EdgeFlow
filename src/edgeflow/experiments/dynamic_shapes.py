@@ -3,6 +3,8 @@ from __future__ import annotations
 import statistics
 from typing import Any
 
+from edgeflow.metrics.statistics import robust_cv
+
 E06_SEQUENCE = (128, 128, 1024, 128, 2048, 1024, 4096)
 E06_MODES = ("false", "auto", "true")
 
@@ -46,6 +48,12 @@ def summarize_dynamic_shape_study(
             for prompt in first_occurrence
             if later.get(prompt) and statistics.median(later[prompt]) > 0
         }
+        steady_cv = robust_cv(block_totals[1:])
+        stable = steady_cv <= 0.10
+        if not stable:
+            issues.append(
+                f"dynamic={mode} steady mixed-sequence robust CV is {steady_cv:.3%}; maximum is 10%"
+            )
         summaries.append(
             {
                 "dynamic_mode": mode,
@@ -54,6 +62,8 @@ def summarize_dynamic_shape_study(
                 "graph_breaks": int(case.get("final_counters", {}).get("graph_break.total", 0)),
                 "cold_sequence_ms": block_totals[0],
                 "steady_sequence_median_ms": float(statistics.median(block_totals[1:])),
+                "steady_sequence_robust_cv": steady_cv,
+                "stability_pass": stable,
                 "maximum_first_shape_spike_ratio": max(spike_ratios.values(), default=1.0),
                 "first_shape_spike_ratios": spike_ratios,
                 "peak_vram_bytes": max(
