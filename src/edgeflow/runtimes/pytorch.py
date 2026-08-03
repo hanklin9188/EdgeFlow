@@ -178,9 +178,9 @@ class PytorchAdapter(RuntimeAdapter):
             raise RuntimeUnavailable("; ".join(report.reasons))
         if plan.backend != self.name:
             raise ValueError(f"Plan backend {plan.backend} does not match adapter {self.name}")
-        if self.compiled and plan.compile_mode == "reduce-overhead":
+        if self.compiled and plan.compile_mode in {"reduce-overhead", "max-autotune"}:
             raise RuntimeUnavailable(
-                "reduce-overhead's internal CUDA Graph path is not safe with this adapter's "
+                f"{plan.compile_mode}'s internal CUDA Graph path is not safe with this adapter's "
                 "mutable token-by-token KV cache; use default or max-autotune-no-cudagraphs"
             )
         import torch

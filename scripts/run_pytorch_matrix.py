@@ -68,14 +68,14 @@ def _execute_case(
     revision: str,
 ) -> dict[str, Any]:
     record: dict[str, Any] = {**case, "status": "RUNNING", "started_at": utc_now()}
-    if case["compile_mode"] == "reduce-overhead":
+    if case["compile_mode"] in {"reduce-overhead", "max-autotune"}:
         record.update(
             {
                 "status": "FAILED",
                 "error_type": "UnsupportedCompileMode",
                 "error": (
-                    "reduce-overhead is capability-pruned: its internal CUDA Graph path is "
-                    "incompatible with the mutable token-by-token KV cache"
+                    f"{case['compile_mode']} is capability-pruned: its internal CUDA Graph "
+                    "path is incompatible with the mutable token-by-token KV cache"
                 ),
                 "completed_at": utc_now(),
             }
