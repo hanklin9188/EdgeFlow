@@ -77,7 +77,10 @@ def main() -> int:
     parser.add_argument("--allow-busy-gpu", action="store_true")
     parser.add_argument("--allow-missing-quality", action="store_true")
     parser.add_argument("--rerun-completed", action="store_true")
+    parser.add_argument("--max-new-cases", type=int)
     arguments = parser.parse_args()
+    if arguments.max_new_cases is not None and arguments.max_new_cases < 1:
+        parser.error("--max-new-cases must be positive")
     if not arguments.quick and not _git_clean():
         print("Formal matrix requires a clean git checkout.", file=sys.stderr)
         return 2
@@ -103,9 +106,12 @@ def main() -> int:
     )
     orchestrator = RunOrchestrator(root=ROOT, artifact_root=ROOT / "artifacts")
     results = list(completed.values())
+    new_cases = 0
     for case in cases:
         if case["case_id"] in completed:
             continue
+        if arguments.max_new_cases is not None and new_cases >= arguments.max_new_cases:
+            break
         submission = BenchmarkSubmission(
             label=case["case_id"].lower(),
             model_id=arguments.model_id,
@@ -143,6 +149,7 @@ def main() -> int:
             return 2
         record: dict[str, Any] = {**case, "status": "RUNNING", "started_at": utc_now()}
         results.append(record)
+        new_cases += 1
         _save_progress(
             output,
             experiment_id=arguments.experiment_id,
