@@ -120,6 +120,15 @@ python scripts/evaluate_hf_quality.py \
 
 後續相同 scope 的 PyTorch eager／`torch.compile` run 會自動複製該 report；quantized 或不同 runtime 不會沿用，以免跨格式外推品質。
 
+正式 E04／E05 網格可續跑；每完成一個 case 就更新本機 matrix artifact，重新執行會略過已完成 case：
+
+```bash
+python scripts/run_pytorch_matrix.py E04 --model-id llama-3.2-3b-instruct
+python scripts/run_pytorch_matrix.py E05 --model-id llama-3.2-3b-instruct
+```
+
+正式模式會拒絕 dirty checkout 與缺少 exact-scope quality report 的模型；`--quick` 只用於工程 regression，永遠標為 `DEVELOPMENT`。
+
 ### 5. Validate and diagnose
 
 ```bash

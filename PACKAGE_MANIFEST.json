@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "package": "EdgeFlow",
-  "generated_at": "2026-08-03T19:31:12.583522+00:00",
-  "file_count": 181,
-  "total_bytes": 1396713,
+  "generated_at": "2026-08-03T19:35:31.289840+00:00",
+  "file_count": 183,
+  "total_bytes": 1407563,
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
@@ -67,8 +67,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 10327,
-      "sha256": "c920d9c25568745eb133811e9084f63a9f38c3b183161963ec8d542be6bae0dd"
+      "bytes": 10774,
+      "sha256": "dc4b54e9d849dfc4d46a1af8bf5ddc7a8a90f005672e3dd3139f0a2ba2715816"
     },
     {
       "path": "SECURITY.md",
@@ -337,8 +337,8 @@
     },
     {
       "path": "scripts/README.md",
-      "bytes": 517,
-      "sha256": "2330d954987be33a2ef49da3c24fb91d8edca48c5dfab5ed268a9a946e20292b"
+      "bytes": 934,
+      "sha256": "90a399af574e035f343d81160dbca3d5dfdee10f64d1f5c85425367b39ba268d"
     },
     {
       "path": "scripts/benchmark_rmsnorm.py",
@@ -374,6 +374,11 @@
       "path": "scripts/run_foundation_experiments.py",
       "bytes": 1299,
       "sha256": "a904b77b9f31661c4dfd8635b28be45025eae8a47700d12e3028d3f4fee6054e"
+    },
+    {
+      "path": "scripts/run_pytorch_matrix.py",
+      "bytes": 7570,
+      "sha256": "12a2ee9c18b8353087fc7419331f027e4023fca1df83b4187ee0360263f1427f"
     },
     {
       "path": "scripts/start_llama_cpp_server.sh",
@@ -547,8 +552,8 @@
     },
     {
       "path": "src/edgeflow/experiments/__init__.py",
-      "bytes": 284,
-      "sha256": "6cd2134c0dce786c2127f1f2eb2275fd6c00b85128738bac7fac6fc734e181a4"
+      "bytes": 373,
+      "sha256": "af5bb76f39a490254f178a185b7a1a186e3276c153bbeea62e70ae0c39c1c4cd"
     },
     {
       "path": "src/edgeflow/experiments/catalog.py",
@@ -559,6 +564,11 @@
       "path": "src/edgeflow/experiments/foundation.py",
       "bytes": 15646,
       "sha256": "de13f4ee742b1221a449903962a3fa77735f2db5e8d70fc16279136aee44be0f"
+    },
+    {
+      "path": "src/edgeflow/experiments/matrix.py",
+      "bytes": 2002,
+      "sha256": "704e828d625a5a12751b255ad911d44937149b6776790f2bed728311af21ddc1"
     },
     {
       "path": "src/edgeflow/experiments/orchestrator.py",
@@ -842,8 +852,8 @@
     },
     {
       "path": "tests/test_experiment_execution.py",
-      "bytes": 5248,
-      "sha256": "3a9deeb30b651872cb8ab1c6765f6e75508ccd1e5f885ecc2bc8c1a588e8d9c9"
+      "bytes": 5573,
+      "sha256": "ae672995ae3922bc8b15b2d335d8f45c46a05bb6a79ab19c8229362db311582f"
     },
     {
       "path": "tests/test_local_web.py",

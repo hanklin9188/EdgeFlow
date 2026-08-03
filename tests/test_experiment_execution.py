@@ -6,6 +6,7 @@ from typing import Any
 
 from edgeflow.core.models import CapabilityReport, ExecutionPlan
 from edgeflow.experiments import BenchmarkConfig, RunOrchestrator
+from edgeflow.experiments.matrix import pytorch_matrix_cases
 from edgeflow.kernels.rmsnorm import dispatch
 from edgeflow.runtimes.base import GenerationResult
 from edgeflow.workloads import create_workload
@@ -153,3 +154,11 @@ def test_kernel_dispatch_cache_only_enables_measured_winners(
     cache = dispatch.record_performance_decisions(rows)
     assert cache[f"{dispatch.KERNEL_VERSION}|GPU-test|torch.float16|1x1024"]["enabled"] is True
     assert cache[f"{dispatch.KERNEL_VERSION}|GPU-test|torch.float16|4x1024"]["enabled"] is False
+
+
+def test_registered_pytorch_matrices_expand_without_duplicates() -> None:
+    e04 = pytorch_matrix_cases("E04")
+    e05 = pytorch_matrix_cases("E05")
+    assert len(e04) == 12
+    assert len(e05) == 32
+    assert len({row["case_id"] for row in e04 + e05}) == 44
