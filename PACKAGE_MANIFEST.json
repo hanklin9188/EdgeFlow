@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "package": "EdgeFlow",
-  "generated_at": "2026-08-03T20:31:53.302141+00:00",
+  "generated_at": "2026-08-03T20:32:36.328711+00:00",
   "file_count": 187,
-  "total_bytes": 1443438,
+  "total_bytes": 1443935,
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
@@ -342,8 +342,8 @@
     },
     {
       "path": "scripts/README.md",
-      "bytes": 1149,
-      "sha256": "bbbb97c76e9bb53bd68a4156c4999ca96cfee94222e370d14e2d5a7603fc0cd7"
+      "bytes": 1241,
+      "sha256": "66d394c38dbe1aac9890ce179f9add7b65535343f98a5a86d19de7c7d3ef3f85"
     },
     {
       "path": "scripts/audit_runtime_fairness.py",
@@ -387,8 +387,8 @@
     },
     {
       "path": "scripts/run_pytorch_matrix.py",
-      "bytes": 14052,
-      "sha256": "ed3b1d9713006b76cb1410d0d766a779dc067f0ad8cf153eae978ee7a384e109"
+      "bytes": 14457,
+      "sha256": "1902944b9d955a3995a4dd4036a0492a192f0fb5faecd22831d2e71e6171606a"
     },
     {
       "path": "scripts/start_llama_cpp_server.sh",

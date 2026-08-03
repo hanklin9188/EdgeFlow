@@ -218,6 +218,7 @@ def main() -> int:
     parser.add_argument("--allow-missing-quality", action="store_true")
     parser.add_argument("--rerun-completed", action="store_true")
     parser.add_argument("--rerun-failed", action="store_true")
+    parser.add_argument("--rerun-case")
     parser.add_argument("--max-new-cases", type=int)
     parser.add_argument("--worker-case", help=argparse.SUPPRESS)
     parser.add_argument("--worker-result", type=Path, help=argparse.SUPPRESS)
@@ -230,6 +231,9 @@ def main() -> int:
     registry = ModelRegistry(ROOT / "specs" / "model_registry.yaml")
     _model_ref, revision = registry.resolve_source(arguments.model_id, "safetensors")
     cases = pytorch_matrix_cases(arguments.experiment_id, quick=arguments.quick)
+    case_ids = {row["case_id"] for row in cases}
+    if arguments.rerun_case and arguments.rerun_case not in case_ids:
+        parser.error(f"unknown --rerun-case {arguments.rerun_case}")
     output = (
         ROOT
         / "artifacts"
@@ -286,12 +290,17 @@ def main() -> int:
     settled = {
         row["case_id"]: row
         for row in previous_cases
-        if (row.get("status") == "COMPLETED" and not arguments.rerun_completed)
-        or (row.get("status") == "FAILED" and not arguments.rerun_failed)
+        if row["case_id"] != arguments.rerun_case
+        and (
+            (row.get("status") == "COMPLETED" and not arguments.rerun_completed)
+            or (row.get("status") == "FAILED" and not arguments.rerun_failed)
+        )
     }
     results = list(settled.values())
     new_cases = 0
     for case in cases:
+        if arguments.rerun_case and case["case_id"] != arguments.rerun_case:
+            continue
         if case["case_id"] in settled:
             continue
         if arguments.max_new_cases is not None and new_cases >= arguments.max_new_cases:
