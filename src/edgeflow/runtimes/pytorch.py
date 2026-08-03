@@ -55,8 +55,12 @@ class PytorchRuntime(PreparedRuntime):
             torch.cuda.reset_peak_memory_stats(device)
         self._synchronize()
         started = time.perf_counter_ns()
-        timestamps: list[float] = []
-        generated: list[list[int]] = [[] for _ in token_id_batches]
+        token_events: list[Any] = []
+        generated_steps: list[Any] = []
+        engine_start = torch.cuda.Event(enable_timing=True) if device.type == "cuda" else None
+        engine_end = torch.cuda.Event(enable_timing=True) if device.type == "cuda" else None
+        if engine_start is not None:
+            engine_start.record()
         past_key_values = None
         if self.cuda_graph:
             from transformers.cache_utils import StaticCache
@@ -79,13 +83,23 @@ class PytorchRuntime(PreparedRuntime):
                 )
                 next_token = outputs.logits[:, -1, :].argmax(dim=-1, keepdim=True)
                 past_key_values = outputs.past_key_values
-                self._synchronize()
-                timestamps.append((time.perf_counter_ns() - started) / 1_000_000)
-                for index, value in enumerate(next_token.flatten().tolist()):
-                    generated[index].append(int(value))
+                generated_steps.append(next_token)
+                if device.type == "cuda":
+                    token_event = torch.cuda.Event(enable_timing=True)
+                    token_event.record()
+                    token_events.append(token_event)
                 current = next_token
-        self._synchronize()
-        wall_ms = (time.perf_counter_ns() - started) / 1_000_000
+        if engine_end is not None and engine_start is not None:
+            engine_end.record()
+            engine_end.synchronize()
+            wall_ms = float(engine_start.elapsed_time(engine_end))
+            timestamps = [float(engine_start.elapsed_time(event)) for event in token_events]
+        else:
+            self._synchronize()
+            wall_ms = (time.perf_counter_ns() - started) / 1_000_000
+            timestamps = []
+        host_wall_ms = (time.perf_counter_ns() - started) / 1_000_000
+        generated = torch.cat(generated_steps, dim=1).tolist()
         ttft_ms = timestamps[0] if timestamps else None
         tpot_ms = None
         if len(timestamps) > 1:
@@ -103,6 +117,8 @@ class PytorchRuntime(PreparedRuntime):
                     "device": str(device),
                     "cache_enabled": True,
                     "measured_batch_size": len(token_id_batches),
+                    "timer": "cuda_event" if device.type == "cuda" else "synchronized_perf_counter",
+                    "host_wall_ms": host_wall_ms,
                 },
             )
             for output_ids in generated
