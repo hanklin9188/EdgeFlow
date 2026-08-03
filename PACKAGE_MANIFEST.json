@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "package": "EdgeFlow",
-  "generated_at": "2026-08-03T19:56:40.537850+00:00",
-  "file_count": 186,
-  "total_bytes": 1440143,
+  "generated_at": "2026-08-03T20:03:08.336558+00:00",
+  "file_count": 187,
+  "total_bytes": 1441647,
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
@@ -116,14 +116,19 @@
       "sha256": "3120302f94f5f3db49528f4a9b89066ee509da931eff346f9d0a9755c15c2f46"
     },
     {
+      "path": "dashboard/favicon.svg",
+      "bytes": 519,
+      "sha256": "bb57ae92a13d31cd17de8e0318b6f0cdcea299598e20d265e1b47ca97a1b3e17"
+    },
+    {
       "path": "dashboard/index.html",
-      "bytes": 16891,
-      "sha256": "d72c67243a2e896ebbc34f28f9d157b4dc1edb529b76635b4483d82a25947122"
+      "bytes": 17019,
+      "sha256": "463a9094d778279768bcdda4b1b455c820b769d2a5bc997d12f0c6ee6b3dd6c7"
     },
     {
       "path": "dashboard/styles.css",
-      "bytes": 19637,
-      "sha256": "829d321d5fc5885bfe632469348127278c625bad5682542531480c2034d6f6b3"
+      "bytes": 20068,
+      "sha256": "f7a712c665ed0074ca033231dbe970daaedb8ea7cc68a99ec16170f9f64fbcbb"
     },
     {
       "path": "diagrams/README.md",
@@ -382,8 +387,8 @@
     },
     {
       "path": "scripts/run_pytorch_matrix.py",
-      "bytes": 13214,
-      "sha256": "a86433864f75e997a469760832227afd608f4bf111d915e6d2b99c144a0b96f2"
+      "bytes": 13697,
+      "sha256": "85c737e777fb0aa183ef4e2712b13c000e0a8e464aa1de6ed9a8eec97b623f47"
     },
     {
       "path": "scripts/start_llama_cpp_server.sh",
@@ -527,8 +532,8 @@
     },
     {
       "path": "src/edgeflow/api/schemas.py",
-      "bytes": 7454,
-      "sha256": "ae5a4f9eabf03fbeff24d3a9f97db5130641b35a67cbb6dbac1498529e03bf4e"
+      "bytes": 7451,
+      "sha256": "dd4eca566b6ab239841a3afd7492b5d1d60dede5b232bbb0f319159130231319"
     },
     {
       "path": "src/edgeflow/cli/__init__.py",
@@ -747,8 +752,8 @@
     },
     {
       "path": "src/edgeflow/runtimes/pytorch.py",
-      "bytes": 9260,
-      "sha256": "24869cfc71b851958b420fd475aaa9a3ab516712de3c15b1540f47f11d14be7b"
+      "bytes": 9242,
+      "sha256": "6515cad7d3e6277368e676e7e917c379df67fecdb906dd9fa983937e2da80025"
     },
     {
       "path": "src/edgeflow/storage/__init__.py",
@@ -872,8 +877,8 @@
     },
     {
       "path": "tests/test_local_web.py",
-      "bytes": 9374,
-      "sha256": "3ed6af0e81fa4fd1ab7450757b46d712c39ea8ff6fd59d52c237768f89d5f7f4"
+      "bytes": 9338,
+      "sha256": "5aedab19710f0bd950dccc85dc2be5b642cfe99284ebc616b8f8d1c090d3ba11"
     },
     {
       "path": "tests/test_optimizer_policy.py",

@@ -117,7 +117,6 @@ def test_benchmark_submission_rejects_unsafe_or_invalid_runtime_input() -> None:
                 **valid_submission(),
                 "backend": "torch_compile",
                 "compile_mode": "reduce-overhead",
-                "cuda_graph": True,
                 "experiment_id": "E05",
             }
         )

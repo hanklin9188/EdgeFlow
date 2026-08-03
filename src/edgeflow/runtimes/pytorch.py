@@ -178,10 +178,10 @@ class PytorchAdapter(RuntimeAdapter):
             raise RuntimeUnavailable("; ".join(report.reasons))
         if plan.backend != self.name:
             raise ValueError(f"Plan backend {plan.backend} does not match adapter {self.name}")
-        if self.compiled and plan.compile_mode == "reduce-overhead" and plan.cuda_graph:
+        if self.compiled and plan.compile_mode == "reduce-overhead":
             raise RuntimeUnavailable(
-                "manual token-by-token decode with a mutated KV cache is not CUDA-Graph-safe in this "
-                "adapter; use compile_mode=default or max-autotune-no-cudagraphs"
+                "reduce-overhead's internal CUDA Graph path is not safe with this adapter's "
+                "mutable token-by-token KV cache; use default or max-autotune-no-cudagraphs"
             )
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer

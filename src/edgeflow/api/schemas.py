@@ -71,13 +71,10 @@ class BenchmarkSubmission(BaseModel):
             and self.model_format != "safetensors"
         ):
             raise ValueError(f"{self.backend} jobs require a safetensors source")
-        if (
-            self.backend == "torch_compile"
-            and self.compile_mode == "reduce-overhead"
-            and self.cuda_graph
-        ):
+        if self.backend == "torch_compile" and self.compile_mode == "reduce-overhead":
             raise ValueError(
-                "reduce-overhead with mutable-KV CUDA Graph is pruned after correctness failure"
+                "reduce-overhead enables an internal CUDA Graph path that is incompatible with "
+                "this adapter's mutable token-by-token KV cache"
             )
         if self.backend in {"pytorch_eager", "torch_compile"} and self.concurrency != 1:
             raise ValueError("PyTorch runtimes use batch_size; concurrency must be 1")

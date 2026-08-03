@@ -67,6 +67,20 @@ def _execute_case(
     registry: ModelRegistry,
     revision: str,
 ) -> dict[str, Any]:
+    record: dict[str, Any] = {**case, "status": "RUNNING", "started_at": utc_now()}
+    if case["compile_mode"] == "reduce-overhead":
+        record.update(
+            {
+                "status": "FAILED",
+                "error_type": "UnsupportedCompileMode",
+                "error": (
+                    "reduce-overhead is capability-pruned: its internal CUDA Graph path is "
+                    "incompatible with the mutable token-by-token KV cache"
+                ),
+                "completed_at": utc_now(),
+            }
+        )
+        return record
     submission = BenchmarkSubmission(
         label=case["case_id"].lower(),
         model_id=arguments.model_id,
@@ -96,7 +110,6 @@ def _execute_case(
         model_revision=revision,
         plan=plan,
     )
-    record: dict[str, Any] = {**case, "status": "RUNNING", "started_at": utc_now()}
     if not arguments.quick and quality is None and not arguments.allow_missing_quality:
         record.update(
             {
