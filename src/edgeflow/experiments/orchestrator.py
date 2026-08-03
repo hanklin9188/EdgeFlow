@@ -21,6 +21,7 @@ from edgeflow.core.models import (
 )
 from edgeflow.core.serialization import project_root, write_json
 from edgeflow.hardware.inspector import inspect_hardware
+from edgeflow.metrics.statistics import robust_cv
 from edgeflow.quality import find_compatible_quality_report
 from edgeflow.runtimes import (
     LlamaCppAdapter,
@@ -301,7 +302,8 @@ class RunOrchestrator:
                         notes="First graph compile/autotune execution; excluded from warmup and steady-state.",
                     )
                 )
-            maximum_warmup = max(config.warmup_requests, 20)
+            maximum_warmup = max(config.warmup_requests, 50)
+            warmup_converged = False
             for iteration in range(maximum_warmup):
                 count = choose_prompt_tokens(workload, -iteration - 1)
                 token_groups = [
@@ -316,7 +318,10 @@ class RunOrchestrator:
                 warmup_results = runtime.generate_batch(token_groups, workload.output_tokens)
                 warmup_wall_ms = (time.perf_counter_ns() - warmup_started) / 1_000_000
                 result = warmup_results[0]
-                warmup_latencies.append(warmup_wall_ms)
+                warmup_engine_ms = sorted(item.wall_ms for item in warmup_results)[
+                    len(warmup_results) // 2
+                ]
+                warmup_latencies.append(warmup_engine_ms)
                 append(
                     MetricRecord(
                         run_id=run_id, request_id=f"warmup-{iteration:04d}", source_type=config.source_type,
@@ -329,8 +334,15 @@ class RunOrchestrator:
                 if iteration + 1 >= max(config.warmup_requests, 10):
                     previous = sorted(warmup_latencies[-10:-5])[2]
                     recent = sorted(warmup_latencies[-5:])[2]
-                    if previous > 0 and abs(recent - previous) / previous < 0.02:
+                    drift = abs(recent - previous) / previous if previous > 0 else float("inf")
+                    if drift < 0.02 and robust_cv(warmup_latencies[-10:]) <= 0.10:
+                        warmup_converged = True
                         break
+            if not warmup_converged:
+                manifest["notes"] += (
+                    " Warmup did not satisfy the registered 2% median-drift and 10% robust-CV "
+                    f"threshold within {maximum_warmup} request groups; validation must decide eligibility."
+                )
             correctness_count = choose_prompt_tokens(workload, -20_000)
             correctness_ids = [
                 build_exact_token_ids(
