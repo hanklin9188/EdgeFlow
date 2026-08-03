@@ -21,6 +21,7 @@ from edgeflow.core.models import (
 )
 from edgeflow.core.serialization import project_root, write_json
 from edgeflow.hardware.inspector import inspect_hardware
+from edgeflow.quality import find_compatible_quality_report
 from edgeflow.runtimes import (
     LlamaCppAdapter,
     PytorchAdapter,
@@ -185,6 +186,7 @@ class RunOrchestrator:
                 "hardware_fingerprint.json", "metrics.jsonl", "stdout.log", "stderr.log",
                 "monitor.jsonl", "validation_verdict.json", "VALIDATION.md",
                 "correctness.json",
+                "quality.json",
             ],
             "supersedes_run_id": None,
             "notes": "Production timing uses synchronized engine boundaries; warmup is stored separately.",
@@ -430,6 +432,14 @@ class RunOrchestrator:
                             ),
                         ),
                     )
+            quality_report = find_compatible_quality_report(
+                artifact_root=self.artifact_root,
+                model_id=workload.model_id,
+                model_revision=str(plan.backend_args.get("revision") or "unknown"),
+                plan=plan,
+            )
+            if quality_report is not None:
+                write_json(temporary / "quality.json", quality_report)
             manifest["status"] = "PASSED"
             manifest["completed_at"] = utc_now()
             write_json(temporary / "run_manifest.json", manifest)

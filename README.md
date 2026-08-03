@@ -40,8 +40,10 @@ pytest -q
 GPU data plane 需要現有 CUDA PyTorch/Transformers 環境，或：
 
 ```bash
-uv sync --extra dev --extra gpu
+uv sync --extra dev --extra gpu --extra quality
 ```
+
+`quality` extra 提供固定 revision 的 WikiText-2／ARC-Challenge evaluator；控制平面本身仍可維持 lean environment。
 
 ### 1. Inspect
 
@@ -105,6 +107,18 @@ artifacts/<run_id>/
 ```
 
 Formal policy eligibility 還要求 correctness 與 quality artifacts；單純 smoke latency 預期得到 `CONDITIONAL_PASS`，不會被包裝成完整結論。
+
+先建立可重用、精確綁定 model revision／dtype／backend 的本機 BF16 quality reference：
+
+```bash
+python scripts/evaluate_hf_quality.py \
+  --model-id llama-3.2-3b-instruct \
+  --wikitext-tokens 8192 \
+  --arc-samples 50 \
+  --allow-download
+```
+
+後續相同 scope 的 PyTorch eager／`torch.compile` run 會自動複製該 report；quantized 或不同 runtime 不會沿用，以免跨格式外推品質。
 
 ### 5. Validate and diagnose
 

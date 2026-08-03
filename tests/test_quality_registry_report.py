@@ -4,8 +4,10 @@ from pathlib import Path
 
 import pytest
 
+from edgeflow.core.models import ExecutionPlan
+from edgeflow.core.serialization import write_json
 from edgeflow.models import ModelRegistry
-from edgeflow.quality import evaluate_quality
+from edgeflow.quality import evaluate_quality, find_compatible_quality_report
 from edgeflow.reports import render_run_report
 from edgeflow.validation.correctness import compare_tensors, compare_token_sequences
 
@@ -31,6 +33,47 @@ def test_quality_gate_is_hard_constraint() -> None:
         protocol_match=True,
     )
     assert failing["pass"] is False
+
+
+def test_quality_registry_requires_exact_runtime_scope(tmp_path: Path) -> None:
+    report = {
+        "pass": True,
+        "scope": {
+            "model_id": "model",
+            "model_revision": "revision",
+            "model_format": "safetensors",
+            "dtype": "bf16",
+            "quantization": None,
+            "applicable_backends": ["pytorch_eager", "torch_compile"],
+        },
+    }
+    write_json(tmp_path / "quality" / "reference.json", report)
+    plan = ExecutionPlan(
+        plan_id="quality-plan",
+        model_id="model",
+        backend="pytorch_eager",
+        model_format="safetensors",
+        dtype="bf16",
+    )
+    assert (
+        find_compatible_quality_report(
+            artifact_root=tmp_path,
+            model_id="model",
+            model_revision="revision",
+            plan=plan,
+        )
+        is not None
+    )
+    mismatched = plan.model_copy(update={"dtype": "fp16"})
+    assert (
+        find_compatible_quality_report(
+            artifact_root=tmp_path,
+            model_id="model",
+            model_revision="revision",
+            plan=mismatched,
+        )
+        is None
+    )
 
 
 def test_tensor_and_token_correctness() -> None:
