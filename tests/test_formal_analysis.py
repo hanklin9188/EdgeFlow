@@ -13,6 +13,7 @@ from edgeflow.experiments import (
     build_intervention_evidence,
     fixed_plan_dominance,
     session_break_even_study,
+    summarize_cold_warm_study,
     summarize_dynamic_shape_study,
 )
 
@@ -192,3 +193,54 @@ def test_dynamic_shape_summary_excludes_a_mismatched_mode() -> None:
     assert result["cross_mode_correctness"] is False
     assert result["excluded_modes"] == ["false"]
     assert result["shape_bucket_rule"]["dynamic_mode"] in {"auto", "true"}
+
+
+def test_cold_warm_summary_is_scope_explicit_and_pair_gated() -> None:
+    samples = [
+        {
+            "sample_index": index,
+            "status": "COMPLETED",
+            "hardware_fingerprint_sha256": "hardware",
+            "first_usable_ms": 5000.0 + index,
+            "load_ms": 4500.0 + index,
+            "first_response_engine_ms": 100.0,
+            "warmed_response_engine_ms": 90.0,
+            "warmed_response_host_ms": 95.0 + index * 0.01,
+            "first_output_sha256": "same",
+            "warmed_output_sha256": "same",
+            "output_length_matches": True,
+        }
+        for index in range(30)
+    ]
+
+    complete = summarize_cold_warm_study(samples, repetitions=30)
+    incomplete = summarize_cold_warm_study(samples[:29], repetitions=30)
+
+    assert complete["status"] == "PASS"
+    assert complete["protocol_complete"] is True
+    assert "explicitly dropped OS filesystem cache" in complete["unvalidated_scopes"]
+    assert incomplete["status"] == "INCOMPLETE"
+
+
+def test_cold_warm_summary_rejects_output_mismatch() -> None:
+    samples = [
+        {
+            "sample_index": index,
+            "status": "COMPLETED",
+            "hardware_fingerprint_sha256": "hardware",
+            "first_usable_ms": 5000.0,
+            "load_ms": 4500.0,
+            "first_response_engine_ms": 100.0,
+            "warmed_response_engine_ms": 90.0,
+            "warmed_response_host_ms": 95.0,
+            "first_output_sha256": "first",
+            "warmed_output_sha256": "different" if index == 0 else "first",
+            "output_length_matches": True,
+        }
+        for index in range(30)
+    ]
+
+    result = summarize_cold_warm_study(samples, repetitions=30)
+
+    assert result["status"] == "FAILED"
+    assert result["correctness_pass"] is False

@@ -135,10 +135,11 @@ E06、正式分析／prerequisite audit 與 E24 end-to-end integration：
 ```bash
 python scripts/run_dynamic_shape_study.py --model-id llama-3.2-3b-instruct
 python scripts/audit_formal_readiness.py
+python scripts/run_cold_warm_study.py --model-id llama-3.2-3b-instruct
 python scripts/run_e24_integration.py --model-id llama-3.2-3b-instruct
 ```
 
-E24 使用成對 ABBA 順序，分開 search 與 untouched holdout prompt。若 search 或 holdout 的 95% CI／2% practical threshold 未通過，結果會明確維持 `MICRO_ONLY`，不宣稱模型端加速。
+E20 每一對都由 fresh Python process 開始，將 cached-host time-to-first-usable 與同程序 warmed response 分開；它不會把未清除的 OS filesystem cache 稱為真正 cold boot。E24 使用成對 ABBA 順序，分開 search 與 untouched holdout prompt。若 search 或 holdout 的 95% CI／2% practical threshold 未通過，結果會明確維持 `MICRO_ONLY`，不宣稱模型端加速。
 
 ### 5. Validate and diagnose
 

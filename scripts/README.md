@@ -10,6 +10,7 @@
 - `run_dynamic_shape_study.py` — runs E06 `dynamic=False/auto/True` in isolated workers over the registered mixed-shape sequence and emits recompilation/cache/spike evidence plus a bounded shape rule.
 - `audit_runtime_fairness.py` — validates exact workload, hardware, quality, repetition, and provenance scope before any E09 cross-runtime ordering.
 - `audit_formal_readiness.py` — computes strict E10/E19 analyses and audits the E25–E28 data/grounding prerequisites without promoting incomplete evidence.
+- `run_cold_warm_study.py` — runs E20 in fresh isolated Python processes and compares cached-host time-to-first-usable against a same-process warmed response; machine-reboot, dropped-filesystem-cache, persisted-compile-cache, and external-service scopes remain explicit exclusions.
 - `benchmark_rmsnorm.py` — executes the E23 randomized correctness/performance sweep and dispatch calibration.
 - `run_e24_integration.py` — performs paired ABBA kernel-off/on Llama inference on search and untouched holdout prompts, verifies greedy output parity, and records explicit rollback/fallback evidence.
 

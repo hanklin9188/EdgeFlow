@@ -152,7 +152,7 @@ experiments:
     name: cold_start_warm_restart
     phase: amortization
     kind: benchmark
-    engineering_status: planned
+    engineering_status: implemented
 
   E21:
     name: kernel_candidate_selection

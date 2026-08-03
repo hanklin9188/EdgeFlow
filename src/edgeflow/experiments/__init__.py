@@ -1,3 +1,4 @@
+from edgeflow.experiments.amortization import summarize_cold_warm_study
 from edgeflow.experiments.analysis import (
     audit_learned_prerequisites,
     fixed_plan_dominance,
@@ -33,5 +34,6 @@ __all__ = [
     "matrix_progress_status",
     "pytorch_matrix_cases",
     "session_break_even_study",
+    "summarize_cold_warm_study",
     "summarize_dynamic_shape_study",
 ]
