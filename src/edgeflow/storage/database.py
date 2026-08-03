@@ -223,6 +223,14 @@ class EdgeFlowDB:
             return None
         return {"manifest": json.loads(row["manifest_json"]), "artifact_path": row["artifact_path"]}
 
+    def list_metrics(self, run_id: str, *, limit: int = 2000) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            rows = connection.execute(
+                "SELECT payload_json FROM metrics WHERE run_id=? ORDER BY id LIMIT ?",
+                (run_id, limit),
+            ).fetchall()
+        return [json.loads(row["payload_json"]) for row in rows]
+
     def list_policies(self) -> list[dict[str, Any]]:
         with self.connect() as connection:
             rows = connection.execute("SELECT payload_json,status FROM policies ORDER BY created_at DESC").fetchall()
@@ -237,6 +245,13 @@ class EdgeFlowDB:
         with self.connect() as connection:
             row = connection.execute("SELECT payload_json FROM evidence WHERE evidence_id=?", (evidence_id,)).fetchone()
         return None if row is None else json.loads(row["payload_json"])
+
+    def list_evidence(self, *, limit: int = 200) -> list[dict[str, Any]]:
+        with self.connect() as connection:
+            rows = connection.execute(
+                "SELECT payload_json FROM evidence ORDER BY evidence_id DESC LIMIT ?", (limit,)
+            ).fetchall()
+        return [json.loads(row["payload_json"]) for row in rows]
 
     def get_evidence_chain(self, evidence_id: str) -> dict[str, Any] | None:
         node = self.get_evidence(evidence_id)

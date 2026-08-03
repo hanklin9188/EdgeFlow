@@ -4,37 +4,197 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark light">
-  <meta name="description" content="EdgeFlow validated run and policy observatory">
-  <title>EdgeFlow · Evidence Observatory</title>
+  <meta name="description" content="EdgeFlow localhost-only GPU experiment control console">
+  <title>EdgeFlow · Local Control Console</title>
   <link rel="stylesheet" href="/dashboard/assets/styles.css">
 </head>
 <body>
   <a class="skip" href="#main">跳到主要內容</a>
-  <aside>
-    <div class="brand"><span>⌁</span><div><strong>EdgeFlow</strong><small>Evidence Observatory</small></div></div>
-    <nav><a href="#overview">Overview</a><a href="#runs">Runs</a><a href="#policies">Policies</a><a href="/docs">API</a></nav>
-    <button id="theme" type="button">◐ Theme</button>
+  <aside class="sidebar" aria-label="Primary navigation">
+    <a class="brand" href="#overview" aria-label="EdgeFlow overview">
+      <span class="brand-mark" aria-hidden="true">⌁</span>
+      <span><strong>EdgeFlow</strong><small>Local Control Console</small></span>
+    </a>
+    <div class="local-lock"><span aria-hidden="true">●</span><div><b>Local-first</b><small>loopback control only</small></div></div>
+    <nav>
+      <a href="#overview"><span>01</span>Overview</a>
+      <a href="#tune"><span>02</span>Tune workspace</a>
+      <a href="#jobs"><span>03</span>Local jobs</a>
+      <a href="#runs"><span>04</span>Run explorer</a>
+      <a href="#evidence"><span>05</span>Evidence & policy</a>
+      <a href="/openapi.json"><span>↗</span>API contract</a>
+    </nav>
+    <button id="theme" class="quiet-button" type="button" aria-label="切換明暗主題">◐ <span>Theme</span></button>
   </aside>
+
   <main id="main">
-    <header><div><p class="eyebrow">Local RTX control plane</p><h1>Inference performance, with evidence.</h1><p>所有 recommendation 都必須回溯至 raw artifact 與 validation gate。</p></div><span id="health" class="pill neutral">connecting</span></header>
-    <section id="overview" class="cards" aria-label="Environment summary">
-      <article><span>GPU</span><strong id="gpu">—</strong><small id="fingerprint">awaiting inspect</small></article>
-      <article><span>Indexed runs</span><strong id="runCount">0</strong><small>measured and diagnostic</small></article>
-      <article><span>Policy eligible</span><strong id="eligibleCount">0</strong><small>G0–G8 passed</small></article>
-      <article><span>Active policies</span><strong id="policyCount">0</strong><small>environment-scoped</small></article>
+    <header class="hero">
+      <div>
+        <p class="eyebrow">RTX workstation · evidence control plane</p>
+        <h1>Local inference tuning,<br><em>without losing the evidence.</em></h1>
+        <p class="lede">模型、GPU 工作與 raw artifacts 全部留在本機。推薦只有通過 G0–G8 才能進入 policy。</p>
+      </div>
+      <div class="hero-actions">
+        <span id="health" class="pill neutral"><span aria-hidden="true">○</span>Connecting</span>
+        <button id="refresh" class="secondary-button" type="button">Refresh</button>
+      </div>
+    </header>
+
+    <div id="connectionBanner" class="banner" role="status">
+      正在建立 localhost session；控制 token 只保存在此瀏覽器分頁的記憶體中。
+    </div>
+
+    <section id="overview" aria-labelledby="overviewTitle">
+      <div class="section-heading">
+        <div><p class="eyebrow">System overview</p><h2 id="overviewTitle">This machine, right now.</h2></div>
+        <p id="lastRefresh">Awaiting first local inspection</p>
+      </div>
+      <div class="metric-grid">
+        <article class="metric-card"><span>GPU</span><strong id="gpu">—</strong><small id="gpuDetail">Awaiting inspect</small></article>
+        <article class="metric-card"><span>Indexed runs</span><strong id="runCount">—</strong><small>Measured and diagnostic</small></article>
+        <article class="metric-card"><span>Policy eligible</span><strong id="eligibleCount">—</strong><small>All G0–G8 gates passed</small></article>
+        <article class="metric-card"><span>Active jobs</span><strong id="activeJobs">—</strong><small>Maximum one GPU worker</small></article>
+        <article class="metric-card"><span>Policies</span><strong id="policyCount">—</strong><small>Fingerprint scoped</small></article>
+        <article class="metric-card"><span>Fingerprint</span><strong id="fingerprint">—</strong><small>Driver · runtime · source tree</small></article>
+      </div>
+
+      <div class="overview-grid">
+        <article class="panel">
+          <div class="panel-heading"><div><p class="eyebrow">Runtime readiness</p><h3>Capability probes</h3></div><span class="source-label">LIVE LOCAL</span></div>
+          <div id="runtimeList" class="runtime-list"><p class="placeholder">Probing local runtimes…</p></div>
+        </article>
+        <article class="panel">
+          <div class="panel-heading"><div><p class="eyebrow">Managed inference</p><h3>Loopback runtime services</h3></div><span class="source-label">ONE AT A TIME</span></div>
+          <p class="panel-intro">Start a pinned backend without entering a command. First use may download registered model files; prompts and results never leave this machine.</p>
+          <div id="serviceList" class="service-list"><p class="placeholder">Inspecting managed services…</p></div>
+        </article>
+        <article class="panel safety-panel">
+          <div class="panel-heading"><div><p class="eyebrow">Safety boundary</p><h3>Local means local</h3></div><span class="pill pass"><span aria-hidden="true">✓</span>Enforced</span></div>
+          <ul class="check-list">
+            <li><span>✓</span>Server binds only to loopback addresses.</li>
+            <li><span>✓</span>Control writes require an in-memory CSRF token.</li>
+            <li><span>✓</span>Jobs use typed arguments and never invoke a shell.</li>
+            <li><span>✓</span>Artifact downloads are allowlisted under each run.</li>
+            <li><span>✓</span>Public export remains read-only and validated-only.</li>
+          </ul>
+        </article>
+      </div>
     </section>
-    <section class="panel" id="runs">
-      <div class="heading"><div><p class="eyebrow">Run explorer</p><h2>Raw evidence before summary.</h2></div><input id="search" type="search" placeholder="Filter run or backend" aria-label="Filter runs"></div>
-      <div id="empty" class="empty"><b>No indexed runs yet.</b><span>Run <code>edgeflow benchmark run</code>; demo data is intentionally not shown here.</span></div>
-      <div class="table-wrap"><table hidden><thead><tr><th>Run</th><th>Backend</th><th>Experiment</th><th>Source</th><th>Verdict</th><th>Eligibility</th></tr></thead><tbody id="rows"></tbody></table></div>
+
+    <section id="tune" aria-labelledby="tuneTitle">
+      <div class="section-heading">
+        <div><p class="eyebrow">Tune workspace</p><h2 id="tuneTitle">Define one controlled workload.</h2></div>
+        <p>Screening is estimated. A queued run is measured but not automatically valid.</p>
+      </div>
+      <div class="workspace-grid">
+        <form id="workloadForm" class="panel form-panel">
+          <div class="form-section-title"><span>01</span><div><h3>Model & runtime</h3><p>Only pinned registry entries are selectable.</p></div></div>
+          <div class="form-grid">
+            <label class="span-2">Registered model<select id="model" name="model_id" required><option value="">Loading registry…</option></select></label>
+            <label>Backend<select id="backend" name="backend"><option value="pytorch_eager">PyTorch eager</option><option value="torch_compile">torch.compile</option><option value="llama_cpp">llama.cpp server</option><option value="vllm">vLLM server</option></select></label>
+            <label>Model format<select id="modelFormat" name="model_format"><option value="safetensors">safetensors</option><option value="gguf">GGUF</option></select></label>
+            <label>Dtype<select id="dtype" name="dtype"><option value="bf16">BF16</option><option value="fp16">FP16</option><option value="fp32">FP32</option></select></label>
+            <label id="quantizationField" hidden>Quantization<select id="quantization" name="quantization"><option value="Q8_0">Q8_0</option><option value="Q6_K">Q6_K</option><option value="Q5_K_M">Q5_K_M</option><option value="Q4_K_M">Q4_K_M</option></select></label>
+            <label id="compileField" class="span-2" hidden>Compile mode<select id="compileMode" name="compile_mode"><option value="default">default</option><option value="max-autotune-no-cudagraphs">max-autotune-no-cudagraphs</option><option value="max-autotune">max-autotune</option><option value="reduce-overhead">reduce-overhead (CUDA Graph disabled)</option></select></label>
+            <label id="serverField" class="span-2" hidden>Local runtime URL<input id="serverUrl" name="external_base_url" type="url" value="http://127.0.0.1:8001" pattern="https?://(127\.0\.0\.1|localhost|\[::1\])(:[0-9]+)?/?" inputmode="url"><small>Use the managed service above or another loopback-only server.</small></label>
+          </div>
+
+          <div class="form-section-title"><span>02</span><div><h3>Workload distribution</h3><p>Exact tokenizer token counts are constructed by the worker.</p></div></div>
+          <div class="form-grid">
+            <label class="span-2">Workload label<input id="label" name="label" value="local-agent" pattern="[a-z0-9][a-z0-9-]{2,47}" required></label>
+            <label class="span-2">Prompt tokens or distribution<input id="promptTokens" name="prompt_tokens" value="128" placeholder="128 or 128:0.5,512:0.5" required><small>Probability buckets must sum to 1.0.</small></label>
+            <label>Output tokens<input id="outputTokens" name="output_tokens" type="number" min="1" max="4096" value="32" required></label>
+            <label>Concurrency<input id="concurrency" name="concurrency" type="number" min="1" max="64" value="1" required></label>
+            <label>Session requests<input id="sessionRequests" name="session_requests" type="number" min="1" max="10000" value="20" required></label>
+            <label>Quality gate<select id="qualityProfile" name="quality_profile"><option value="strict">Strict</option><option value="balanced" selected>Balanced</option><option value="memory_first">Memory first</option></select></label>
+          </div>
+
+          <div class="form-section-title"><span>03</span><div><h3>Measurement protocol</h3><p>Warmup and production timing remain separate.</p></div></div>
+          <div class="form-grid">
+            <label>Experiment<select id="experiment" name="experiment_id"><option value="E04">E04 · eager baseline</option><option value="E05">E05 · compile modes</option><option value="E07">E07 · llama.cpp quantization</option><option value="E08">E08 · vLLM scheduler</option></select></label>
+            <label>Seed<input id="seed" name="seed" type="number" min="0" value="42"></label>
+            <label>Measured repetitions<input id="repetitions" name="repetitions" type="number" min="1" max="1000" value="30"></label>
+            <label>Minimum warmup<input id="warmup" name="warmup_requests" type="number" min="1" max="100" value="5"></label>
+          </div>
+          <div class="option-stack">
+            <label class="check"><input id="allowDownload" type="checkbox">Allow a pinned model/tokenizer download for this job</label>
+            <label class="check"><input id="allowBusy" type="checkbox">Override the GPU &lt;5% idle precheck</label>
+            <label class="check acknowledgment"><input id="acknowledge" type="checkbox" required>I understand this measured job can reserve the local GPU and that only its validation verdict determines eligibility.</label>
+          </div>
+          <div class="form-actions">
+            <button id="screenButton" class="secondary-button" type="button">Screen candidates</button>
+            <button id="queueButton" class="primary-button" type="submit">Queue measured run</button>
+          </div>
+          <p id="formMessage" class="form-message" role="status"></p>
+        </form>
+
+        <aside class="panel candidate-panel" aria-labelledby="candidateTitle">
+          <div class="panel-heading"><div><p class="eyebrow">Candidate preview</p><h3 id="candidateTitle">Capability-aware search space</h3></div><span class="source-label estimated">ESTIMATED</span></div>
+          <div id="candidateEmpty" class="empty compact"><b>No screening result yet.</b><span>Define a workload and select “Screen candidates”.</span></div>
+          <div id="candidateSummary" hidden>
+            <div class="candidate-counts"><div><strong id="candidateCount">0</strong><span>kept</span></div><div><strong id="prunedCount">0</strong><span>pruned</span></div></div>
+            <p class="warning-note">These rows are unmeasured and cannot support a recommendation.</p>
+            <div id="candidateList" class="candidate-list"></div>
+            <details><summary>Deterministic prune reasons</summary><div id="prunedList" class="pruned-list"></div></details>
+          </div>
+        </aside>
+      </div>
     </section>
-    <section class="panel" id="policies">
-      <div class="heading"><div><p class="eyebrow">Deployment policy</p><h2>Measured scope, explicit fallback.</h2></div></div>
-      <div id="policyEmpty" class="empty"><b>No validated policy.</b><span>A policy appears only after eligible measured runs and supporting evidence exist.</span></div>
-      <div id="policyList" class="policy-list"></div>
+
+    <section id="jobs" aria-labelledby="jobsTitle">
+      <div class="section-heading">
+        <div><p class="eyebrow">Local job queue</p><h2 id="jobsTitle">One GPU worker, explicit state.</h2></div>
+        <p>Stopping a job preserves any artifact already committed by the orchestrator.</p>
+      </div>
+      <div class="panel">
+        <div id="jobsEmpty" class="empty"><b>No local jobs yet.</b><span>Queue a typed benchmark from the Tune workspace.</span></div>
+        <div id="jobList" class="job-list"></div>
+      </div>
     </section>
-    <footer>EdgeFlow v0.1 · no mock values on production surfaces · <a href="/openapi.json">OpenAPI</a></footer>
+
+    <section id="runs" aria-labelledby="runsTitle">
+      <div class="section-heading">
+        <div><p class="eyebrow">Run explorer</p><h2 id="runsTitle">Raw evidence before summary.</h2></div>
+        <div class="filters"><label class="sr-only" for="search">Filter runs</label><input id="search" type="search" placeholder="Filter run, model, backend…"><label class="check small-check"><input id="eligibleOnly" type="checkbox">Eligible only</label></div>
+      </div>
+      <div class="panel table-panel">
+        <div id="runsEmpty" class="empty"><b>No indexed runs yet.</b><span>Demo data is intentionally excluded from this production surface.</span></div>
+        <div class="table-wrap"><table id="runTable" hidden><thead><tr><th>Run</th><th>Model / plan</th><th>Protocol</th><th>Source</th><th>Verdict</th><th>Eligibility</th><th><span class="sr-only">Open</span></th></tr></thead><tbody id="runRows"></tbody></table></div>
+      </div>
+    </section>
+
+    <section id="evidence" aria-labelledby="evidenceTitle">
+      <div class="section-heading">
+        <div><p class="eyebrow">Evidence & deployment</p><h2 id="evidenceTitle">A recommendation is a trace, not a badge.</h2></div>
+        <p>Observation → hypothesis → intervention → outcome → policy.</p>
+      </div>
+      <div class="overview-grid">
+        <article class="panel">
+          <div class="panel-heading"><div><p class="eyebrow">Evidence graph</p><h3>Recorded nodes</h3></div><span id="evidenceCount" class="count-badge">0</span></div>
+          <div id="evidenceEmpty" class="empty compact"><b>No evidence chain recorded.</b><span>Profiler output alone remains a hypothesis until a matched intervention is validated.</span></div>
+          <div id="evidenceList" class="evidence-list"></div>
+        </article>
+        <article class="panel">
+          <div class="panel-heading"><div><p class="eyebrow">Deployment policy</p><h3>Measured scope, explicit fallback</h3></div><span id="policyBadge" class="count-badge">0</span></div>
+          <div id="policyEmpty" class="empty compact"><b>No validated policy.</b><span>A policy appears only after eligible measured runs and holdout evidence exist.</span></div>
+          <div id="policyList" class="policy-list"></div>
+        </article>
+      </div>
+    </section>
+
+    <footer>
+      <span>EdgeFlow v0.1 · localhost control · no mock performance values</span>
+      <span><a href="/openapi.json">OpenAPI</a> · <a href="/metrics">Metrics</a></span>
+    </footer>
   </main>
+
+  <dialog id="drawer" aria-labelledby="drawerTitle">
+    <div class="drawer-shell">
+      <header><div><p id="drawerEyebrow" class="eyebrow">Evidence drawer</p><h2 id="drawerTitle">Run detail</h2></div><button id="drawerClose" class="icon-button" type="button" aria-label="Close evidence drawer">×</button></header>
+      <div id="drawerBody" class="drawer-body"></div>
+    </div>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   <script src="/dashboard/assets/app.js"></script>
 </body>
 </html>

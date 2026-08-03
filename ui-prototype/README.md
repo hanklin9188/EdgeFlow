@@ -3,10 +3,10 @@
 A dependency-free static prototype for the **Calm Technical Observatory** visual system.
 
 ```bash
-python -m http.server 8765 --directory ui-prototype
+python -m http.server 8788 --directory ui-prototype
 ```
 
-Open `http://127.0.0.1:8765`.
+Open `http://127.0.0.1:8788`. This port is reserved for the clearly labelled demo prototype; the production Local Control Console uses `8787`.
 
 ## Included interactions
 

@@ -22,7 +22,15 @@ SECRET_PATTERNS = [
     re.compile(r"AKIA[0-9A-Z]{16}"),
     re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
 ]
-EXCLUDED_PARTS = {".git", ".venv", ".cache", ".pytest_cache", ".ruff_cache", "__pycache__"}
+EXCLUDED_PARTS = {
+    ".git",
+    ".venv",
+    ".runtime",
+    ".cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    "__pycache__",
+}
 
 
 def validate_json(path: Path, schema_name: str) -> list[str]:

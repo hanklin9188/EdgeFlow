@@ -31,7 +31,7 @@ dependencies = [
 
 [project.optional-dependencies]
 gpu = ["torch>=2.6", "transformers>=4.48"]
-dev = ["httpx>=0.28,<1", "pytest>=8.3,<10", "pytest-cov>=6,<8", "ruff>=0.9,<1"]
+dev = ["httpx2>=2.9,<3", "pytest>=8.3,<10", "pytest-cov>=6,<8", "ruff>=0.9,<1"]
 
 [project.scripts]
 edgeflow = "edgeflow.cli.app:app"

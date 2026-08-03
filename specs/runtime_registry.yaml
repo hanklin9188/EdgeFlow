@@ -1,0 +1,36 @@
+schema_version: "1.0"
+captured_at: "2026-08-04"
+runtimes:
+  llama_cpp:
+    release: b10242
+    commit: 96278e39fc83e1d97c881e34bcec39ac7ea98820
+    source: https://github.com/ggml-org/llama.cpp
+    install_root: .runtime/llama.cpp
+    server: .runtime/llama.cpp/build/bin/llama-server
+    launcher: scripts/start_llama_cpp_server.sh
+    loopback_port: 8001
+    build:
+      GGML_CUDA: true
+      CMAKE_CUDA_ARCHITECTURES: "89"
+      CMAKE_BUILD_TYPE: Release
+      GGML_NATIVE: false
+  vllm:
+    release: v0.26.0
+    cuda_variant: cu129
+    python: "3.12"
+    install_root: .runtime/vllm/.venv
+    executable: .runtime/vllm/.venv/bin/vllm
+    launcher: scripts/start_vllm_server.sh
+    loopback_port: 8002
+    wheel: https://github.com/vllm-project/vllm/releases/download/v0.26.0/vllm-0.26.0%2Bcu129-cp38-abi3-manylinux_2_28_x86_64.whl
+    wheel_sha256: 6ce4ca30616f0a35810391015622b197a7b8b267ed27f8716f0789db79ff578b
+    wsl2_environment:
+      VLLM_WSL2_ENABLE_PIN_MEMORY: "1"
+      VLLM_USE_FLASHINFER_SAMPLER: "0"
+policy:
+  environments_are_isolated: true
+  install_during_benchmark: false
+  formal_run_requires_exact_match: true
+  servers_bind_loopback_only: true
+  managed_service_uses_ephemeral_api_key: true
+  maximum_managed_gpu_services: 1

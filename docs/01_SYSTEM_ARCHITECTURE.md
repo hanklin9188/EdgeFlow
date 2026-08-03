@@ -6,13 +6,15 @@ EdgeFlow 採用「控制平面與資料平面分離」：
 
 - **Data plane**：實際載入模型、執行 inference、收集時間與 trace。
 - **Control plane**：產生候選 plan、安排實驗、驗證結果、更新 evidence graph。
-- **Presentation plane**：CLI、API、Dashboard、可選 Copilot。
+- **Presentation plane**：CLI、localhost API、Local-first Web App、可選 Copilot。
+
+正式操作介面以 Local-first Web App 為主：Windows／Linux 瀏覽器只連線 `127.0.0.1`，FastAPI、worker、模型、GPU 與 SQLite/artifacts 都位於同一台機器。公開靜態頁若存在，只是 sanitised validated-result export，不是 control plane。
 
 LLM／Agent 不得位於 data plane 的量測迴圈內，避免污染 GPU、CPU、記憶體與 timing。
 
 ```mermaid
 flowchart TB
-    U[CLI / Web UI / Optional Copilot]
+    U[CLI / Local-first Web UI / Optional Copilot]
     C[Control Plane]
     R[Run Orchestrator]
     V[Validation Gate]
@@ -411,13 +413,21 @@ OOM、CUDA illegal memory access、backend crash 後必須終止 subprocess；�
 
 ---
 
-## 1.7 API 草案
+## 1.7 Local control API
 
 ```text
 POST /api/v1/inspect
-POST /api/v1/experiments
-GET  /api/v1/experiments/{id}
-POST /api/v1/runs
+GET  /api/v1/session
+GET  /api/v1/models
+GET  /api/v1/runtime-capabilities
+GET  /api/v1/runtime-services
+POST /api/v1/runtime-services/{backend}/start
+POST /api/v1/runtime-services/{backend}/stop
+GET  /api/v1/experiments
+POST /api/v1/jobs/benchmark
+POST /api/v1/jobs/{id}/cancel
+GET  /api/v1/jobs/{id}
+GET  /api/v1/runs
 GET  /api/v1/runs/{id}
 POST /api/v1/compare
 POST /api/v1/tune
@@ -427,7 +437,7 @@ GET  /metrics
 GET  /health
 ```
 
-Dashboard 只讀 raw artifacts 與 normalized API，不直接解析 backend-specific logs。
+Web App 只透過 normalized API 讀 raw artifacts，不直接解析 backend-specific logs。控制 endpoint 只接受 registered model 與 typed benchmark schema，不接受 command、executable、environment 或任意輸出路徑。Runtime service manager 只能呼叫 repository 內兩個固定 launcher、一次一個服務；子服務綁定 loopback 並使用隨機 API key，關閉控制平面時一併清理 process group。
 
 ---
 
@@ -455,6 +465,9 @@ edgeflow/
 ├── policy/
 ├── evidence/
 ├── kernels/
+├── local/
+│   ├── jobs.py
+│   └── services.py
 ├── reports/
 └── storage/
 ```

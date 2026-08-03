@@ -8,7 +8,14 @@ models:
   qwen3_5_4b: 851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a
   ministral3_8b_gguf: 0102285ad796bd99af90f58de616092e5630e970
 runtimes:
-  llama_cpp: PIN_IN_ISOLATED_RUNTIME_ENV_BEFORE_E07
-  vllm: PIN_IN_ISOLATED_RUNTIME_ENV_BEFORE_E08
+  llama_cpp:
+    release: b10242
+    commit: 96278e39fc83e1d97c881e34bcec39ac7ea98820
+    source: https://github.com/ggml-org/llama.cpp
+  vllm:
+    release: v0.26.0
+    cuda_variant: cu129
+    wheel_sha256: 6ce4ca30616f0a35810391015622b197a7b8b267ed27f8716f0789db79ff578b
+    source: https://github.com/vllm-project/vllm
 policy:
   formal_runs_refuse_unpinned_entries: true

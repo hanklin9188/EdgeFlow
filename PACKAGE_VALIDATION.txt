@@ -1,14 +1,15 @@
 
 EdgeFlow package validation
 ===============================
-[PASS] Required package structure present (12 anchors)
+[PASS] Required package structure present (24 anchors)
 [PASS] Parsed 25 JSON files
-[PASS] Parsed 15 YAML files
+[PASS] Parsed 16 YAML files
 [PASS] Validated 9/9 schema examples
 [PASS] Checked 8 internal Markdown links
 [PASS] Inspected 4 SKILL.md files and the Copilot agent contract
 [PASS] UI prototype files, provenance labeling, theme, and reduced-motion contract present
+[PASS] Local-first production UI, typed job control, evidence surfaces, and web safety contract present
 [PASS] Demo artifacts are isolated from measured-result eligibility
-[PASS] Package manifest verified (159 entries)
+[PASS] Package manifest verified (174 entries)
 -------------------------------
-9 passed · 0 warnings · 0 failed
+10 passed · 0 warnings · 0 failed

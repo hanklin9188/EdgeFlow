@@ -159,7 +159,7 @@ EdgeFlow policy 在實際 workload distribution \(\mathcal D\) 上，應優於�
 - profiler-driven bottleneck taxonomy。
 - deterministic plan optimizer。
 - quality gate。
-- static Web dashboard。
+- localhost-only Local-first Web App；public site 僅可為 validated read-only export。
 - 一個真正整合到 runtime dispatch 的 Triton optimization。
 
 ### MVP 不做

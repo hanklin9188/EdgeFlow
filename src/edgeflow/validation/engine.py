@@ -129,11 +129,29 @@ class ValidationEngine:
             collector.add("G0", "content_hashes", "PASS" if hash_ok else "FAIL", "Plan/workload hashes match." if hash_ok else "Plan or workload hash mismatch.")
 
         background = hardware.get("measurement_controls", {}).get("background_gpu_processes", [])
-        background_ok = not background
+        backend = str(plan.get("backend", ""))
+        runtime_marker = {
+            "llama_cpp": "llama-server",
+            "vllm": "VLLM::EngineCore",
+        }.get(backend)
+        selected_runtime_only = bool(
+            runtime_marker
+            and len(background) == 1
+            and runtime_marker in str(background[0])
+        )
+        background_ok = not background or selected_runtime_only
+        if not background:
+            background_message = "No background compute process recorded."
+        elif selected_runtime_only:
+            background_message = (
+                f"Only the selected {backend} service was recorded: {background[0]}"
+            )
+        else:
+            background_message = f"Unexpected background GPU processes: {background}"
         collector.add(
             "G1", "background_gpu",
             "PASS" if background_ok else "FAIL",
-            "No background compute process recorded." if background_ok else f"Background GPU processes: {background}",
+            background_message,
             "hardware_fingerprint.json",
         )
         expected_gpu = "RTX 4080 SUPER" in hardware.get("gpu", {}).get("name", "")

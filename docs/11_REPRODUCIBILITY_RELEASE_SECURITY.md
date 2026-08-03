@@ -139,12 +139,15 @@ HumanEval執行需：
 
 ### Web service
 
-- localhost預設；
+- localhost強制；CLI拒絕非 loopback bind；
+- state-changing control 需要短生命週期、只存於分頁記憶體的 token；
+- Host allowlist 與 cross-origin write rejection；
 - 無任意file path traversal；
 - report API只讀allowlisted artifact root；
 - request size limit；
 - CSRF/CORS明確；
-- public deployment需auth/rate limit。
+- benchmark API只接受 registered model + typed schema，不接受 command/environment/output path；
+- public deployment不承載 control plane；若未來開放 remote control，需另行設計 auth、TLS、rate limit 與 threat model。
 
 ---
 
@@ -204,7 +207,7 @@ EdgeFlow code建議Apache-2.0。模型／資料各自受原條款，不因repo l
 9. changelog；
 10. tag/sign；
 11. release assets checksums；
-12. GitHub Pages verified。
+12. 若有 public result export，驗證其唯讀、清理與 provenance 標示。
 
 ---
 

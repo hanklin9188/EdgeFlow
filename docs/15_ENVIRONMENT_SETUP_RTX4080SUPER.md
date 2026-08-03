@@ -173,17 +173,14 @@ Do not begin performance sweeps until the smoke test is represented by a validat
 
 ## 15.7 llama.cpp CUDA build
 
-Pin a commit and preserve build metadata:
+Repository 已把 release、commit、SM89 與 build flags 固定在 `specs/runtime_registry.yaml`。執行：
 
 ```bash
-git clone https://github.com/ggml-org/llama.cpp.git
-cd llama.cpp
-git checkout <PINNED_COMMIT>
-cmake -B build -G Ninja \
-  -DGGML_CUDA=ON \
-  -DCMAKE_BUILD_TYPE=Release
-cmake --build build --config Release -j
+./scripts/bootstrap_llama_cpp.sh
+./scripts/start_llama_cpp_server.sh
 ```
+
+bootstrap 會拒絕 dirty checkout、核對 exact commit、以 `CMAKE_CUDA_ARCHITECTURES=89` 編譯，並保存 binary SHA-256 與 CMake cache。launcher 解析固定 revision 的 official Ministral Q4_K_M、只綁定 `127.0.0.1:8001`；由 Web App 啟動時另帶隨機 API key。
 
 Record:
 
@@ -200,7 +197,14 @@ Do not compare a locally converted GGUF against a different original checkpoint 
 
 ## 15.8 vLLM worker
 
-Install vLLM in a fresh environment following the current official GPU installation page. The selected wheel constrains PyTorch and CUDA compatibility, so EdgeFlow must probe rather than assume support.
+vLLM 使用隔離的 Python 3.12／cu129 環境與 hash-pinned wheel，不與 core/PyTorch worker 混裝：
+
+```bash
+./scripts/bootstrap_vllm.sh
+./scripts/start_vllm_server.sh
+```
+
+RTX 4080 SUPER WSL2 實測需要 `VLLM_WSL2_ENABLE_PIN_MEMORY=1`。v0.26.0 bundled FlashInfer sampler 與此 checkout 的 cu129 CCCL 在 SM89 JIT 編譯不相容，因此固定 `VLLM_USE_FLASHINFER_SAMPLER=0` 使用 native sampler；此 fallback 明確記錄於 runtime registry 與 launcher，不作為未揭露變因。服務只綁定 `127.0.0.1:8002`。
 
 Capability probe:
 
