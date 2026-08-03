@@ -38,7 +38,7 @@ def _gpu_telemetry() -> dict[str, float | None]:
         result = subprocess.run(
             [
                 "nvidia-smi",
-                "--query-gpu=temperature.gpu,clocks.sm,clocks.mem",
+                "--query-gpu=temperature.gpu,clocks.sm,clocks.mem,utilization.gpu,power.draw",
                 "--format=csv,noheader,nounits",
             ],
             capture_output=True,
@@ -51,9 +51,17 @@ def _gpu_telemetry() -> dict[str, float | None]:
             "temperature_c": float(values[0]),
             "sm_clock_mhz": float(values[1]),
             "memory_clock_mhz": float(values[2]),
+            "gpu_utilization_pct": float(values[3]),
+            "power_w": float(values[4]),
         }
     except (FileNotFoundError, IndexError, ValueError, subprocess.TimeoutExpired):
-        return {"temperature_c": None, "sm_clock_mhz": None, "memory_clock_mhz": None}
+        return {
+            "temperature_c": None,
+            "sm_clock_mhz": None,
+            "memory_clock_mhz": None,
+            "gpu_utilization_pct": None,
+            "power_w": None,
+        }
 
 
 def _gpu_utilization() -> float | None:
@@ -97,7 +105,13 @@ class TelemetryMonitor:
 
     def latest(self) -> dict[str, float | None]:
         if not self.samples:
-            return {"temperature_c": None, "sm_clock_mhz": None, "memory_clock_mhz": None}
+            return {
+                "temperature_c": None,
+                "sm_clock_mhz": None,
+                "memory_clock_mhz": None,
+                "gpu_utilization_pct": None,
+                "power_w": None,
+            }
         return self.samples[-1]
 
 
@@ -170,6 +184,7 @@ class RunOrchestrator:
                 "run_manifest.json", "workload.json", "execution_plan.json",
                 "hardware_fingerprint.json", "metrics.jsonl", "stdout.log", "stderr.log",
                 "monitor.jsonl", "validation_verdict.json", "VALIDATION.md",
+                "correctness.json",
             ],
             "supersedes_run_id": None,
             "notes": "Production timing uses synchronized engine boundaries; warmup is stored separately.",
@@ -187,6 +202,16 @@ class RunOrchestrator:
         config = config or BenchmarkConfig()
         if config.repetitions < 1 or config.warmup_requests < 1:
             raise ValueError("repetitions and warmup_requests must be positive")
+        if plan.backend in {"pytorch_eager", "torch_compile"}:
+            if workload.concurrency != 1:
+                raise ValueError("PyTorch runtimes use batch_size; concurrency must be 1")
+            request_group_size = workload.batch_size
+            grouping_kind = "batch"
+        else:
+            if workload.batch_size != 1:
+                raise ValueError("HTTP runtimes use concurrency; batch_size must be 1")
+            request_group_size = workload.concurrency
+            grouping_kind = "concurrency"
         plan = plan.with_hash()
         adapter = self.adapter_for(plan)
         report = adapter.probe()
@@ -255,8 +280,11 @@ class RunOrchestrator:
             warmup_latencies: list[float] = []
             if plan.backend == "torch_compile":
                 count = choose_prompt_tokens(workload, -10_000)
-                token_ids = build_exact_token_ids(tokenizer, count, seed=workload.seed)
-                first_compiled = runtime.warmup(token_ids, workload.output_tokens)
+                token_groups = [
+                    build_exact_token_ids(tokenizer, count, seed=workload.seed + member)
+                    for member in range(request_group_size)
+                ]
+                first_compiled = runtime.generate_batch(token_groups, workload.output_tokens)[0]
                 append(
                     MetricRecord(
                         run_id=run_id,
@@ -274,15 +302,26 @@ class RunOrchestrator:
             maximum_warmup = max(config.warmup_requests, 20)
             for iteration in range(maximum_warmup):
                 count = choose_prompt_tokens(workload, -iteration - 1)
-                token_ids = build_exact_token_ids(tokenizer, count, seed=workload.seed + iteration)
-                result = runtime.warmup(token_ids, workload.output_tokens)
-                warmup_latencies.append(result.wall_ms)
+                token_groups = [
+                    build_exact_token_ids(
+                        tokenizer,
+                        count,
+                        seed=workload.seed + iteration * request_group_size + member,
+                    )
+                    for member in range(request_group_size)
+                ]
+                warmup_started = time.perf_counter_ns()
+                warmup_results = runtime.generate_batch(token_groups, workload.output_tokens)
+                warmup_wall_ms = (time.perf_counter_ns() - warmup_started) / 1_000_000
+                result = warmup_results[0]
+                warmup_latencies.append(warmup_wall_ms)
                 append(
                     MetricRecord(
                         run_id=run_id, request_id=f"warmup-{iteration:04d}", source_type=config.source_type,
                         phase="warmup", iteration=iteration, prompt_tokens=count, output_tokens=len(result.output_token_ids),
-                        metrics=MetricValues(wall_ms=result.wall_ms, ttft_ms=result.ttft_ms, tpot_ms=result.tpot_ms),
-                        token_timestamps_ms=result.token_timestamps_ms, notes="Excluded from steady-state summary.",
+                        metrics=MetricValues(wall_ms=warmup_wall_ms, ttft_ms=result.ttft_ms, tpot_ms=result.tpot_ms),
+                        token_timestamps_ms=result.token_timestamps_ms,
+                        notes=f"Excluded from steady-state summary; {grouping_kind}={request_group_size}.",
                     )
                 )
                 if iteration + 1 >= max(config.warmup_requests, 10):
@@ -290,43 +329,107 @@ class RunOrchestrator:
                     recent = sorted(warmup_latencies[-5:])[2]
                     if previous > 0 and abs(recent - previous) / previous < 0.02:
                         break
+            correctness_count = choose_prompt_tokens(workload, -20_000)
+            correctness_ids = [
+                build_exact_token_ids(
+                    tokenizer,
+                    correctness_count,
+                    seed=workload.seed + 20_000 + member,
+                )
+                for member in range(request_group_size)
+            ]
+            correctness_a = runtime.generate_batch(correctness_ids, workload.output_tokens)
+            correctness_b = runtime.generate_batch(correctness_ids, workload.output_tokens)
+            deterministic = [item.output_token_ids for item in correctness_a] == [
+                item.output_token_ids for item in correctness_b
+            ]
+            timestamps_valid = all(
+                len(result.token_timestamps_ms) in {0, len(result.output_token_ids)}
+                for result in (*correctness_a, *correctness_b)
+            )
+            correctness_pass = bool(
+                deterministic
+                and all(result.output_token_ids for result in (*correctness_a, *correctness_b))
+                and timestamps_valid
+            )
+            write_json(
+                temporary / "correctness.json",
+                {
+                    "schema_version": "1.0",
+                    "pass": correctness_pass,
+                    "nan_count": 0,
+                    "reference_type": "pinned_runtime_deterministic_repeat",
+                    "prompt_tokens": correctness_count,
+                    "requested_output_tokens": workload.output_tokens,
+                    "request_group_size": request_group_size,
+                    "grouping_kind": grouping_kind,
+                    "observed_output_tokens": [
+                        len(result.output_token_ids) for result in correctness_a
+                    ],
+                    "exact_output_match": deterministic,
+                    "timestamp_cardinality_valid": timestamps_valid,
+                    "summary": (
+                        "Pinned runtime produced identical greedy outputs for a repeated exact-token prompt."
+                        if correctness_pass
+                        else "Pinned runtime repeatability or token-timestamp integrity failed."
+                    ),
+                },
+            )
+            if not correctness_pass:
+                raise RuntimeError("runtime correctness repeat failed before measured timing")
             manifest["status"] = "RUNNING"
             write_json(temporary / "run_manifest.json", manifest)
             order = list(range(config.repetitions))
             random.Random(workload.seed).shuffle(order)
             for execution_index, prompt_index in enumerate(order):
                 count = choose_prompt_tokens(workload, prompt_index)
-                token_ids = build_exact_token_ids(tokenizer, count, seed=workload.seed + prompt_index)
-                result = runtime.generate(token_ids, workload.output_tokens)
-                telemetry = monitor.latest()
-                generation_rate = (
-                    len(result.output_token_ids) / (result.wall_ms / 1000.0) if result.wall_ms > 0 else None
-                )
-                append(
-                    MetricRecord(
-                        run_id=run_id,
-                        request_id=f"request-{prompt_index:06d}",
-                        source_type=config.source_type,
-                        phase="end_to_end",
-                        iteration=execution_index,
-                        prompt_tokens=count,
-                        output_tokens=len(result.output_token_ids),
-                        metrics=MetricValues(
-                            wall_ms=result.wall_ms,
-                            ttft_ms=result.ttft_ms,
-                            tpot_ms=result.tpot_ms,
-                            request_latency_ms=result.wall_ms,
-                            generation_tokens_per_s=generation_rate,
-                            requests_per_s=1000.0 / result.wall_ms,
-                            peak_vram_bytes=result.peak_vram_bytes,
-                            temperature_c=telemetry["temperature_c"],
-                            sm_clock_mhz=telemetry["sm_clock_mhz"],
-                            memory_clock_mhz=telemetry["memory_clock_mhz"],
-                        ),
-                        token_timestamps_ms=result.token_timestamps_ms,
-                        notes="Engine-only greedy generation; randomized prompt order.",
+                token_groups = [
+                    build_exact_token_ids(
+                        tokenizer,
+                        count,
+                        seed=workload.seed + prompt_index * request_group_size + member,
                     )
+                    for member in range(request_group_size)
+                ]
+                group_started = time.perf_counter_ns()
+                results = runtime.generate_batch(token_groups, workload.output_tokens)
+                group_wall_ms = (time.perf_counter_ns() - group_started) / 1_000_000
+                telemetry = monitor.latest()
+                group_output_tokens = sum(len(result.output_token_ids) for result in results)
+                generation_rate = (
+                    group_output_tokens / (group_wall_ms / 1000.0) if group_wall_ms > 0 else None
                 )
+                for member, result in enumerate(results):
+                    append(
+                        MetricRecord(
+                            run_id=run_id,
+                            request_id=f"request-{prompt_index:06d}-{member:02d}",
+                            source_type=config.source_type,
+                            phase="end_to_end",
+                            iteration=execution_index * request_group_size + member,
+                            prompt_tokens=count,
+                            output_tokens=len(result.output_token_ids),
+                            metrics=MetricValues(
+                                wall_ms=result.wall_ms,
+                                ttft_ms=result.ttft_ms,
+                                tpot_ms=result.tpot_ms,
+                                request_latency_ms=result.wall_ms,
+                                generation_tokens_per_s=generation_rate,
+                                requests_per_s=request_group_size * 1000.0 / group_wall_ms,
+                                peak_vram_bytes=result.peak_vram_bytes,
+                                temperature_c=telemetry["temperature_c"],
+                                sm_clock_mhz=telemetry["sm_clock_mhz"],
+                                memory_clock_mhz=telemetry["memory_clock_mhz"],
+                                gpu_utilization_pct=telemetry["gpu_utilization_pct"],
+                                power_w=telemetry["power_w"],
+                            ),
+                            token_timestamps_ms=result.token_timestamps_ms,
+                            notes=(
+                                "Engine-only greedy generation; randomized prompt order; "
+                                f"{grouping_kind}={request_group_size}."
+                            ),
+                        ),
+                    )
             manifest["status"] = "PASSED"
             manifest["completed_at"] = utc_now()
             write_json(temporary / "run_manifest.json", manifest)

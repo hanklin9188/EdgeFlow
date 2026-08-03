@@ -79,6 +79,10 @@ class BenchmarkSubmission(BaseModel):
             raise ValueError(
                 "reduce-overhead with mutable-KV CUDA Graph is pruned after correctness failure"
             )
+        if self.backend in {"pytorch_eager", "torch_compile"} and self.concurrency != 1:
+            raise ValueError("PyTorch runtimes use batch_size; concurrency must be 1")
+        if self.backend in {"llama_cpp", "vllm"} and self.batch_size != 1:
+            raise ValueError("HTTP runtimes use concurrency; batch_size must be 1")
         if self.backend in {"llama_cpp", "vllm"}:
             base_url = self.external_base_url or (
                 "http://127.0.0.1:8001"
@@ -97,7 +101,10 @@ class BenchmarkSubmission(BaseModel):
             else "mix-" + "-".join(str(item.tokens) for item in self.prompt_tokens)
         )
         return WorkloadSpec(
-            workload_id=f"{self.label}-p{prompt_slug}-o{self.output_tokens}-c{self.concurrency}",
+            workload_id=(
+                f"{self.label}-p{prompt_slug}-o{self.output_tokens}"
+                f"-b{self.batch_size}-c{self.concurrency}"
+            ),
             model_id=self.model_id,
             prompt_source=PromptSource(type="synthetic", name="edgeflow-corpus-v1", revision="1.0"),
             prompt_tokens=self.prompt_tokens,

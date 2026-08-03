@@ -141,6 +141,8 @@ class MetricValues(StrictModel):
     temperature_c: float | None = Field(default=None, ge=0)
     sm_clock_mhz: float | None = Field(default=None, ge=0)
     memory_clock_mhz: float | None = Field(default=None, ge=0)
+    gpu_utilization_pct: float | None = Field(default=None, ge=0, le=100)
+    power_w: float | None = Field(default=None, ge=0)
 
 
 class MetricRecord(StrictModel):

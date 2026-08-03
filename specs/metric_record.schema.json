@@ -158,6 +158,21 @@
             "null"
           ],
           "minimum": 0
+        },
+        "gpu_utilization_pct": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "power_w": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
         }
       }
     },

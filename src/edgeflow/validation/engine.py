@@ -197,6 +197,7 @@ class ValidationEngine:
                 float(row["metrics"]["sm_clock_mhz"])
                 for row in measured_rows
                 if row.get("metrics", {}).get("sm_clock_mhz")
+                and float(row.get("metrics", {}).get("gpu_utilization_pct") or 0) >= 5.0
             ]
             clock_ratio = min(clocks) / max(clocks) if clocks else 1.0
             temperatures = [
@@ -206,6 +207,7 @@ class ValidationEngine:
             ]
             temperature_range = max(temperatures) - min(temperatures) if temperatures else 0.0
             statistics["minimum_to_maximum_sm_clock_ratio"] = clock_ratio
+            statistics["active_clock_samples"] = len(clocks)
             statistics["temperature_range_c"] = temperature_range
             stable = (
                 drift <= 0.03
@@ -215,7 +217,8 @@ class ValidationEngine:
             collector.add(
                 "G4", "stability", "PASS" if stable else "WARN",
                 f"drift={drift:.3%}, robust_cv={float(statistics['robust_cv']):.3%}, "
-                f"clock_ratio={clock_ratio:.3f}, temp_range={temperature_range:.1f}°C",
+                f"active_clock_ratio={clock_ratio:.3f} ({len(clocks)} samples), "
+                f"temp_range={temperature_range:.1f}°C",
                 "metrics.jsonl",
             )
         else:

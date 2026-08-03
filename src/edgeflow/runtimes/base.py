@@ -32,6 +32,19 @@ class PreparedRuntime(ABC):
     @abstractmethod
     def generate(self, token_ids: list[int], output_tokens: int) -> GenerationResult: ...
 
+    def generate_batch(
+        self, token_id_batches: list[list[int]], output_tokens: int
+    ) -> list[GenerationResult]:
+        """Generate one measured request group.
+
+        Adapters must override this method before advertising batch or concurrent
+        execution. The sequential default is intentionally limited to one request.
+        """
+
+        if len(token_id_batches) != 1:
+            raise RuntimeUnavailable("runtime does not implement measured request grouping")
+        return [self.generate(token_id_batches[0], output_tokens)]
+
     @abstractmethod
     def shutdown(self) -> None: ...
 

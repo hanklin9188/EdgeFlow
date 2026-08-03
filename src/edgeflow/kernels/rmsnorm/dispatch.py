@@ -8,10 +8,15 @@ from edgeflow.core.serialization import project_root, write_json
 from edgeflow.kernels.rmsnorm.reference import reference_residual_rmsnorm
 
 KERNEL_VERSION = "fused-residual-rmsnorm-v1"
+MIN_PRACTICAL_SPEEDUP = 1.05
 
 
 def _cache_path() -> Path:
     return project_root() / ".cache" / "edgeflow" / "kernel_validation.json"
+
+
+def _performance_cache_path() -> Path:
+    return project_root() / ".cache" / "edgeflow" / "kernel_performance.json"
 
 
 def _key(x: Any) -> str:
@@ -30,6 +35,41 @@ def _load_cache() -> dict[str, Any]:
         return value if isinstance(value, dict) else {}
     except (OSError, json.JSONDecodeError):
         return {}
+
+
+def _load_performance_cache() -> dict[str, Any]:
+    path = _performance_cache_path()
+    if not path.exists():
+        return {}
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+        return value if isinstance(value, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def record_performance_decisions(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Persist measured dispatch decisions; unmeasured shapes remain on the reference path."""
+
+    cache = _load_performance_cache()
+    for row in rows:
+        shape = row.get("shape", [])
+        dtype = row.get("dtype")
+        gpu = row.get("gpu")
+        speedup = float(row.get("speedup", 0.0))
+        if len(shape) != 2 or not dtype or not gpu:
+            continue
+        key = f"{KERNEL_VERSION}|{gpu}|{dtype}|{shape[0]}x{shape[1]}"
+        cache[key] = {
+            "enabled": bool(
+                row.get("correctness", {}).get("status") == "PASS"
+                and speedup >= MIN_PRACTICAL_SPEEDUP
+            ),
+            "speedup_vs_eager": speedup,
+            "minimum_practical_speedup": MIN_PRACTICAL_SPEEDUP,
+        }
+    write_json(_performance_cache_path(), cache)
+    return cache
 
 
 def validate_shape(x: Any, residual: Any, weight: Any, eps: float = 1e-6) -> dict[str, Any]:
@@ -94,6 +134,9 @@ def fused_residual_rmsnorm(
         return reference_residual_rmsnorm(x, residual, weight, eps)
     cache = _load_cache()
     if cache.get(_key(x), {}).get("status") != "PASS":
+        return reference_residual_rmsnorm(x, residual, weight, eps)
+    performance = _load_performance_cache().get(_key(x), {})
+    if not performance.get("enabled"):
         return reference_residual_rmsnorm(x, residual, weight, eps)
     try:
         from edgeflow.kernels.rmsnorm.kernel import triton_residual_rmsnorm

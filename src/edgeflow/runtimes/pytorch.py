@@ -35,18 +35,28 @@ class PytorchRuntime(PreparedRuntime):
             torch.cuda.synchronize()
 
     def generate(self, token_ids: list[int], output_tokens: int) -> GenerationResult:
+        return self.generate_batch([token_ids], output_tokens)[0]
+
+    def generate_batch(
+        self, token_id_batches: list[list[int]], output_tokens: int
+    ) -> list[GenerationResult]:
         import torch
 
         if output_tokens < 1:
             raise ValueError("output_tokens must be positive")
+        if not token_id_batches:
+            raise ValueError("token_id_batches cannot be empty")
+        prompt_lengths = {len(token_ids) for token_ids in token_id_batches}
+        if len(prompt_lengths) != 1:
+            raise ValueError("PyTorch measured batches require equal prompt lengths")
         device = next(self.model.parameters()).device
-        inputs = torch.tensor([token_ids], dtype=torch.long, device=device)
+        inputs = torch.tensor(token_id_batches, dtype=torch.long, device=device)
         if device.type == "cuda":
             torch.cuda.reset_peak_memory_stats(device)
         self._synchronize()
         started = time.perf_counter_ns()
         timestamps: list[float] = []
-        generated: list[int] = []
+        generated: list[list[int]] = [[] for _ in token_id_batches]
         past_key_values = None
         if self.cuda_graph:
             from transformers.cache_utils import StaticCache
@@ -54,7 +64,7 @@ class PytorchRuntime(PreparedRuntime):
             model_config = getattr(self.model, "config", None) or self.model._orig_mod.config
             past_key_values = StaticCache(
                 config=model_config,
-                max_cache_len=len(token_ids) + output_tokens,
+                max_cache_len=len(token_id_batches[0]) + output_tokens,
             )
         current = inputs
         with torch.inference_mode():
@@ -71,7 +81,8 @@ class PytorchRuntime(PreparedRuntime):
                 past_key_values = outputs.past_key_values
                 self._synchronize()
                 timestamps.append((time.perf_counter_ns() - started) / 1_000_000)
-                generated.append(int(next_token.item()))
+                for index, value in enumerate(next_token.flatten().tolist()):
+                    generated[index].append(int(value))
                 current = next_token
         self._synchronize()
         wall_ms = (time.perf_counter_ns() - started) / 1_000_000
@@ -80,15 +91,22 @@ class PytorchRuntime(PreparedRuntime):
         if len(timestamps) > 1:
             tpot_ms = (timestamps[-1] - timestamps[0]) / (len(timestamps) - 1)
         peak = torch.cuda.max_memory_allocated(device) if device.type == "cuda" else None
-        return GenerationResult(
-            output_token_ids=tuple(generated),
-            token_timestamps_ms=tuple(timestamps),
-            wall_ms=wall_ms,
-            ttft_ms=ttft_ms,
-            tpot_ms=tpot_ms,
-            peak_vram_bytes=peak,
-            native_metrics={"device": str(device), "cache_enabled": True},
-        )
+        return [
+            GenerationResult(
+                output_token_ids=tuple(output_ids),
+                token_timestamps_ms=tuple(timestamps),
+                wall_ms=wall_ms,
+                ttft_ms=ttft_ms,
+                tpot_ms=tpot_ms,
+                peak_vram_bytes=peak,
+                native_metrics={
+                    "device": str(device),
+                    "cache_enabled": True,
+                    "measured_batch_size": len(token_id_batches),
+                },
+            )
+            for output_ids in generated
+        ]
 
     def warmup(self, token_ids: list[int], output_tokens: int) -> GenerationResult:
         return self.generate(token_ids, output_tokens)

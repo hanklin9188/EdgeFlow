@@ -7,6 +7,7 @@ import shutil
 import time
 import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -86,6 +87,18 @@ class _HTTPRuntime(PreparedRuntime):
 
     def warmup(self, token_ids: list[int], output_tokens: int) -> GenerationResult:
         return self.generate(token_ids, output_tokens)
+
+    def generate_batch(
+        self, token_id_batches: list[list[int]], output_tokens: int
+    ) -> list[GenerationResult]:
+        if not token_id_batches:
+            raise ValueError("token_id_batches cannot be empty")
+        with ThreadPoolExecutor(max_workers=len(token_id_batches)) as executor:
+            futures = [
+                executor.submit(self.generate, token_ids, output_tokens)
+                for token_ids in token_id_batches
+            ]
+            return [future.result() for future in futures]
 
     def shutdown(self) -> None:
         return None
