@@ -64,7 +64,7 @@ experiments:
     name: dynamic_shape_recompilation
     phase: runtime_baselines
     kind: intervention
-    engineering_status: partial
+    engineering_status: implemented
     sequence: [128, 128, 1024, 128, 2048, 1024, 4096]
   E07:
     name: llama_cpp_quantization
@@ -95,7 +95,7 @@ experiments:
     name: fixed_plan_dominance
     phase: policy_causal
     kind: analysis
-    engineering_status: partial
+    engineering_status: implemented
     input: validated_pareto_plans
   E11:
     name: policy_synthesis_baselines
@@ -146,7 +146,7 @@ experiments:
     name: session_break_even
     phase: amortization
     kind: analysis
-    engineering_status: partial
+    engineering_status: implemented
     session_requests: [1, 5, 20, 100, 1000]
   E20:
     name: cold_start_warm_restart
@@ -176,7 +176,7 @@ experiments:
     name: end_to_end_kernel_integration
     phase: custom_kernel
     kind: intervention
-    engineering_status: partial
+    engineering_status: implemented
 
   E25:
     name: cost_model_dataset

@@ -26,6 +26,36 @@ def _key(x: Any) -> str:
     return f"{KERNEL_VERSION}|{gpu}|{x.dtype!s}|{x.shape[0]}x{x.shape[1]}"
 
 
+def dispatch_decision(x: Any, residual: Any, weight: Any) -> dict[str, Any]:
+    """Explain whether this exact tensor scope can use the measured Triton path."""
+
+    if not getattr(x, "is_cuda", False):
+        return {"use_triton": False, "reason": "cpu_reference", "key": None}
+    supported = (
+        x.ndim == 2
+        and x.shape == residual.shape
+        and tuple(weight.shape) == (x.shape[1],)
+        and x.is_contiguous()
+        and residual.is_contiguous()
+        and weight.is_contiguous()
+        and x.shape[1] <= 65_536
+    )
+    if not supported:
+        return {"use_triton": False, "reason": "unsupported_contract", "key": None}
+    key = _key(x)
+    if _load_cache().get(key, {}).get("status") != "PASS":
+        return {"use_triton": False, "reason": "correctness_unvalidated", "key": key}
+    performance = _load_performance_cache().get(key, {})
+    if not performance.get("enabled"):
+        return {"use_triton": False, "reason": "no_measured_practical_speedup", "key": key}
+    return {
+        "use_triton": True,
+        "reason": "validated_measured_winner",
+        "key": key,
+        "speedup_vs_eager": performance.get("speedup_vs_eager"),
+    }
+
+
 def _load_cache() -> dict[str, Any]:
     path = _cache_path()
     if not path.exists():
@@ -121,22 +151,8 @@ def fused_residual_rmsnorm(
 
     if force_reference or not getattr(x, "is_cuda", False):
         return reference_residual_rmsnorm(x, residual, weight, eps)
-    supported = (
-        x.ndim == 2
-        and x.shape == residual.shape
-        and tuple(weight.shape) == (x.shape[1],)
-        and x.is_contiguous()
-        and residual.is_contiguous()
-        and weight.is_contiguous()
-        and x.shape[1] <= 65_536
-    )
-    if not supported:
-        return reference_residual_rmsnorm(x, residual, weight, eps)
-    cache = _load_cache()
-    if cache.get(_key(x), {}).get("status") != "PASS":
-        return reference_residual_rmsnorm(x, residual, weight, eps)
-    performance = _load_performance_cache().get(_key(x), {})
-    if not performance.get("enabled"):
+    decision = dispatch_decision(x, residual, weight)
+    if not decision["use_triton"]:
         return reference_residual_rmsnorm(x, residual, weight, eps)
     try:
         from edgeflow.kernels.rmsnorm.kernel import triton_residual_rmsnorm

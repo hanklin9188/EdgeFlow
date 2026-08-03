@@ -57,6 +57,26 @@ def _prompt_counts_for_group(
     ]
 
 
+def _prompt_seed(
+    workload: WorkloadSpec,
+    *,
+    prompt_index: int,
+    request_group_size: int,
+    member: int,
+) -> int:
+    """Keep fixed-bucket benchmarks paired while varying distribution replays.
+
+    A scalar prompt-token workload represents one registered exact prompt. Reusing
+    its token IDs across warmup, correctness, and measured repetitions is required
+    for a matched stability estimate. Distribution workloads deliberately retain a
+    deterministic per-request seed so replay diversity is not collapsed.
+    """
+
+    if isinstance(workload.prompt_tokens, int):
+        return workload.seed + member
+    return workload.seed + prompt_index * request_group_size + member
+
+
 def _gpu_telemetry() -> dict[str, float | None]:
     try:
         result = subprocess.run(
@@ -382,7 +402,16 @@ class RunOrchestrator:
                     grouping_kind=grouping_kind,
                 )
                 token_groups = [
-                    build_exact_token_ids(tokenizer, count, seed=workload.seed + member)
+                    build_exact_token_ids(
+                        tokenizer,
+                        count,
+                        seed=_prompt_seed(
+                            workload,
+                            prompt_index=-10_000,
+                            request_group_size=request_group_size,
+                            member=member,
+                        ),
+                    )
                     for member, count in enumerate(prompt_counts)
                 ]
                 first_compiled = runtime.generate_batch(token_groups, workload.output_tokens)[0]
@@ -413,7 +442,12 @@ class RunOrchestrator:
                     build_exact_token_ids(
                         tokenizer,
                         count,
-                        seed=workload.seed + iteration * request_group_size + member,
+                        seed=_prompt_seed(
+                            workload,
+                            prompt_index=-iteration - 1,
+                            request_group_size=request_group_size,
+                            member=member,
+                        ),
                     )
                     for member, count in enumerate(prompt_counts)
                 ]
@@ -463,7 +497,12 @@ class RunOrchestrator:
                 build_exact_token_ids(
                     tokenizer,
                     count,
-                    seed=workload.seed + 20_000 + member,
+                    seed=_prompt_seed(
+                        workload,
+                        prompt_index=-20_000,
+                        request_group_size=request_group_size,
+                        member=member,
+                    ),
                 )
                 for member, count in enumerate(correctness_counts)
             ]
@@ -522,7 +561,12 @@ class RunOrchestrator:
                     build_exact_token_ids(
                         tokenizer,
                         count,
-                        seed=workload.seed + prompt_index * request_group_size + member,
+                        seed=_prompt_seed(
+                            workload,
+                            prompt_index=prompt_index,
+                            request_group_size=request_group_size,
+                            member=member,
+                        ),
                     )
                     for member, count in enumerate(prompt_counts)
                 ]
@@ -560,7 +604,7 @@ class RunOrchestrator:
                             ),
                             token_timestamps_ms=result.token_timestamps_ms,
                             notes=(
-                                "Engine-only greedy generation; randomized prompt order; "
+                                "Engine-only greedy generation; deterministic paired prompts; "
                                 f"{grouping_kind}={request_group_size}."
                             ),
                         ),

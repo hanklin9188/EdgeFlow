@@ -7,6 +7,7 @@ const state = {
   services: [],
   experiments: {},
   progress: null,
+  readiness: null,
   runs: [],
   jobs: [],
   policies: [],
@@ -182,6 +183,21 @@ function renderExperimentProgress() {
     }).join("");
     return `<article class="phase-card"><header><div><p class="eyebrow">${escapeHtml(phase.phase.replaceAll("_", " "))}</p><h3>${escapeHtml(phase.label)}</h3></div><span>${validated}/${phase.experiments.length}</span></header><div class="experiment-dots">${dots}</div></article>`;
   }).join("");
+
+  const readiness = state.readiness;
+  const container = $("#formalReadiness");
+  if (!readiness || readiness.status === "NOT_RUN") {
+    container.innerHTML = '<p class="placeholder">尚未產生 formal readiness audit；這不等於驗證通過。</p>';
+    return;
+  }
+  const prerequisite = readiness.E25_E28?.experiments || {};
+  const cards = [
+    ["E10", "Policy grid", readiness.E10?.status, `${readiness.E10?.common_bucket_count || 0}/${readiness.E10?.expected_bucket_count || 45} common buckets`],
+    ["E19", "Break-even", readiness.E19?.status, `${readiness.E19?.comparison_count || 0} exact-scope pairs`],
+    ["E25", "Cost dataset", prerequisite.E25?.status, `${prerequisite.E25?.unique_validated_points || 0}/${prerequisite.E25?.required || 2000} unique points`],
+    ["E28", "Grounding", prerequisite.E28?.status, `${prerequisite.E28?.grounded_question_count || 0} fixed questions`],
+  ];
+  container.innerHTML = cards.map(([id, label, status, detail]) => `<article class="readiness-card"><header><b>${escapeHtml(id)} · ${escapeHtml(label)}</b>${badge(status)}</header><small>${escapeHtml(detail)}</small></article>`).join("");
 }
 
 function renderServices() {
@@ -428,10 +444,10 @@ async function stopService(backend) {
 }
 
 async function refreshOperationalData() {
-  const [runs, jobs, policies, evidence, services, progress] = await Promise.all([
-    api("/api/v1/runs?limit=500"), api("/api/v1/jobs?limit=200"), api("/api/v1/policies"), api("/api/v1/evidence"), api("/api/v1/runtime-services"), api("/api/v1/experiment-progress"),
+  const [runs, jobs, policies, evidence, services, progress, readiness] = await Promise.all([
+    api("/api/v1/runs?limit=500"), api("/api/v1/jobs?limit=200"), api("/api/v1/policies"), api("/api/v1/evidence"), api("/api/v1/runtime-services"), api("/api/v1/experiment-progress"), api("/api/v1/formal-readiness"),
   ]);
-  state.runs = runs; state.jobs = jobs; state.policies = policies; state.evidence = evidence; state.services = services; state.progress = progress;
+  state.runs = runs; state.jobs = jobs; state.policies = policies; state.evidence = evidence; state.services = services; state.progress = progress; state.readiness = readiness;
   $("#runCount").textContent = runs.length;
   $("#eligibleCount").textContent = runs.filter((item) => item.validation?.policy_eligible).length;
   renderJobs(); renderRuns(); renderPolicies(); renderEvidence(); renderServices(); renderExperimentProgress();

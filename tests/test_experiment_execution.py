@@ -12,6 +12,7 @@ from edgeflow.experiments.matrix import (
     matrix_progress_status,
     pytorch_matrix_cases,
 )
+from edgeflow.experiments.orchestrator import _prompt_seed
 from edgeflow.kernels.rmsnorm import dispatch
 from edgeflow.runtimes.base import GenerationResult
 from edgeflow.workloads import create_workload
@@ -65,6 +66,33 @@ class FakeAdapter:
 
     def prepare(self, *_args: Any, **_kwargs: Any) -> tuple[FakeRuntime, FakeTokenizer]:
         return self.runtime, FakeTokenizer()
+
+
+def test_fixed_prompt_scope_reuses_exact_token_seed() -> None:
+    fixed = create_workload(
+        workload_id="fixed-prompt",
+        model_id="model",
+        prompt_distribution="128",
+        output_tokens=2,
+        seed=73,
+    )
+    mixed = create_workload(
+        workload_id="mixed-prompts",
+        model_id="model",
+        prompt_distribution="128:0.5,1024:0.5",
+        output_tokens=2,
+        seed=73,
+    )
+
+    assert _prompt_seed(
+        fixed, prompt_index=0, request_group_size=1, member=0
+    ) == _prompt_seed(fixed, prompt_index=29, request_group_size=1, member=0)
+    assert _prompt_seed(
+        fixed, prompt_index=0, request_group_size=4, member=1
+    ) != _prompt_seed(fixed, prompt_index=0, request_group_size=4, member=2)
+    assert _prompt_seed(
+        mixed, prompt_index=0, request_group_size=1, member=0
+    ) != _prompt_seed(mixed, prompt_index=29, request_group_size=1, member=0)
 
 
 def test_orchestrator_preserves_true_batch_groups(tmp_path: Path, monkeypatch: Any) -> None:

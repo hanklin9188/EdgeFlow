@@ -222,6 +222,9 @@ def test_local_control_security_headers_host_and_size_limit(tmp_path: Path) -> N
     assert progress.status_code == 200
     assert progress.json()["total"] == 31
     assert progress.json()["external_required"] == 2
+    readiness = client.get("/api/v1/formal-readiness")
+    assert readiness.status_code == 200
+    assert readiness.json()["status"] == "NOT_RUN"
 
 
 def test_job_manager_marks_stale_worker_interrupted_and_rejects_bad_id(tmp_path: Path) -> None:

@@ -248,6 +248,23 @@ def create_app(
             runs=db.list_runs(limit=10_000),
         )
 
+    @application.get("/api/v1/formal-readiness")
+    def get_formal_readiness() -> dict[str, Any]:
+        path = artifacts / "experiments" / "formal-readiness.json"
+        if not path.is_file():
+            return {
+                "schema_version": "1.0",
+                "status": "NOT_RUN",
+                "claim_scope": "Run scripts/audit_formal_readiness.py to create the local audit.",
+            }
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise HTTPException(status_code=500, detail="formal readiness artifact is invalid") from exc
+        if not isinstance(value, dict):
+            raise HTTPException(status_code=500, detail="formal readiness artifact is invalid")
+        return value
+
     @application.get("/api/v1/runs")
     def list_runs(eligible_only: bool = False, limit: int = 100) -> list[dict[str, Any]]:
         return db.list_runs(eligible_only=eligible_only, limit=min(max(limit, 1), 1000))
