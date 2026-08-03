@@ -2,7 +2,7 @@
 
 > **Causal, workload-conditioned autotuning for local LLM inference.**
 
-[Live Dashboard](#) · `docs/REPRODUCE.md` · `docs/METHOD.md` · `docs/RESULTS.md` · `docs/AUDIT.md`
+[Local Web Console](#local-first-web-app) · `docs/REPRODUCE.md` · `docs/METHOD.md` · `docs/RESULTS.md` · `docs/AUDIT.md`
 
 > [!IMPORTANT]
 > Replace every `DEMO` placeholder below with a validated measured artifact before public release. A headline metric must link to a run ID and a validation verdict.

@@ -29,6 +29,8 @@
 ## Documentation and UX
 
 - [ ] README answers motivation, difference, method, results, reproduction, and limitations in 90 seconds.
+- [ ] Local Web Console rejects non-loopback bind, cross-origin writes, missing control token, oversized bodies, arbitrary commands, and path traversal.
+- [ ] Background GPU jobs are single-worker, cancellable, and failure-isolated.
 - [ ] Dashboard chart points link to run artifacts.
 - [ ] Color is not the only status signal.
 - [ ] Keyboard navigation, focus states, contrast, reduced motion, and mobile layouts are tested.

@@ -2,13 +2,17 @@ from __future__ import annotations
 
 import importlib.metadata
 import json
+import os
 import shutil
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 from edgeflow.core.models import CapabilityReport, ExecutionPlan, WorkloadSpec
+from edgeflow.core.serialization import project_root
 from edgeflow.runtimes.base import (
     GenerationResult,
     PreparedRuntime,
@@ -18,15 +22,21 @@ from edgeflow.runtimes.base import (
 
 
 class _HTTPRuntime(PreparedRuntime):
-    def __init__(self, base_url: str, model: str, tokenizer: Any) -> None:
+    def __init__(
+        self, base_url: str, model: str, tokenizer: Any, api_key: str | None = None
+    ) -> None:
         self.base_url = base_url.rstrip("/")
         self.model = model
         self.tokenizer = tokenizer
+        self.api_key = api_key
         self.load_ms = 0.0
         self.compile_ms = 0.0
 
     def generate(self, token_ids: list[int], output_tokens: int) -> GenerationResult:
-        prompt = self.tokenizer.decode(token_ids, skip_special_tokens=False)
+        # OpenAI-compatible servers apply their model's BOS policy. Removing the
+        # synthetic leading BOS here avoids a double-BOS prompt while preserving
+        # the requested token count once the server adds its own special token.
+        prompt = self.tokenizer.decode(token_ids, skip_special_tokens=True)
         payload = json.dumps(
             {
                 "model": self.model,
@@ -37,10 +47,13 @@ class _HTTPRuntime(PreparedRuntime):
                 "ignore_eos": True,
             }
         ).encode("utf-8")
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
         request = urllib.request.Request(
             f"{self.base_url}/v1/completions",
             data=payload,
-            headers={"Content-Type": "application/json"},
+            headers=headers,
             method="POST",
         )
         started = time.perf_counter_ns()
@@ -87,30 +100,76 @@ class _OpenAIAdapter(RuntimeAdapter):
         self.package_name = package_name
         self.executable = executable
 
-    def _installed_version(self) -> str | None:
-        try:
-            return importlib.metadata.version(self.package_name)
-        except importlib.metadata.PackageNotFoundError:
-            executable_path = shutil.which(self.executable) if self.executable else None
-            return f"executable:{executable_path}" if executable_path else None
+    def _local_executable(self) -> str | None:
+        environment_name = (
+            "EDGEFLOW_LLAMA_CPP_SERVER" if self.name == "llama_cpp" else "EDGEFLOW_VLLM_EXECUTABLE"
+        )
+        configured = os.environ.get(environment_name)
+        candidates = [Path(configured).expanduser()] if configured else []
+        root = project_root()
+        if self.name == "llama_cpp":
+            candidates.append(root / ".runtime" / "llama.cpp" / "build" / "bin" / "llama-server")
+        else:
+            candidates.append(root / ".runtime" / "vllm" / ".venv" / "bin" / "vllm")
+        located = shutil.which(self.executable) if self.executable else None
+        if located:
+            candidates.append(Path(located))
+        return next((str(path.resolve()) for path in candidates if path.is_file() and os.access(path, os.X_OK)), None)
 
-    def _server_ready(self, base_url: str) -> bool:
+    def _installed_version(self) -> tuple[str | None, str | None]:
+        try:
+            return importlib.metadata.version(self.package_name), self._local_executable()
+        except importlib.metadata.PackageNotFoundError:
+            executable_path = self._local_executable()
+            return (f"isolated:{executable_path}" if executable_path else None), executable_path
+
+    @staticmethod
+    def _request(base_url: str, endpoint: str, api_key: str | None = None) -> Any:
+        headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+        request = urllib.request.Request(base_url.rstrip("/") + endpoint, headers=headers)
+        return urllib.request.urlopen(request, timeout=3)
+
+    def _server_ready(self, base_url: str, api_key: str | None = None) -> bool:
         for endpoint in ("/health", "/v1/models"):
             try:
-                with urllib.request.urlopen(base_url.rstrip("/") + endpoint, timeout=1) as response:
+                with self._request(base_url, endpoint, api_key) as response:
                     if response.status < 500:
                         return True
             except (urllib.error.URLError, TimeoutError):
                 continue
         return False
 
+    @staticmethod
+    def _require_loopback(base_url: str) -> str:
+        parsed = urlparse(base_url)
+        if parsed.scheme != "http" or parsed.hostname not in {"127.0.0.1", "localhost", "::1"}:
+            raise RuntimeUnavailable("external runtime servers must use a loopback HTTP URL")
+        return base_url.rstrip("/")
+
+    def _served_model(self, base_url: str, fallback: str, api_key: str | None = None) -> str:
+        """Resolve the server's actual model id instead of assuming its source repo name."""
+        try:
+            with self._request(base_url, "/v1/models", api_key) as response:
+                payload = json.load(response)
+            models = payload.get("data", [])
+            if models and isinstance(models[0].get("id"), str):
+                return str(models[0]["id"])
+        except (urllib.error.URLError, TimeoutError, ValueError, KeyError, TypeError):
+            pass
+        return fallback
+
     def probe(self) -> CapabilityReport:
-        version = self._installed_version()
+        version, executable_path = self._installed_version()
         return CapabilityReport(
             backend=self.name,
             available=version is not None,
             version=version,
-            features={"openai_compatible": True, "managed_process": False},
+            features={
+                "openai_compatible": True,
+                "managed_process": False,
+                "isolated_executable": executable_path,
+                "loopback_only": True,
+            },
             reasons=() if version else (f"{self.package_name} / {self.executable} not installed",),
         )
 
@@ -122,15 +181,25 @@ class _OpenAIAdapter(RuntimeAdapter):
         *,
         local_files_only: bool = True,
     ) -> tuple[_HTTPRuntime, Any]:
-        base_url = str(plan.backend_args.get("base_url", "http://127.0.0.1:8000"))
-        if not self._server_ready(base_url):
+        default_port = 8001 if self.name == "llama_cpp" else 8002
+        base_url = self._require_loopback(
+            str(plan.backend_args.get("base_url", f"http://127.0.0.1:{default_port}"))
+        )
+        api_key = os.environ.get("EDGEFLOW_RUNTIME_API_KEY")
+        if not self._server_ready(base_url, api_key):
             raise RuntimeUnavailable(f"{self.name} server is not ready at {base_url}")
         from transformers import AutoTokenizer
 
         tokenizer_ref = str(plan.backend_args.get("tokenizer", model_ref))
-        tokenizer = AutoTokenizer.from_pretrained(tokenizer_ref, local_files_only=local_files_only)
-        served_model = str(plan.backend_args.get("served_model_name", model_ref))
-        return _HTTPRuntime(base_url, served_model, tokenizer), tokenizer
+        tokenizer_revision = plan.backend_args.get("tokenizer_revision")
+        tokenizer = AutoTokenizer.from_pretrained(
+            tokenizer_ref,
+            revision=str(tokenizer_revision) if tokenizer_revision else None,
+            local_files_only=local_files_only,
+        )
+        configured_model = str(plan.backend_args.get("served_model_name", "")).strip()
+        served_model = configured_model or self._served_model(base_url, model_ref, api_key)
+        return _HTTPRuntime(base_url, served_model, tokenizer, api_key), tokenizer
 
 
 class LlamaCppAdapter(_OpenAIAdapter):

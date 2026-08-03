@@ -82,7 +82,49 @@ def _gpu_processes() -> list[str]:
             "--format=csv,noheader,nounits",
         ]
     )
-    return [line.strip() for line in (output or "").splitlines() if line.strip()]
+    processes: list[str] = []
+    for line in (output or "").splitlines():
+        fields = [item.strip() for item in line.split(",", maxsplit=2)]
+        if len(fields) != 3:
+            continue
+        pid, reported_name, memory = fields
+        identity = _process_identity(pid)
+        name = identity or reported_name
+        processes.append(f"{pid}, {name}, {memory}")
+    return processes
+
+
+def _process_identity(pid: str) -> str | None:
+    """Return a path-free process identity, including a useful WSL parent marker."""
+    try:
+        raw = (Path("/proc") / pid / "cmdline").read_bytes()
+        arguments = [item.decode("utf-8", errors="replace") for item in raw.split(b"\0") if item]
+        if not arguments:
+            return None
+        identity = Path(arguments[0]).name
+        if identity.startswith("VLLM::EngineCore"):
+            status = (Path("/proc") / pid / "status").read_text(encoding="utf-8")
+            parent_pid = next(
+                line.split(":", maxsplit=1)[1].strip()
+                for line in status.splitlines()
+                if line.startswith("PPid:")
+            )
+            parent_raw = (Path("/proc") / parent_pid / "cmdline").read_bytes()
+            parent_args = [
+                item.decode("utf-8", errors="replace")
+                for item in parent_raw.split(b"\0")
+                if item
+            ]
+            if parent_args:
+                parent = Path(parent_args[0]).name
+                subcommand = parent_args[1] if len(parent_args) > 1 else ""
+                if parent.startswith("python") and len(parent_args) > 1:
+                    parent = Path(parent_args[1]).name
+                    subcommand = parent_args[2] if len(parent_args) > 2 else ""
+                return f"{identity} (parent: {parent} {subcommand})".strip()
+        return identity
+    except (OSError, StopIteration):
+        return None
 
 
 def _gpu_record() -> dict[str, Any]:

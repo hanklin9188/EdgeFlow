@@ -74,7 +74,15 @@ Fallback                        → PyTorch eager BF16
 
 ---
 
-## 14.2 Dashboard
+## 14.2 Local-first Web App
+
+使用者先執行：
+
+```bash
+edgeflow serve --host 127.0.0.1 --port 8787
+```
+
+瀏覽器、FastAPI、isolated worker、GPU、SQLite 與 artifacts 均在本機；沒有雲端控制依賴。
 
 首頁：
 
@@ -85,6 +93,16 @@ Fallback                        → PyTorch eager BF16
 - top bottleneck evidence；
 - quality Pareto；
 - run health。
+
+Tune workspace：
+
+- 一鍵啟停白名單 llama.cpp／vLLM；
+- STARTING／RUNNING／FAILED／STOPPED 與 loopback URL；
+- registered model／pinned revision；
+- exact-token workload distribution；
+- backend capability 與 deterministic prune；
+- warmup、repetition、quality profile；
+- 單一 GPU background job、cancel 與 bounded failure。
 
 使用者點policy rule後，看到：
 
@@ -102,7 +120,7 @@ Measured runs
 ## 14.3 GitHub Demo Script（90秒）
 
 1. 開README，讀一句定位。
-2. 看dashboard screenshot。
+2. 啟動 Local-first Web App 並看 dashboard screenshot。
 3. 執行 `edgeflow inspect`。
 4. 載入已附的demo dataset，不需模型權重。
 5. 在UI選 local-agent workload。

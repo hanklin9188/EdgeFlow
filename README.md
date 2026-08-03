@@ -11,7 +11,7 @@ Observe → Diagnose → Intervene → Verify → Synthesize Policy
 ```
 
 > [!IMPORTANT]
-> Repository 內的 `examples/` 與 `ui-prototype/` 永遠標示為 `demo`，不得支持性能結論。正式 dashboard 只讀 `artifacts/` 中的 validated runs。目前 README 不刊登尚未完成 confirmatory/holdout 的性能數字。
+> Repository 內的 `examples/` 與 `ui-prototype/` 永遠標示為 `demo`，不得支持性能結論。正式產品是 localhost-only 的 Local-first Web App；模型、GPU 工作與 artifacts 不上傳雲端。目前 README 不刊登尚未完成 confirmatory/holdout 的性能數字。
 
 ## 已完成的工程面
 
@@ -22,7 +22,7 @@ Observe → Diagnose → Intervene → Verify → Synthesize Policy
 - G0–G8 validation engine、robust statistics、10,000-sample paired bootstrap、thermal/drift checks。
 - Deterministic bottleneck diagnosis、controlled-intervention drafts、session-aware objective 與 decision-list policy。
 - Correctness-cached Triton fused residual + RMSNorm，任何未驗證 shape 自動 fallback。
-- Typer CLI、FastAPI、Prometheus endpoint、無假數據 production dashboard、測試與 CI。
+- Typer CLI、localhost FastAPI、隔離背景 worker、白名單 runtime service manager、Prometheus endpoint、無假數據 Local-first Web App、測試與 CI。
 
 完整 phase 狀態與尚需正式 GPU 實驗的項目見 [Implementation Status](docs/IMPLEMENTATION_STATUS.md)。研究設計仍完整保留在 [Executive Blueprint](docs/00_EXECUTIVE_BLUEPRINT.md) 與 [Experiment Catalog](docs/03_EXPERIMENT_CATALOG.md)。
 
@@ -127,13 +127,26 @@ python scripts/benchmark_rmsnorm.py --quick
 
 Dispatcher key 包含 kernel version、GPU、dtype 與 shape；cache 中沒有 `PASS` 時一定使用 PyTorch reference。
 
-### 7. Serve the dashboard
+### 7. Start the Local-first Web App
+
+選用 llama.cpp／vLLM 前，先建立互不污染的固定版本環境：
 
 ```bash
-edgeflow serve --host 127.0.0.1 --port 8765
+./scripts/bootstrap_llama_cpp.sh
+./scripts/bootstrap_vllm.sh
 ```
 
-開啟 `http://127.0.0.1:8765`。API 文件位於 `/docs`，metrics 位於 `/metrics`。
+```bash
+edgeflow serve --host 127.0.0.1 --port 8787
+```
+
+開啟 `http://127.0.0.1:8787`。OpenAPI contract 位於 `/openapi.json`，metrics 位於 `/metrics`。`8787` 是 EdgeFlow 的專用預設 port，避免與工作區內其他 localhost 服務混淆。
+
+Web App 可一鍵啟停固定版本 llama.cpp／vLLM、建立 workload、screen 候選、提交一個受控 GPU benchmark、取消本機 worker，以及查看 runtime 能力、run validation、raw artifacts、evidence 與 policy。第一次啟動 runtime 可下載 registry 鎖定的模型檔；推論 prompt、結果、SQLite 與 artifacts 仍只留本機。
+
+一次只允許一個 managed runtime 與一個 GPU job。Managed runtime 綁定 `127.0.0.1`，使用程序記憶體中的隨機 API key；控制寫入另需只存在分頁記憶體的 token。server 拒絕非 loopback host、跨來源寫入、超過 1 MiB 的 request，以及任意 shell/path/environment 參數。
+
+公開網站不是控制平面。若後續輸出 GitHub Pages，只能包含經清理且 validated 的唯讀 JSON／圖表，不得啟動本機實驗或讀取私人 artifacts。
 
 ## CLI surface
 
@@ -173,12 +186,13 @@ Verdicts are `PASS`, `CONDITIONAL_PASS`, `FAIL`, `INVALID`, and `SKIPPED`. `FAIL
 
 ```text
 src/edgeflow/
-├── api/             FastAPI read/planning surface
+├── api/             localhost FastAPI control/read surface
 ├── cli/             Typer commands
 ├── core/            immutable contracts and canonical hashing
 ├── experiments/     isolated run orchestrator
 ├── hardware/        RTX/CUDA/software fingerprint + doctor
 ├── kernels/         correctness-gated Triton optimization
+├── local/           typed single-GPU job + allowlisted runtime service managers
 ├── metrics/         robust statistics and paired bootstrap
 ├── optimizer/       pruning, objectives, break-even
 ├── policy/          explainable scoped decision lists
@@ -214,7 +228,7 @@ Public CI 不需要 GPU，驗證 schemas、tests、lint、secret/model-weight po
 
 ## Security and data
 
-不提交模型權重、token、`.env`、gated prompt 原文、Nsight binary trace 或 private artifacts。HTTP adapters 只連接明示的 OpenAI-compatible endpoint；正式 run 不使用 `shell=True`，也不在 benchmark 過程安裝套件。詳見 [SECURITY.md](SECURITY.md) 與 [Reproducibility](docs/11_REPRODUCIBILITY_RELEASE_SECURITY.md)。
+不提交模型權重、token、`.env`、gated prompt 原文、Nsight binary trace 或 private artifacts。HTTP adapters 只允許 loopback OpenAI-compatible endpoint；正式 run 不使用 `shell=True`，也不在 benchmark 過程安裝套件。詳見 [SECURITY.md](SECURITY.md) 與 [Reproducibility](docs/11_REPRODUCIBILITY_RELEASE_SECURITY.md)。
 
 ## License
 

@@ -220,7 +220,7 @@ Persist Observation → Hypothesis → Intervention → Outcome → Scope. Gener
 
 ### Day 29 — Dashboard wiring
 
-Replace selected UI demo surfaces with processed JSON fixtures while retaining an explicit demo mode. Add artifact drawer and source-type badges.
+Make the Local-first Web App the primary interface. Wire the localhost API, registered workload builder, typed single-GPU job queue, cancel/failure state, artifact drawer and source-type badges. Keep demo fixtures isolated under `ui-prototype/`; never inject them into production surfaces.
 
 ### Day 30 — Internal release review
 
@@ -250,7 +250,7 @@ Priority order:
 3. quality confirmatory evaluation;
 4. profile-selected Triton optimization;
 5. holdout policy release;
-6. public dashboard and GitHub release;
+6. local-first dashboard, optional read-only public export, and GitHub release;
 7. optional cost model;
 8. optional Copilot;
 9. later FAD integration.

@@ -145,12 +145,13 @@ python -m pytest
 
 ---
 
-# Phase 5 · Dashboard and Portfolio Release
+# Phase 5 · Local-first Web Console and Portfolio Release
 
 ## Deliverables
 
-- Web UI；
-- GitHub Pages；
+- localhost-only Web UI；
+- typed single-GPU worker queue；
+- optional read-only public export；
 - README；
 - results／audit；
 - demo GIF；
@@ -161,6 +162,8 @@ python -m pytest
 
 - UI所有數字可追raw run；
 - 不含fake result；
+- 非 loopback bind、CSRF、cross-origin write、任意 shell/path 必須被拒絕；
+- worker failure／cancel 不污染其他 run；
 - clean machine smoke成功；
 - 90秒demo可完整執行；
 - release checklist全部完成。

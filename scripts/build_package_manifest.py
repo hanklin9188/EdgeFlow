@@ -10,7 +10,14 @@ ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "PACKAGE_MANIFEST.json"
 EXCLUDE = {OUTPUT.resolve()}
 EXCLUDED_PARTS = {
-    ".git", ".venv", ".cache", ".pytest_cache", ".ruff_cache", "__pycache__", "artifacts"
+    ".git",
+    ".venv",
+    ".runtime",
+    ".cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    "__pycache__",
+    "artifacts",
 }
 
 files = []

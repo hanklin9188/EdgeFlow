@@ -11,6 +11,7 @@ flowchart LR
     P[Candidate plans]:::input
 
     O[Run orchestrator]:::core
+    L[Allowlisted local service manager]:::safe
     A[Runtime adapters\nPyTorch · compile · llama.cpp · vLLM]:::core
     G[RTX 4080 SUPER]:::core
 
@@ -18,7 +19,7 @@ flowchart LR
     V[Validation gate]:::safe
     E[(Evidence graph)]:::data
     S[Policy synthesizer]:::safe
-    D[Dashboard / CLI / Serve]:::output
+    D[Browser on 127.0.0.1:8787]:::output
     C[Optional performance copilot]:::output
 
     H --> O
@@ -26,6 +27,8 @@ flowchart LR
     W --> O
     P --> O
     O --> A --> G
+    D -->|typed control + CSRF token| L
+    L -->|one loopback runtime + API key| A
     G --> R
     R --> V
     V -->|valid| E

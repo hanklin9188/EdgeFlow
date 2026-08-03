@@ -1,5 +1,21 @@
 # 09 · UI/UX and GitHub Presentation
 
+## 9.0 產品介面決策
+
+EdgeFlow 的正式產品介面是 **Local-first Web App**，不是純雲端控制網站，也不是 Electron／Qt 桌面程式：
+
+```text
+Browser on this machine → 127.0.0.1 FastAPI → typed worker → local GPU → local SQLite/artifacts
+```
+
+- server 預設且強制使用 loopback；
+- GPU job 一次一個，以獨立 subprocess 執行；
+- UI 不得提交任意 command、environment 或 filesystem output path；
+- control write 必須通過 Host、Origin、request-size 與 CSRF token 檢查；
+- public site 僅能是 sanitised、validated、read-only result export。
+
+---
+
 ## 9.1 視覺目標
 
 EdgeFlow UI應呈現：
@@ -282,16 +298,18 @@ Hardware · Model · Workload · Metric · CI · Quality · Run IDs
 
 ---
 
-## 9.11 GitHub Pages
+## 9.11 Optional Public Result Export
 
-`ui-prototype/` 可先作靜態mock；正式版由processed JSON驅動。
+`ui-prototype/` 保留為靜態 mock。正式操作版由 localhost API 驅動；GitHub Pages 不再是主要產品，也不得提供 benchmark control。
 
-Pages必須明示：
+若建立 public export，必須明示：
 
 - Demo data／Measured data；
 - last verified date；
 - environment fingerprint；
 - no model inference in browser（若只是dashboard）。
+- read-only export，沒有本機 control token；
+- 不含 raw prompt、private path、log 或未通過 validation 的 headline。
 
 ---
 
@@ -314,3 +332,5 @@ Custom kernel bullet只有在完成E24後加入。
 - `ui-prototype/app.js`
 
 它示範Overview、policy cards、evidence chain、run table與dark mode。所有數字標記為demo。
+
+正式 `dashboard/` 則是 Local Control Console，包含 workload builder、runtime capability、typed job queue、run explorer、evidence drawer 與 policy；production surface 不注入 demo performance rows。

@@ -408,13 +408,19 @@ def quality_evaluate(
 @app.command("serve")
 def serve_command(
     host: Annotated[str, typer.Option()] = "127.0.0.1",
-    port: Annotated[int, typer.Option(min=1, max=65535)] = 8765,
+    port: Annotated[int, typer.Option(min=1, max=65535)] = 8787,
     artifact_root: Annotated[Path | None, typer.Option()] = None,
 ) -> None:
     import os
 
     import uvicorn
 
+    if host not in {"127.0.0.1", "localhost", "::1"}:
+        raise typer.BadParameter(
+            "EdgeFlow is local-first: --host must be 127.0.0.1, localhost, or ::1"
+        )
     if artifact_root:
         os.environ["EDGEFLOW_ARTIFACT_ROOT"] = str(artifact_root.resolve())
+    typer.echo(f"EdgeFlow local console: http://{host}:{port}")
+    typer.echo("GPU jobs and artifacts remain on this machine; press Ctrl+C to stop.")
     uvicorn.run("edgeflow.api.app:app", host=host, port=port, reload=False)

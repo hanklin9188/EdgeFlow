@@ -16,7 +16,14 @@ from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parents[1]
 EXCLUDED_PARTS = {
-    ".git", ".venv", ".cache", ".pytest_cache", ".ruff_cache", "__pycache__", "artifacts"
+    ".git",
+    ".venv",
+    ".runtime",
+    ".cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    "__pycache__",
+    "artifacts",
 }
 
 
@@ -211,6 +218,47 @@ def validate_ui(report: Report) -> None:
         report.warn("UI HTML contains an external URL; confirm offline policy")
     report.ok("UI prototype files, provenance labeling, theme, and reduced-motion contract present")
 
+    production = ROOT / "dashboard"
+    production_required = [
+        production / "index.html",
+        production / "styles.css",
+        production / "app.js",
+    ]
+    production_missing = [path.relative_to(ROOT) for path in production_required if not path.exists()]
+    if production_missing:
+        report.fail("Production local UI missing: " + ", ".join(map(str, production_missing)))
+        return
+    production_html = (production / "index.html").read_text(encoding="utf-8")
+    production_css = (production / "styles.css").read_text(encoding="utf-8")
+    production_js = (production / "app.js").read_text(encoding="utf-8")
+    api_source = (ROOT / "src" / "edgeflow" / "api" / "app.py").read_text(encoding="utf-8")
+    required_ids = [
+        'id="overview"',
+        'id="serviceList"',
+        'id="tune"',
+        'id="jobs"',
+        'id="runs"',
+        'id="evidence"',
+    ]
+    for required_id in required_ids:
+        if required_id not in production_html:
+            report.fail(f"Production local UI missing workflow surface: {required_id}")
+    if "Local Control Console" not in production_html or "local-first" not in production_html.lower():
+        report.fail("Production UI does not clearly identify the localhost-only control mode")
+    if "X-EdgeFlow-Token" not in production_js or "/api/v1/jobs/benchmark" not in production_js:
+        report.fail("Production UI lacks typed CSRF-protected local job control")
+    if "/api/v1/runtime-services" not in production_js or "LocalRuntimeServiceManager" not in api_source:
+        report.fail("Production UI lacks allowlisted managed runtime control")
+    if "prefers-reduced-motion" not in production_css:
+        report.fail("Production UI lacks reduced-motion handling")
+    if 'data-source-type="demo"' in production_html:
+        report.fail("Production local UI must not embed demo result rows")
+    if "TrustedHostMiddleware" not in api_source or "MAX_REQUEST_BYTES" not in api_source:
+        report.fail("Local web API is missing Host or request-size enforcement")
+    if "https://" in production_html:
+        report.fail("Production local UI contains an unexpected remote URL")
+    report.ok("Local-first production UI, typed job control, evidence surfaces, and web safety contract present")
+
 
 def validate_demo_safety(report: Report, parsed: dict[Path, object]) -> None:
     for path, obj in parsed.items():
@@ -243,6 +291,18 @@ def validate_required_structure(report: Report) -> None:
         "templates/README_TEMPLATE.md",
         "github/workflows/ci.yml",
         "diagrams/system_architecture.mmd",
+        "SECURITY.md",
+        "THIRD_PARTY.md",
+        "MODEL_LICENSES.md",
+        "DATA_LICENSES.md",
+        "NOTICE.md",
+        "specs/runtime_registry.yaml",
+        "scripts/bootstrap_llama_cpp.sh",
+        "scripts/bootstrap_vllm.sh",
+        "scripts/start_llama_cpp_server.sh",
+        "scripts/start_vllm_server.sh",
+        "src/edgeflow/local/jobs.py",
+        "src/edgeflow/local/services.py",
     ]
     missing = [item for item in required if not (ROOT / item).exists()]
     if missing:
