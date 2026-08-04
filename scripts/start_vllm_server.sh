@@ -47,6 +47,8 @@ exec "${vllm}" serve "${model}" \
   --max-model-len 4096 \
   --gpu-memory-utilization "${memory_utilization}" \
   --served-model-name "${served_model}" \
+  --enforce-eager \
+  --no-enable-prefix-caching \
   --generation-config vllm \
   --disable-fastapi-docs \
   "${authentication[@]}"
