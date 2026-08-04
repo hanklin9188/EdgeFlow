@@ -34,6 +34,7 @@ fi
 # compile against the current cu129 CCCL headers on SM89, so use the native sampler.
 export VLLM_WSL2_ENABLE_PIN_MEMORY=1
 export VLLM_USE_FLASHINFER_SAMPLER=0
+export VLLM_USE_V2_MODEL_RUNNER=0
 authentication=()
 if [[ -n "${EDGEFLOW_RUNTIME_API_KEY:-}" ]]; then
   authentication=(--api-key "${EDGEFLOW_RUNTIME_API_KEY}")

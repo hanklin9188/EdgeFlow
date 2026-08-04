@@ -74,7 +74,8 @@ def main() -> int:
             "max_num_seqs": 1,
             "backend_args": {
                 **plan.backend_args,
-                "server_profile": "llama32-3b-bf16-eager-mbt4096-ms1",
+                "server_profile": "llama32-3b-bf16-v1-eager-mbt4096-ms1",
+                "model_runner": "v1",
                 "enforce_eager": True,
                 "enable_prefix_caching": False,
                 "async_scheduling": False,
