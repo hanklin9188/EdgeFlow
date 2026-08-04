@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 360" width="1280" height="360" role="img" aria-label="EdgeFlow — evidence-backed, workload-conditioned autotuning for local LLM inference">
+  <defs>
+    <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#78d5c8"/><stop offset="1" stop-color="#2f8f86"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.18" cy="0.1" r="0.85">
+      <stop offset="0" stop-color="#78d5c8" stop-opacity="0.20"/>
+      <stop offset="1" stop-color="#78d5c8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="0.92" cy="0.95" r="0.7">
+      <stop offset="0" stop-color="#aaa7ff" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#aaa7ff" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0 L0 0 0 40" fill="none" stroke="#38505b" stroke-width="1" opacity="0.28"/>
+    </pattern>
+    <style>
+      .s{font-family:Inter,"Segoe UI",Helvetica,Arial,sans-serif}
+      .m{font-family:ui-monospace,"SFMono-Regular",Consolas,"Liberation Mono",monospace}
+    </style>
+  </defs>
+
+  <rect width="1280" height="360" fill="#152129"/>
+  <rect width="1280" height="360" fill="url(#grid)"/>
+  <rect width="1280" height="360" fill="url(#glow)"/>
+  <rect width="1280" height="360" fill="url(#glow2)"/>
+  <rect x="0" y="0" width="1280" height="3" fill="#78d5c8" opacity="0.85"/>
+
+  <!-- mark -->
+  <g transform="translate(72,74) scale(0.72)">
+    <rect x="0" y="0" width="128" height="128" rx="32" fill="#1e2d36" stroke="#38505b" stroke-width="2"/>
+    <path d="M24 88 C 43 88, 43 46, 64 46 C 85 46, 85 88, 104 88" fill="none" stroke="url(#mark)" stroke-width="10" stroke-linecap="round"/>
+    <path d="M24 104 C 43 104, 43 62, 64 62 C 85 62, 85 104, 104 104" fill="none" stroke="#78d5c8" stroke-width="5.5" stroke-linecap="round" opacity="0.3"/>
+    <circle cx="64" cy="46" r="10.5" fill="#1e2d36"/><circle cx="64" cy="46" r="7" fill="#78d5c8"/>
+  </g>
+
+  <!-- eyebrow -->
+  <text class="m" x="186" y="96" fill="#78d5c8" font-size="15" letter-spacing="3.4">RTX WORKSTATION · EVIDENCE CONTROL PLANE</text>
+
+  <!-- wordmark -->
+  <text class="s" x="184" y="164" fill="#f2f6f3" font-size="66" font-weight="700" letter-spacing="-2.6">EdgeFlow</text>
+
+  <!-- tagline -->
+  <text class="s" x="186" y="208" fill="#b7c5c7" font-size="22">Evidence-backed autotuning for local LLM inference.</text>
+  <text class="s" x="186" y="238" fill="#8fa2a7" font-size="18">Models, GPU work and raw artifacts never leave the machine.</text>
+
+  <!-- pipeline -->
+  <g transform="translate(186,278)">
+    <g>
+      <rect x="0" y="0" width="112" height="40" rx="12" fill="#1e2d36" stroke="#38505b"/>
+      <text class="s" x="56" y="26" fill="#f2f6f3" font-size="15" text-anchor="middle">Observe</text>
+    </g>
+    <path d="M120 20 L138 20" stroke="#78d5c8" stroke-width="2" stroke-linecap="round"/>
+    <path d="M133 15 L139 20 L133 25" fill="none" stroke="#78d5c8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <g transform="translate(148,0)">
+      <rect x="0" y="0" width="118" height="40" rx="12" fill="#1e2d36" stroke="#38505b"/>
+      <text class="s" x="59" y="26" fill="#f2f6f3" font-size="15" text-anchor="middle">Diagnose</text>
+    </g>
+    <path d="M274 20 L292 20" stroke="#78d5c8" stroke-width="2" stroke-linecap="round"/>
+    <path d="M287 15 L293 20 L287 25" fill="none" stroke="#78d5c8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <g transform="translate(302,0)">
+      <rect x="0" y="0" width="122" height="40" rx="12" fill="#1e2d36" stroke="#38505b"/>
+      <text class="s" x="61" y="26" fill="#f2f6f3" font-size="15" text-anchor="middle">Intervene</text>
+    </g>
+    <path d="M432 20 L450 20" stroke="#78d5c8" stroke-width="2" stroke-linecap="round"/>
+    <path d="M445 15 L451 20 L445 25" fill="none" stroke="#78d5c8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <g transform="translate(460,0)">
+      <rect x="0" y="0" width="104" height="40" rx="12" fill="#1e2d36" stroke="#38505b"/>
+      <text class="s" x="52" y="26" fill="#f2f6f3" font-size="15" text-anchor="middle">Verify</text>
+    </g>
+    <path d="M572 20 L590 20" stroke="#78d5c8" stroke-width="2" stroke-linecap="round"/>
+    <path d="M585 15 L591 20 L585 25" fill="none" stroke="#78d5c8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <g transform="translate(600,0)">
+      <rect x="0" y="0" width="176" height="40" rx="12" fill="#23413e" stroke="#78d5c8" stroke-opacity="0.55"/>
+      <text class="s" x="88" y="26" fill="#78d5c8" font-size="15" font-weight="600" text-anchor="middle">Synthesize policy</text>
+    </g>
+  </g>
+
+  <!-- right side status card -->
+  <g transform="translate(972,74)">
+    <rect x="0" y="0" width="236" height="212" rx="18" fill="#1e2d36" stroke="#38505b"/>
+    <circle cx="26" cy="30" r="5" fill="#8adeb0"/>
+    <text class="s" x="42" y="35" fill="#8adeb0" font-size="14" font-weight="600">Local-first</text>
+    <text class="s" x="26" y="58" fill="#8fa2a7" font-size="13">loopback control only</text>
+    <line x1="20" y1="76" x2="216" y2="76" stroke="#38505b"/>
+    <text class="m" x="26" y="102" fill="#8fa2a7" font-size="11.5" letter-spacing="1.6">VALIDATION GATES</text>
+    <g transform="translate(24,114)">
+      <g><rect width="58" height="26" rx="8" fill="#273943" stroke="#38505b"/><text class="m" x="29" y="18" fill="#b7c5c7" font-size="12" text-anchor="middle">G0–G2</text></g>
+      <g transform="translate(66,0)"><rect width="58" height="26" rx="8" fill="#273943" stroke="#38505b"/><text class="m" x="29" y="18" fill="#b7c5c7" font-size="12" text-anchor="middle">G3–G5</text></g>
+      <g transform="translate(132,0)"><rect width="58" height="26" rx="8" fill="#273943" stroke="#38505b"/><text class="m" x="29" y="18" fill="#b7c5c7" font-size="12" text-anchor="middle">G6–G8</text></g>
+    </g>
+    <text class="s" x="26" y="172" fill="#b7c5c7" font-size="13">Only measured PASS runs</text>
+    <text class="s" x="26" y="192" fill="#b7c5c7" font-size="13">may enter a policy.</text>
+  </g>
+</svg>

@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 700" width="1240" height="700" role="img" aria-label="EdgeFlow Local Control Console interface preview">
+  <defs>
+    <style>
+      .s{font-family:Inter,"Segoe UI",Helvetica,Arial,sans-serif}
+      .m{font-family:ui-monospace,"SFMono-Regular",Consolas,"Liberation Mono",monospace}
+      .nav{fill:#b7c5c7;font-size:14.5px}
+      .num{fill:#8fa2a7;font-size:11px}
+      .k{fill:#8fa2a7;font-size:12.5px}
+      .v{fill:#f2f6f3;font-size:30px;font-weight:700}
+      .sub{fill:#8fa2a7;font-size:11.5px}
+    </style>
+    <linearGradient id="mk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#78d5c8"/><stop offset="1" stop-color="#2f8f86"/></linearGradient>
+  </defs>
+
+  <rect width="1240" height="700" rx="16" fill="#152129"/>
+  <rect width="1240" height="700" rx="16" fill="none" stroke="#38505b"/>
+
+  <!-- sidebar -->
+  <path d="M0 16 A16 16 0 0 1 16 0 L240 0 L240 700 L16 700 A16 16 0 0 1 0 684 Z" fill="#18262f"/>
+  <line x1="240" y1="0" x2="240" y2="700" stroke="#38505b"/>
+
+  <g transform="translate(24,28)">
+    <rect width="40" height="40" rx="12" fill="#1e2d36" stroke="#38505b"/>
+    <path d="M9 29 C16 29,16 15,20 15 C24 15,24 29,31 29" fill="none" stroke="url(#mk)" stroke-width="3.4" stroke-linecap="round"/>
+    <circle cx="20" cy="15" r="3.4" fill="#78d5c8"/>
+    <text class="s" x="52" y="18" fill="#f2f6f3" font-size="19" font-weight="700" letter-spacing="-0.5">EdgeFlow</text>
+    <text class="s" x="52" y="36" fill="#8fa2a7" font-size="12">Local Control Console</text>
+  </g>
+
+  <g transform="translate(20,96)">
+    <rect width="196" height="54" rx="14" fill="#23413e" stroke="#78d5c8" stroke-opacity="0.35"/>
+    <circle cx="18" cy="22" r="5" fill="#8adeb0"/>
+    <text class="s" x="32" y="26" fill="#8adeb0" font-size="13.5" font-weight="600">Local-first</text>
+    <text class="s" x="18" y="44" fill="#8fa2a7" font-size="11.5">loopback control only</text>
+  </g>
+
+  <g transform="translate(34,182)">
+    <g><text class="m num" x="0" y="12">01</text><text class="s nav" x="34" y="12" fill="#f2f6f3">Overview</text><rect x="-14" y="-4" width="3" height="22" rx="2" fill="#78d5c8"/></g>
+    <g transform="translate(0,42)"><text class="m num" x="0" y="12">02</text><text class="s nav" x="34" y="12">Research map</text></g>
+    <g transform="translate(0,84)"><text class="m num" x="0" y="12">03</text><text class="s nav" x="34" y="12">Tune workspace</text></g>
+    <g transform="translate(0,126)"><text class="m num" x="0" y="12">04</text><text class="s nav" x="34" y="12">Local jobs</text></g>
+    <g transform="translate(0,168)"><text class="m num" x="0" y="12">05</text><text class="s nav" x="34" y="12">Run explorer</text></g>
+    <g transform="translate(0,210)"><text class="m num" x="0" y="12">06</text><text class="s nav" x="34" y="12">Evidence &amp; policy</text></g>
+    <g transform="translate(0,252)"><text class="m num" x="0" y="12">↗</text><text class="s nav" x="34" y="12">API contract</text></g>
+  </g>
+
+  <g transform="translate(20,626)">
+    <rect width="196" height="42" rx="13" fill="#1e2d36" stroke="#38505b"/>
+    <text class="s" x="20" y="26" fill="#b7c5c7" font-size="13.5">◐  Theme</text>
+  </g>
+
+  <!-- main -->
+  <text class="m" x="288" y="60" fill="#78d5c8" font-size="11.5" letter-spacing="2.6">RTX WORKSTATION · EVIDENCE CONTROL PLANE</text>
+
+  <g transform="translate(1000,42)">
+    <rect width="118" height="30" rx="10" fill="#23413e" stroke="#8adeb0" stroke-opacity="0.4"/>
+    <text class="s" x="59" y="20" fill="#8adeb0" font-size="12" text-anchor="middle">✓ Local API ready</text>
+    <rect x="128" y="0" width="84" height="30" rx="10" fill="#304650" stroke="#38505b"/>
+    <text class="s" x="170" y="20" fill="#f2f6f3" font-size="12.5" text-anchor="middle">Refresh</text>
+  </g>
+
+  <text class="s" x="286" y="118" fill="#f2f6f3" font-size="43" font-weight="700" letter-spacing="-2.2">Local inference tuning,</text>
+  <text class="s" x="286" y="164" fill="#c8d6d3" font-size="43" font-weight="700" letter-spacing="-2.2">without losing the evidence.</text>
+  <text class="s" x="288" y="200" fill="#b7c5c7" font-size="14.5">Models, GPU work and raw artifacts stay on this machine. Only G0–G8 survivors reach a policy.</text>
+
+  <g transform="translate(288,220)">
+    <g><rect width="150" height="30" rx="10" fill="#1e2d36" stroke="#38505b"/><circle cx="18" cy="15" r="4" fill="#8adeb0"/><text class="s" x="30" y="20" fill="#b7c5c7" font-size="12.5">Data stays local</text></g>
+    <g transform="translate(160,0)"><rect width="150" height="30" rx="10" fill="#1e2d36" stroke="#38505b"/><circle cx="18" cy="15" r="4" fill="#8adeb0"/><text class="s" x="30" y="20" fill="#b7c5c7" font-size="12.5">One GPU job</text></g>
+    <g transform="translate(320,0)"><rect width="176" height="30" rx="10" fill="#1e2d36" stroke="#38505b"/><circle cx="18" cy="15" r="4" fill="#8adeb0"/><text class="s" x="30" y="20" fill="#b7c5c7" font-size="12.5">Every result traceable</text></g>
+  </g>
+
+  <g transform="translate(288,270)">
+    <rect width="924" height="46" rx="12" fill="#1b2f31"/>
+    <rect width="4" height="46" rx="2" fill="#78d5c8"/>
+    <text class="s" x="20" y="28" fill="#b7c5c7" font-size="13">local-first session ready. Control is loopback-only; artifacts are stored locally.</text>
+  </g>
+
+  <text class="m" x="288" y="358" fill="#78d5c8" font-size="11.5" letter-spacing="2.6">SYSTEM OVERVIEW</text>
+  <text class="s" x="286" y="396" fill="#f2f6f3" font-size="28" font-weight="700" letter-spacing="-1">This machine, right now.</text>
+
+  <g transform="translate(288,420)">
+    <g>
+      <rect width="180" height="132" rx="14" fill="#1e2d36" stroke="#38505b"/>
+      <text class="s k" x="18" y="28">GPU</text>
+      <text class="s" x="18" y="54" fill="#f2f6f3" font-size="16" font-weight="700">NVIDIA GeForce</text>
+      <text class="s" x="18" y="76" fill="#f2f6f3" font-size="16" font-weight="700">RTX 4080 SUPER</text>
+      <text class="m sub" x="18" y="98">15.99 GiB · SM 8.9</text>
+      <text class="m sub" x="18" y="114">CUDA 13.0</text>
+    </g>
+    <g transform="translate(192,0)">
+      <rect width="180" height="132" rx="14" fill="#1e2d36" stroke="#38505b"/>
+      <text class="s k" x="18" y="28">Indexed runs</text>
+      <text class="s v" x="18" y="74">152</text>
+      <text class="s sub" x="18" y="104">Measured and diagnostic</text>
+    </g>
+    <g transform="translate(384,0)">
+      <rect width="180" height="132" rx="14" fill="#1e2d36" stroke="#38505b"/>
+      <text class="s k" x="18" y="28">Policy eligible</text>
+      <text class="s v" x="18" y="74" fill="#8adeb0">80</text>
+      <text class="s sub" x="18" y="104">All G0–G8 gates passed</text>
+    </g>
+    <g transform="translate(576,0)">
+      <rect width="180" height="132" rx="14" fill="#1e2d36" stroke="#38505b"/>
+      <text class="s k" x="18" y="28">Active jobs</text>
+      <text class="s v" x="18" y="74">0</text>
+      <text class="s sub" x="18" y="104">Maximum one GPU worker</text>
+    </g>
+    <g transform="translate(768,0)">
+      <rect width="156" height="132" rx="14" fill="#1e2d36" stroke="#38505b"/>
+      <text class="s k" x="18" y="28">Fingerprint</text>
+      <text class="m" x="18" y="58" fill="#78d5c8" font-size="13">hw-39074ecbd4ac</text>
+      <text class="s sub" x="18" y="104">Driver · runtime · tree</text>
+    </g>
+  </g>
+
+  <g transform="translate(288,570)">
+    <rect width="450" height="106" rx="14" fill="#1e2d36" stroke="#38505b"/>
+    <text class="m" x="18" y="26" fill="#78d5c8" font-size="10.5" letter-spacing="2">RUNTIME READINESS</text>
+    <rect x="352" y="12" width="80" height="20" rx="7" fill="#23413e"/><text class="m" x="392" y="26" fill="#8adeb0" font-size="9.5" text-anchor="middle" letter-spacing="1">LIVE LOCAL</text>
+    <text class="s" x="18" y="52" fill="#f2f6f3" font-size="17" font-weight="700">Capability probes</text>
+    <g transform="translate(18,64)">
+      <text class="m" x="0" y="14" fill="#b7c5c7" font-size="12">pytorch_eager</text><text class="s" x="196" y="14" fill="#8adeb0" font-size="12">✓ Available</text>
+      <text class="m" x="0" y="32" fill="#b7c5c7" font-size="12">torch_compile</text><text class="s" x="196" y="32" fill="#8adeb0" font-size="12">✓ Available</text>
+    </g>
+  </g>
+  <g transform="translate(762,570)">
+    <rect width="450" height="106" rx="14" fill="#1e2d36" stroke="#38505b"/>
+    <text class="m" x="18" y="26" fill="#78d5c8" font-size="10.5" letter-spacing="2">MANAGED INFERENCE</text>
+    <rect x="326" y="12" width="106" height="20" rx="7" fill="#23413e"/><text class="m" x="379" y="26" fill="#8adeb0" font-size="9.5" text-anchor="middle" letter-spacing="1">ONE AT A TIME</text>
+    <text class="s" x="18" y="52" fill="#f2f6f3" font-size="17" font-weight="700">Loopback runtime services</text>
+    <g transform="translate(18,64)">
+      <text class="m" x="0" y="14" fill="#b7c5c7" font-size="12">llama_cpp · 127.0.0.1:8001</text><text class="m" x="250" y="14" fill="#8fa2a7" font-size="11">○ STOPPED</text>
+      <text class="m" x="0" y="32" fill="#b7c5c7" font-size="12">vllm · 127.0.0.1:8002</text><text class="m" x="250" y="32" fill="#8fa2a7" font-size="11">○ STOPPED</text>
+    </g>
+  </g>
+</svg>

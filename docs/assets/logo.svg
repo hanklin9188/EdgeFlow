@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="EdgeFlow logo">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#78d5c8"/>
+      <stop offset="1" stop-color="#2f8f86"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="120" height="120" rx="30" fill="#152129"/>
+  <rect x="4" y="4" width="120" height="120" rx="30" fill="none" stroke="#38505b" stroke-width="2"/>
+  <path d="M26 86 C 44 86, 44 46, 64 46 C 84 46, 84 86, 102 86"
+        fill="none" stroke="url(#g)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M26 101 C 44 101, 44 61, 64 61 C 84 61, 84 101, 102 101"
+        fill="none" stroke="#78d5c8" stroke-width="5" stroke-linecap="round" opacity="0.3"/>
+  <circle cx="64" cy="46" r="10" fill="#152129"/>
+  <circle cx="64" cy="46" r="6.5" fill="#78d5c8"/>
+</svg>

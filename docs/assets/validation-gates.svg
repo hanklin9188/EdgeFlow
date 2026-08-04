@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 560" width="1120" height="560" role="img" aria-label="EdgeFlow validation gates G0 to G8">
+  <defs>
+    <style>
+      .s{font-family:Inter,"Segoe UI",Helvetica,Arial,sans-serif}
+      .m{font-family:ui-monospace,"SFMono-Regular",Consolas,"Liberation Mono",monospace}
+      .n{fill:#f2f6f3;font-size:15px;font-weight:600}
+      .i{fill:#8fa2a7;font-size:13px}
+    </style>
+  </defs>
+  <rect width="1120" height="560" rx="20" fill="#152129"/>
+
+  <text class="m" x="48" y="52" fill="#78d5c8" font-size="11.5" letter-spacing="2.6">VALIDATION AUTHORITY</text>
+  <text class="s" x="48" y="88" fill="#f2f6f3" font-size="28" font-weight="700" letter-spacing="-0.8">A run is a claim only after every gate holds.</text>
+
+  <!-- rail -->
+  <line x1="86" y1="126" x2="86" y2="452" stroke="#38505b" stroke-width="2"/>
+
+  <g transform="translate(0,132)">
+    <g><circle cx="86" cy="14" r="6" fill="#78d5c8"/><rect x="112" y="0" width="60" height="28" rx="9" fill="#273943" stroke="#38505b"/><text class="m" x="142" y="19" fill="#78d5c8" font-size="13" text-anchor="middle">G0</text><text class="s n" x="192" y="19">Schema</text><text class="s i" x="400" y="19">Required artifacts, canonical hashes, raw JSONL present</text></g>
+    <g transform="translate(0,36)"><circle cx="86" cy="14" r="6" fill="#78d5c8"/><rect x="112" y="0" width="60" height="28" rx="9" fill="#273943" stroke="#38505b"/><text class="m" x="142" y="19" fill="#78d5c8" font-size="13" text-anchor="middle">G1</text><text class="s n" x="192" y="19">Environment</text><text class="s i" x="400" y="19">GPU scope verified, no unapproved background GPU process</text></g>
+    <g transform="translate(0,72)"><circle cx="86" cy="14" r="6" fill="#78d5c8"/><rect x="112" y="0" width="60" height="28" rx="9" fill="#273943" stroke="#38505b"/><text class="m" x="142" y="19" fill="#78d5c8" font-size="13" text-anchor="middle">G2</text><text class="s n" x="192" y="19">Correctness</text><text class="s i" x="400" y="19">Reference parity, no NaN, kernel contract upheld</text></g>
+    <g transform="translate(0,108)"><circle cx="86" cy="14" r="6" fill="#78d5c8"/><rect x="112" y="0" width="60" height="28" rx="9" fill="#273943" stroke="#38505b"/><text class="m" x="142" y="19" fill="#78d5c8" font-size="13" text-anchor="middle">G3</text><text class="s n" x="192" y="19">Timing</text><text class="s i" x="400" y="19">Warmup split, monotonic timestamps, no profiler contamination</text></g>
+    <g transform="translate(0,144)"><circle cx="86" cy="14" r="6" fill="#78d5c8"/><rect x="112" y="0" width="60" height="28" rx="9" fill="#273943" stroke="#38505b"/><text class="m" x="142" y="19" fill="#78d5c8" font-size="13" text-anchor="middle">G4</text><text class="s n" x="192" y="19">Stability</text><text class="s i" x="400" y="19">Robust CV bound, first-vs-last-third drift ≤ 3%</text></g>
+    <g transform="translate(0,180)"><circle cx="86" cy="14" r="6" fill="#78d5c8"/><rect x="112" y="0" width="60" height="28" rx="9" fill="#273943" stroke="#38505b"/><text class="m" x="142" y="19" fill="#78d5c8" font-size="13" text-anchor="middle">G5</text><text class="s n" x="192" y="19">Statistics</text><text class="s i" x="400" y="19">≥ 30 engine requests, or ≥ 100 kernel iterations</text></g>
+    <g transform="translate(0,216)"><circle cx="86" cy="14" r="6" fill="#78d5c8"/><rect x="112" y="0" width="60" height="28" rx="9" fill="#273943" stroke="#38505b"/><text class="m" x="142" y="19" fill="#78d5c8" font-size="13" text-anchor="middle">G6</text><text class="s n" x="192" y="19">Quality</text><text class="s i" x="400" y="19">Profile-specific hard gate; quantized plans cannot bypass it</text></g>
+    <g transform="translate(0,252)"><circle cx="86" cy="14" r="6" fill="#78d5c8"/><rect x="112" y="0" width="60" height="28" rx="9" fill="#273943" stroke="#38505b"/><text class="m" x="142" y="19" fill="#78d5c8" font-size="13" text-anchor="middle">G7</text><text class="s n" x="192" y="19">Provenance</text><text class="s i" x="400" y="19">Pinned revision, exact command, git and source state</text></g>
+    <g transform="translate(0,288)"><circle cx="86" cy="14" r="6" fill="#8adeb0"/><rect x="112" y="0" width="60" height="28" rx="9" fill="#23413e" stroke="#78d5c8" stroke-opacity="0.5"/><text class="m" x="142" y="19" fill="#8adeb0" font-size="13" text-anchor="middle">G8</text><text class="s n" x="192" y="19">Eligibility</text><text class="s i" x="400" y="19">Only measured PASS runs may enter a deployment policy</text></g>
+  </g>
+
+  <!-- verdict legend -->
+  <line x1="48" y1="478" x2="1072" y2="478" stroke="#38505b"/>
+  <g transform="translate(48,498)">
+    <text class="m" x="0" y="14" fill="#8fa2a7" font-size="11.5" letter-spacing="2.2">VERDICTS</text>
+    <g transform="translate(112,-4)">
+      <g><rect width="70" height="26" rx="8" fill="#23413e" stroke="#8adeb0" stroke-opacity="0.5"/><text class="m" x="35" y="18" fill="#8adeb0" font-size="11.5" text-anchor="middle">PASS</text></g>
+      <g transform="translate(80,0)"><rect width="164" height="26" rx="8" fill="#3a3524" stroke="#f0c36d" stroke-opacity="0.5"/><text class="m" x="82" y="18" fill="#f0c36d" font-size="11.5" text-anchor="middle">CONDITIONAL_PASS</text></g>
+      <g transform="translate(254,0)"><rect width="70" height="26" rx="8" fill="#3d2828" stroke="#ff9e9e" stroke-opacity="0.5"/><text class="m" x="35" y="18" fill="#ff9e9e" font-size="11.5" text-anchor="middle">FAIL</text></g>
+      <g transform="translate(334,0)"><rect width="86" height="26" rx="8" fill="#3d2828" stroke="#ff9e9e" stroke-opacity="0.4"/><text class="m" x="43" y="18" fill="#ff9e9e" font-size="11.5" text-anchor="middle">INVALID</text></g>
+      <g transform="translate(430,0)"><rect width="90" height="26" rx="8" fill="#273943" stroke="#38505b"/><text class="m" x="45" y="18" fill="#b7c5c7" font-size="11.5" text-anchor="middle">SKIPPED</text></g>
+    </g>
+    <text class="s i" x="660" y="15">FAIL and INVALID raw artifacts stay on disk for audit.</text>
+  </g>
+</svg>

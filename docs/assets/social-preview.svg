@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-label="EdgeFlow social preview">
+  <defs>
+    <linearGradient id="mk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#78d5c8"/><stop offset="1" stop-color="#2f8f86"/></linearGradient>
+    <radialGradient id="gl" cx="0.2" cy="0.15" r="0.9">
+      <stop offset="0" stop-color="#78d5c8" stop-opacity="0.22"/><stop offset="1" stop-color="#78d5c8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gl2" cx="0.9" cy="1" r="0.7">
+      <stop offset="0" stop-color="#aaa7ff" stop-opacity="0.16"/><stop offset="1" stop-color="#aaa7ff" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="gr" width="44" height="44" patternUnits="userSpaceOnUse">
+      <path d="M44 0 L0 0 0 44" fill="none" stroke="#38505b" stroke-width="1" opacity="0.3"/>
+    </pattern>
+    <style>
+      .s{font-family:Inter,"Segoe UI",Helvetica,Arial,sans-serif}
+      .m{font-family:ui-monospace,"SFMono-Regular",Consolas,"Liberation Mono",monospace}
+    </style>
+  </defs>
+
+  <rect width="1280" height="640" fill="#152129"/>
+  <rect width="1280" height="640" fill="url(#gr)"/>
+  <rect width="1280" height="640" fill="url(#gl)"/>
+  <rect width="1280" height="640" fill="url(#gl2)"/>
+
+  <g transform="translate(112,116)">
+    <rect width="72" height="72" rx="20" fill="#1e2d36" stroke="#38505b" stroke-width="1.5"/>
+    <path d="M16 52 C27 52,27 26,36 26 C45 26,45 52,56 52" fill="none" stroke="url(#mk)" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="36" cy="26" r="6" fill="#78d5c8"/>
+  </g>
+
+  <text class="m" x="204" y="146" fill="#78d5c8" font-size="17" letter-spacing="3.6">EVIDENCE CONTROL PLANE</text>
+  <text class="s" x="202" y="188" fill="#f2f6f3" font-size="46" font-weight="700" letter-spacing="-1.8">EdgeFlow</text>
+
+  <text class="s" x="112" y="286" fill="#f2f6f3" font-size="58" font-weight="700" letter-spacing="-2.6">Local inference tuning,</text>
+  <text class="s" x="112" y="352" fill="#78d5c8" font-size="58" font-weight="700" letter-spacing="-2.6">without losing the evidence.</text>
+
+  <text class="s" x="112" y="410" fill="#b7c5c7" font-size="23">Workload-conditioned autotuning for local LLM inference on an RTX 4080 SUPER.</text>
+
+  <g transform="translate(112,456)">
+    <g><rect width="196" height="44" rx="13" fill="#1e2d36" stroke="#38505b"/><text class="s" x="98" y="28" fill="#b7c5c7" font-size="15" text-anchor="middle">Local-first · loopback</text></g>
+    <g transform="translate(212,0)"><rect width="196" height="44" rx="13" fill="#1e2d36" stroke="#38505b"/><text class="s" x="98" y="28" fill="#b7c5c7" font-size="15" text-anchor="middle">G0–G8 validation</text></g>
+    <g transform="translate(424,0)"><rect width="230" height="44" rx="13" fill="#1e2d36" stroke="#38505b"/><text class="s" x="115" y="28" fill="#b7c5c7" font-size="15" text-anchor="middle">PyTorch · llama.cpp · vLLM</text></g>
+  </g>
+
+  <text class="m" x="112" y="556" fill="#8fa2a7" font-size="16" letter-spacing="1.4">Observe → Diagnose → Intervene → Verify → Synthesize policy</text>
+
+  <rect x="0" y="634" width="1280" height="6" fill="#78d5c8" opacity="0.9"/>
+</svg>
