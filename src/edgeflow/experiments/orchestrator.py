@@ -229,6 +229,14 @@ class RunOrchestrator:
         }
         return adapters[plan.backend]
 
+    @staticmethod
+    def _output_tokens(result: Any) -> int:
+        return int(result.reported_output_tokens or len(result.output_token_ids))
+
+    @staticmethod
+    def _output_identity(result: Any) -> str | tuple[int, ...]:
+        return result.output_digest or result.output_token_ids
+
     def _base_manifest(
         self,
         *,
@@ -469,7 +477,7 @@ class RunOrchestrator:
                         phase="compile",
                         iteration=1,
                         prompt_tokens=prompt_counts[0],
-                        output_tokens=len(first_compiled.output_token_ids),
+                        output_tokens=self._output_tokens(first_compiled),
                         metrics=MetricValues(wall_ms=first_compiled.wall_ms),
                         token_timestamps_ms=first_compiled.token_timestamps_ms,
                         notes="First graph compile/autotune execution; excluded from warmup and steady-state.",
@@ -518,7 +526,7 @@ class RunOrchestrator:
                         phase="warmup",
                         iteration=iteration,
                         prompt_tokens=prompt_counts[0],
-                        output_tokens=len(result.output_token_ids),
+                        output_tokens=self._output_tokens(result),
                         metrics=MetricValues(
                             wall_ms=warmup_wall_ms,
                             ttft_ms=result.ttft_ms,
@@ -580,16 +588,16 @@ class RunOrchestrator:
             ]
             correctness_a = runtime.generate_batch(correctness_ids, workload.output_tokens)
             correctness_b = runtime.generate_batch(correctness_ids, workload.output_tokens)
-            deterministic = [item.output_token_ids for item in correctness_a] == [
-                item.output_token_ids for item in correctness_b
+            deterministic = [self._output_identity(item) for item in correctness_a] == [
+                self._output_identity(item) for item in correctness_b
             ]
             timestamps_valid = all(
-                len(result.token_timestamps_ms) in {0, len(result.output_token_ids)}
+                len(result.token_timestamps_ms) in {0, self._output_tokens(result)}
                 for result in (*correctness_a, *correctness_b)
             )
             correctness_pass = bool(
                 deterministic
-                and all(result.output_token_ids for result in (*correctness_a, *correctness_b))
+                and all(self._output_tokens(result) > 0 for result in (*correctness_a, *correctness_b))
                 and timestamps_valid
             )
             write_json(
@@ -605,7 +613,7 @@ class RunOrchestrator:
                     "request_group_size": request_group_size,
                     "grouping_kind": grouping_kind,
                     "observed_output_tokens": [
-                        len(result.output_token_ids) for result in correctness_a
+                        self._output_tokens(result) for result in correctness_a
                     ],
                     "exact_output_match": deterministic,
                     "timestamp_cardinality_valid": timestamps_valid,
@@ -648,7 +656,7 @@ class RunOrchestrator:
                 # Querying nvidia-smi can serialize driver work on WSL/consumer GPUs.
                 # Sample only after the synchronized engine timer has closed.
                 telemetry = monitor.sample()
-                group_output_tokens = sum(len(result.output_token_ids) for result in results)
+                group_output_tokens = sum(self._output_tokens(result) for result in results)
                 generation_rate = (
                     group_output_tokens / (group_wall_ms / 1000.0) if group_wall_ms > 0 else None
                 )
@@ -661,7 +669,7 @@ class RunOrchestrator:
                             phase="end_to_end",
                             iteration=execution_index * request_group_size + member,
                             prompt_tokens=prompt_counts[member],
-                            output_tokens=len(result.output_token_ids),
+                            output_tokens=self._output_tokens(result),
                             metrics=MetricValues(
                                 wall_ms=result.wall_ms,
                                 ttft_ms=result.ttft_ms,

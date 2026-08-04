@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.metadata
 import json
 import os
@@ -56,6 +57,7 @@ class _HTTPRuntime(PreparedRuntime):
                 "max_tokens": output_tokens,
                 "temperature": 0,
                 "stream": True,
+                "stream_options": {"include_usage": True},
                 "ignore_eos": True,
             }
         ).encode("utf-8")
@@ -70,12 +72,16 @@ class _HTTPRuntime(PreparedRuntime):
         )
         started = time.perf_counter_ns()
         streamed_parts: list[tuple[str, float]] = []
+        reported_output_tokens: int | None = None
         with urllib.request.urlopen(request, timeout=300) as response:
             for raw_line in response:
                 line = raw_line.decode("utf-8").strip()
                 if not line.startswith("data: ") or line == "data: [DONE]":
                     continue
                 item = json.loads(line[6:])
+                usage = item.get("usage") or {}
+                if isinstance(usage.get("completion_tokens"), int):
+                    reported_output_tokens = int(usage["completion_tokens"])
                 text = item.get("choices", [{}])[0].get("text", "")
                 if text:
                     current_time = (time.perf_counter_ns() - started) / 1_000_000
@@ -89,7 +95,8 @@ class _HTTPRuntime(PreparedRuntime):
         # evidence without charging host-side reporting work to the runtime.
         output_text = "".join(text for text, _ in streamed_parts)
         output_ids = self.tokenizer.encode(output_text, add_special_tokens=False)
-        if len(streamed_parts) == len(output_ids):
+        server_output_tokens = reported_output_tokens or len(output_ids)
+        if len(streamed_parts) == server_output_tokens:
             # vLLM and llama.cpp normally emit one non-empty delta per token.
             # This is an exact O(n) mapping and avoids 512 repeated tokenizer
             # passes for a 512-token completion.
@@ -105,7 +112,7 @@ class _HTTPRuntime(PreparedRuntime):
                 current_ids = self.tokenizer.encode("".join(text_parts), add_special_tokens=False)
                 timestamps.extend([current_time] * max(0, len(current_ids) - token_count))
                 token_count = len(current_ids)
-        if len(timestamps) != len(output_ids):
+        if len(timestamps) != server_output_tokens:
             # A backend that rewrites previous text cannot support token-boundary normalization.
             timestamps = []
         ttft = timestamps[0] if timestamps else None
@@ -126,10 +133,12 @@ class _HTTPRuntime(PreparedRuntime):
                 "prompt_transport": "exact_token_ids" if self.exact_token_prompts else "text",
                 "timestamp_reconstruction": (
                     "direct_stream_delta"
-                    if len(streamed_parts) == len(output_ids)
+                    if len(streamed_parts) == server_output_tokens
                     else "retokenized_prefix_fallback"
                 ),
             },
+            server_output_tokens,
+            hashlib.sha256(output_text.encode("utf-8")).hexdigest(),
         )
 
     def warmup(self, token_ids: list[int], output_tokens: int) -> GenerationResult:

@@ -20,6 +20,8 @@ class GenerationResult:
     tpot_ms: float | None
     peak_vram_bytes: int | None
     native_metrics: dict[str, Any]
+    reported_output_tokens: int | None = None
+    output_digest: str | None = None
 
 
 class PreparedRuntime(ABC):
