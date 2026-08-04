@@ -36,6 +36,29 @@ def _plan_identity(row: dict[str, Any]) -> str:
     return str(row.get("plan_signature") or row["plan_id"])
 
 
+def _largest_complete_rectangle(
+    by_plan: dict[str, dict[tuple[int, int, int, int, int], dict[str, Any]]],
+) -> tuple[list[str], set[tuple[int, int, int, int, int]]]:
+    """Select the widest common bucket set without letting unrelated plans erase it."""
+
+    plan_ids = sorted(by_plan)
+    best_plans: list[str] = []
+    best_buckets: set[tuple[int, int, int, int, int]] = set()
+    for plan_a, plan_b in itertools.combinations(plan_ids, 2):
+        common = set(by_plan[plan_a]).intersection(by_plan[plan_b])
+        if not common:
+            continue
+        participants = [
+            plan_id for plan_id in plan_ids if common.issubset(set(by_plan[plan_id]))
+        ]
+        score = (len(common), len(participants))
+        best_score = (len(best_buckets), len(best_plans))
+        if score > best_score or (score == best_score and participants < best_plans):
+            best_plans = participants
+            best_buckets = common
+    return best_plans, best_buckets
+
+
 def fixed_plan_dominance(
     rows: list[dict[str, Any]],
     *,
@@ -55,10 +78,8 @@ def fixed_plan_dominance(
     by_plan: dict[str, dict[tuple[int, int, int, int, int], dict[str, Any]]] = defaultdict(dict)
     for row in eligible:
         by_plan[_plan_identity(row)][_bucket(row)] = row
-    plan_ids = sorted(by_plan)
-    common_buckets = (
-        set.intersection(*(set(by_plan[plan_id]) for plan_id in plan_ids)) if plan_ids else set()
-    )
+    eligible_plan_count = len(by_plan)
+    plan_ids, common_buckets = _largest_complete_rectangle(by_plan)
     coverage = len(common_buckets) / expected_bucket_count if expected_bucket_count else 1.0
     if len(plan_ids) < 2 or not common_buckets:
         return {
@@ -66,7 +87,8 @@ def fixed_plan_dominance(
             "experiment_id": "E10",
             "status": "INCOMPLETE",
             "pass": False,
-            "eligible_plan_count": len(plan_ids),
+            "eligible_plan_count": eligible_plan_count,
+            "analyzed_plan_count": len(plan_ids),
             "common_bucket_count": len(common_buckets),
             "expected_bucket_count": expected_bucket_count,
             "coverage": coverage,
@@ -113,7 +135,8 @@ def fixed_plan_dominance(
         "experiment_id": "E10",
         "status": "PASS" if full_coverage else "INCOMPLETE",
         "pass": full_coverage,
-        "eligible_plan_count": len(plan_ids),
+        "eligible_plan_count": eligible_plan_count,
+        "analyzed_plan_count": len(plan_ids),
         "common_bucket_count": len(common_buckets),
         "expected_bucket_count": expected_bucket_count,
         "coverage": coverage,

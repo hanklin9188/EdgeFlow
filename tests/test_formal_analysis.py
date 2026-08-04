@@ -114,6 +114,22 @@ def test_fixed_plan_dominance_requires_full_registered_grid() -> None:
     assert partial["conditioned_policy_motivated"] is False
 
 
+def test_fixed_plan_dominance_uses_largest_complete_plan_rectangle() -> None:
+    rows = [
+        _row("a", 128, 10.0),
+        _row("b", 128, 20.0),
+        _row("unrelated", 4096, 30.0),
+    ]
+
+    result = fixed_plan_dominance(rows)
+
+    assert result["eligible_plan_count"] == 3
+    assert result["analyzed_plan_count"] == 2
+    assert result["common_bucket_count"] == 1
+    assert result["coverage"] == pytest.approx(1 / 45)
+    assert result["status"] == "INCOMPLETE"
+
+
 def test_break_even_and_learned_prerequisites_remain_scope_gated() -> None:
     rows = [_row("a", 128, 10.0, startup_ms=100.0), _row("b", 128, 20.0)]
     study = session_break_even_study(rows)

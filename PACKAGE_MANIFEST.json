@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "package": "EdgeFlow",
-  "generated_at": "2026-08-04T01:12:49.857031+00:00",
+  "generated_at": "2026-08-04T01:54:06.662085+00:00",
   "file_count": 201,
-  "total_bytes": 1559890,
+  "total_bytes": 1564722,
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
@@ -247,8 +247,8 @@
     },
     {
       "path": "docs/IMPLEMENTATION_STATUS.md",
-      "bytes": 7457,
-      "sha256": "0278c3cc8d1e4dc9a71baa1a7a77c2fd0b4370ec6bf6a6852017437553b5bbbb"
+      "bytes": 9384,
+      "sha256": "973641455af081b6ac81f39b31794c1cc422e2c831e2764b7924d759984b26b0"
     },
     {
       "path": "environment.yml",
@@ -342,8 +342,8 @@
     },
     {
       "path": "scripts/README.md",
-      "bytes": 2091,
-      "sha256": "ac48cc7e13cd77c3fd3eb32501d4a60e4ff5aa0f61ed6e34e79bb1f7daec70e3"
+      "bytes": 2630,
+      "sha256": "da19a3e5c5076ec7cf1d59814ba5ca11f28e9156a2bc46addf43002649997123"
     },
     {
       "path": "scripts/audit_formal_readiness.py",
@@ -417,8 +417,8 @@
     },
     {
       "path": "scripts/run_vllm_bucket.py",
-      "bytes": 4011,
-      "sha256": "1ef6832b33cfdf964fbde16edf03c004407b68478f1cf7d96669c99c0a26c137"
+      "bytes": 4694,
+      "sha256": "c787932de4a7c64658fa51f84bf029ec5b6b2dd0d4e2a5e6acd4dc273f2704c5"
     },
     {
       "path": "scripts/start_llama_cpp_server.sh",
@@ -427,8 +427,8 @@
     },
     {
       "path": "scripts/start_vllm_server.sh",
-      "bytes": 1562,
-      "sha256": "83085587e825a0d7cfd990913661e7fe5306e2859d73b8aa2544905e68f4edfe"
+      "bytes": 1728,
+      "sha256": "6224d3cc0f8341b34fcb6f6916f4211b041b78f3dde21cb8463b6f29795433d9"
     },
     {
       "path": "scripts/validate_package.py",
@@ -602,8 +602,8 @@
     },
     {
       "path": "src/edgeflow/experiments/analysis.py",
-      "bytes": 9203,
-      "sha256": "f1681148f6620c61a477d12e43e74e4fa4ecefdbd7b764ba7d9d2828db3d52b7"
+      "bytes": 10243,
+      "sha256": "85472cbf0b6c14a5ee199e2d4b630974d5c5c1781418ff8379265f2decff1040"
     },
     {
       "path": "src/edgeflow/experiments/catalog.py",
@@ -937,8 +937,8 @@
     },
     {
       "path": "tests/test_formal_analysis.py",
-      "bytes": 9048,
-      "sha256": "470210cff929a788135a3cdfd0f18ab8749609bd1c0d1a8b50dbeb5cb4648e04"
+      "bytes": 9525,
+      "sha256": "7afaefe93a5def0a63a0a1c47e0cc0d644e996dbe7c3b2cdde8181cf2f1175ea"
     },
     {
       "path": "tests/test_foundation.py",
