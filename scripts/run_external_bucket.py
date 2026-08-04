@@ -95,6 +95,12 @@ def main() -> int:
         backend_args["served_model_name"] = arguments.served_model
     update: dict[str, object] = {"backend_args": backend_args}
     if backend == "llama_cpp":
+        backend_args.update(
+            {
+                "enable_prompt_caching": False,
+                "slot_prompt_similarity": 0.0,
+            }
+        )
         update.update({"dtype": None, "flash_attention": True})
     else:
         update.update(

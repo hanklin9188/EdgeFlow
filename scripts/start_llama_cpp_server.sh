@@ -41,5 +41,7 @@ exec "${server}" \
   --ctx-size 4096 \
   --parallel 1 \
   --cont-batching \
+  --no-cache-prompt \
+  --slot-prompt-similarity 0 \
   --no-webui \
   "${authentication[@]}"
