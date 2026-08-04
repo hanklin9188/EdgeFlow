@@ -8,6 +8,11 @@ from edgeflow.core.models import ExecutionPlan
 from edgeflow.core.serialization import write_json
 from edgeflow.models import ModelRegistry
 from edgeflow.quality import evaluate_quality, find_compatible_quality_report
+from edgeflow.quality.llama_cpp import (
+    build_multiple_choice_payload,
+    parse_llama_multiple_choice,
+    parse_llama_perplexity,
+)
 from edgeflow.quality.openai_runtime import prompt_token_logprobs
 from edgeflow.reports import render_run_report
 from edgeflow.validation.correctness import compare_tensors, compare_token_sequences
@@ -97,6 +102,31 @@ def test_openai_runtime_prompt_logprobs_exclude_probe_token() -> None:
     }
 
     assert prompt_token_logprobs(payload, 3) == [None, -1.0, -2.0]
+
+
+def test_llama_cpp_quality_protocol_helpers() -> None:
+    rows = [
+        {
+            "id": "arc-1",
+            "question": "Two plus two?",
+            "choices": {"label": ["A", "B"], "text": ["3", "4"]},
+            "answerKey": "B",
+        }
+    ]
+    payload = build_multiple_choice_payload(rows)
+    assert payload[:4] == (1).to_bytes(4, "little")
+    assert int.from_bytes(payload[4:8], "little") == 8
+    assert parse_llama_multiple_choice("Final result: 44.0000 +/- 7.0000") == 0.44
+    assert parse_llama_perplexity(
+        "have 12345 tokens. computing over 17 chunks, n_ctx=768\n"
+        "Final estimate: PPL = 7.1234 +/- 0.10"
+    ) == {"perplexity": 7.1234, "input_tokens": 12345, "chunks": 17, "context_size": 768}
+    assert (
+        parse_llama_perplexity(
+            "have 12345 tokens. computing over 17 chunks, n_ctx=768\n[16]7.2,[17]7.1,"
+        )["perplexity"]
+        == 7.1
+    )
 
 
 def test_report_is_rebuilt_from_raw_rows(valid_run_dir: Path) -> None:

@@ -25,9 +25,7 @@ def _bucket(row: dict[str, Any]) -> tuple[int, int, int, int, int]:
 def _session_cost(row: dict[str, Any]) -> float:
     metrics = row["metrics"]
     requests = _bucket(row)[-1]
-    return float(metrics.get("startup_ms", 0.0)) + requests * float(
-        metrics["request_latency_ms"]
-    )
+    return float(metrics.get("startup_ms", 0.0)) + requests * float(metrics["request_latency_ms"])
 
 
 def _plan_identity(row: dict[str, Any]) -> str:
@@ -48,9 +46,7 @@ def _largest_complete_rectangle(
         common = set(by_plan[plan_a]).intersection(by_plan[plan_b])
         if not common:
             continue
-        participants = [
-            plan_id for plan_id in plan_ids if common.issubset(set(by_plan[plan_id]))
-        ]
+        participants = [plan_id for plan_id in plan_ids if common.issubset(set(by_plan[plan_id]))]
         score = (len(common), len(participants))
         best_score = (len(best_buckets), len(best_plans))
         if score > best_score or (score == best_score and participants < best_plans):
@@ -92,19 +88,18 @@ def fixed_plan_dominance(
             "common_bucket_count": len(common_buckets),
             "expected_bucket_count": expected_bucket_count,
             "coverage": coverage,
-            "issues": ["At least two quality-passing plans on common workload buckets are required."],
+            "issues": [
+                "At least two quality-passing plans on common workload buckets are required."
+            ],
             "claim_scope": "No fixed-plan or conditioned-policy conclusion is permitted.",
         }
 
     costs = {
-        plan_id: {
-            bucket: _session_cost(by_plan[plan_id][bucket]) for bucket in common_buckets
-        }
+        plan_id: {bucket: _session_cost(by_plan[plan_id][bucket]) for bucket in common_buckets}
         for plan_id in plan_ids
     }
     fixed_expected = {
-        plan_id: statistics.fmean(bucket_costs.values())
-        for plan_id, bucket_costs in costs.items()
+        plan_id: statistics.fmean(bucket_costs.values()) for plan_id, bucket_costs in costs.items()
     }
     global_winner = min(fixed_expected, key=fixed_expected.__getitem__)
     per_bucket_winners: list[dict[str, Any]] = []
@@ -211,6 +206,7 @@ def audit_learned_prerequisites(
     evidence_records: list[dict[str, Any]],
     *,
     grounded_question_count: int,
+    grounding_report: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     unique_points = {
         (
@@ -232,6 +228,13 @@ def audit_learned_prerequisites(
         count >= 50 for count in supported_labels.values()
     )
     e25_ready = len(unique_points) >= 2_000
+    e28_ready = bool(
+        grounded_question_count >= 20
+        and grounding_report
+        and grounding_report.get("pass") is True
+        and grounding_report.get("protocol_status") == "FORMAL"
+        and grounding_report.get("unsupported_numeric_claims") == 0
+    )
     return {
         "schema_version": "1.0",
         "experiments": {
@@ -250,9 +253,15 @@ def audit_learned_prerequisites(
                 "required_per_available_class": 50,
             },
             "E28": {
-                "status": "READY" if grounded_question_count > 0 else "BLOCKED_PREREQUISITE",
+                "status": "PASS" if e28_ready else "BLOCKED_PREREQUISITE",
                 "grounded_question_count": grounded_question_count,
-                "prerequisite": "fixed grounded question set with expected citations and answers",
+                "grounding_validation_pass": bool(
+                    grounding_report and grounding_report.get("pass")
+                ),
+                "unsupported_numeric_claims": (
+                    grounding_report.get("unsupported_numeric_claims") if grounding_report else None
+                ),
+                "prerequisite": "at least 20 fixed questions with exact answers, valid citations, safe refusal, and zero unsupported numeric claims",
             },
         },
         "claim_scope": "Readiness audit only; READY does not substitute for experiment validation.",

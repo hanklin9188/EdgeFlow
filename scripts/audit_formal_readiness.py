@@ -22,9 +22,7 @@ from edgeflow.storage import EdgeFlowDB  # noqa: E402
 
 def _rows(path: Path) -> list[dict[str, Any]]:
     return [
-        json.loads(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
+        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
     ]
 
 
@@ -73,8 +71,10 @@ def collect_analysis_rows(artifact_root: Path) -> list[dict[str, Any]]:
             {
                 "run_id": manifest["run_id"],
                 "experiment_id": manifest["experiment_id"],
+                "created_at": manifest.get("created_at"),
                 "hardware_fingerprint_sha256": manifest["hardware_fingerprint_sha256"],
                 "plan_id": plan["plan_id"],
+                "backend": plan.get("backend"),
                 "plan_sha256": manifest.get("plan_sha256"),
                 "plan_signature": _plan_signature(plan),
                 "workload_id": workload["workload_id"],
@@ -82,8 +82,7 @@ def collect_analysis_rows(artifact_root: Path) -> list[dict[str, Any]]:
                 "source_type": manifest["source_type"],
                 "paired_prompt_ids": bool(measured)
                 and all(
-                    "deterministic paired prompts" in str(row.get("notes", ""))
-                    for row in measured
+                    "deterministic paired prompts" in str(row.get("notes", "")) for row in measured
                 ),
                 "workload": workload,
                 "metrics": {
@@ -106,12 +105,15 @@ def main() -> int:
     evidence = database.list_evidence(limit=100_000)
     question_path = ROOT / "datasets" / "grounded_questions.jsonl"
     grounded_questions = len(_rows(question_path)) if question_path.is_file() else 0
+    grounding_path = artifact_root / "experiments" / "E28" / "result.json"
+    grounding_report = read_json(grounding_path) if grounding_path.is_file() else None
     e10 = fixed_plan_dominance(rows)
     e19 = session_break_even_study(rows)
     prerequisites = audit_learned_prerequisites(
         rows,
         evidence,
         grounded_question_count=grounded_questions,
+        grounding_report=grounding_report,
     )
     report = {
         "schema_version": "1.0",

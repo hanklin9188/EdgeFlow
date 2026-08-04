@@ -89,9 +89,7 @@ def _arc_accuracy(
         labels = [str(label) for label in row["choices"]["label"]]
         choices = [str(text) for text in row["choices"]["text"]]
         prompt = f"Question: {row['question']}\nAnswer:"
-        scores = [
-            _continuation_score(model, tokenizer, prompt, f" {choice}") for choice in choices
-        ]
+        scores = [_continuation_score(model, tokenizer, prompt, f" {choice}") for choice in choices]
         predicted_index = max(range(len(scores)), key=scores.__getitem__)
         predicted = labels[predicted_index]
         answer = str(row["answerKey"])
@@ -124,8 +122,14 @@ def evaluate_hf_reference_quality(
     """Measure the BF16 Transformers reference used by later hard quality gates."""
 
     import torch
+    from transformers import (
+        AutoConfig,
+        AutoModelForCausalLM,
+        AutoModelForImageTextToText,
+        AutoTokenizer,
+    )
+
     from datasets import load_dataset
-    from transformers import AutoModelForCausalLM, AutoTokenizer
 
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is required for the registered HF quality reference")
@@ -138,19 +142,37 @@ def evaluate_hf_reference_quality(
     }[dtype]
     wiki = _dataset_pin(root, "wikitext-2-raw")
     arc = _dataset_pin(root, "arc-challenge")
-    tokenizer = AutoTokenizer.from_pretrained(
+    config = AutoConfig.from_pretrained(
         model_ref,
         revision=model_revision,
         local_files_only=local_files_only,
         trust_remote_code=False,
     )
-    model = AutoModelForCausalLM.from_pretrained(
+    tokenizer = AutoTokenizer.from_pretrained(
         model_ref,
         revision=model_revision,
         local_files_only=local_files_only,
         trust_remote_code=False,
-        dtype=dtype_value,
-    ).eval().to("cuda")
+        fix_mistral_regex=config.model_type == "mistral3",
+    )
+    # Ministral 3 is registered as a multimodal architecture even for the text-only
+    # protocol used by EdgeFlow.  Loading it through AutoModelForCausalLM is rejected
+    # by Transformers; the image-to-text auto class still exposes the causal text
+    # logits and loss when pixel inputs are absent.
+    model_loader = (
+        AutoModelForImageTextToText if config.model_type == "mistral3" else AutoModelForCausalLM
+    )
+    model = (
+        model_loader.from_pretrained(
+            model_ref,
+            revision=model_revision,
+            local_files_only=local_files_only,
+            trust_remote_code=False,
+            dtype=dtype_value,
+        )
+        .eval()
+        .to("cuda")
+    )
     wiki_rows = load_dataset(
         wiki["source"],
         wiki.get("config"),

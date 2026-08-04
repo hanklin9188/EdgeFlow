@@ -158,7 +158,7 @@ experiments:
     name: kernel_candidate_selection
     phase: custom_kernel
     kind: profiler
-    engineering_status: partial
+    engineering_status: implemented
   E22:
     name: triton_correctness
     phase: custom_kernel
@@ -182,25 +182,25 @@ experiments:
     name: cost_model_dataset
     phase: optional_learned
     kind: learned
-    engineering_status: deferred
+    engineering_status: implemented_prerequisite_gated
     prerequisite: 2000_unique_validated_points
   E26:
     name: cost_model_evaluation
     phase: optional_learned
     kind: learned
-    engineering_status: deferred
+    engineering_status: implemented_prerequisite_gated
     prerequisite: E25
   E27:
     name: bottleneck_classifier
     phase: optional_learned
     kind: learned
-    engineering_status: deferred
+    engineering_status: implemented_prerequisite_gated
     prerequisite: intervention_labels
   E28:
     name: copilot_grounding_test
     phase: external_validation
     kind: copilot
-    engineering_status: deferred
+    engineering_status: implemented
     prerequisite: grounded_question_set
   E29:
     name: ui_usability_audit

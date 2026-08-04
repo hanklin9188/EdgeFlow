@@ -86,14 +86,22 @@ def evaluate_openai_runtime_quality(
         raise ValueError(f"unsupported OpenAI-compatible quality backend: {backend}")
     if not base_url.startswith(("http://127.0.0.1:", "http://localhost:")):
         raise ValueError("quality runtime must use a loopback HTTP endpoint")
-    from datasets import load_dataset
-    from transformers import AutoTokenizer
+    from transformers import AutoConfig, AutoTokenizer
 
+    from datasets import load_dataset
+
+    config = AutoConfig.from_pretrained(
+        model_ref,
+        revision=model_revision,
+        local_files_only=local_files_only,
+        trust_remote_code=False,
+    )
     tokenizer = AutoTokenizer.from_pretrained(
         model_ref,
         revision=model_revision,
         local_files_only=local_files_only,
         trust_remote_code=False,
+        fix_mistral_regex=config.model_type == "mistral3",
     )
     models = _request_json(base_url, "/v1/models")
     served_ids = [str(row.get("id")) for row in models.get("data", [])]
@@ -181,13 +189,9 @@ def evaluate_openai_runtime_quality(
     sample_ids_sha256 = sha256_value([row.get("id") for row in selected])
     protocol_match = bool(
         reference_report.get("protocol_status") == "FORMAL"
-        and reference_report.get("datasets", {})
-        .get("arc_challenge", {})
-        .get("sample_ids_sha256")
+        and reference_report.get("datasets", {}).get("arc_challenge", {}).get("sample_ids_sha256")
         == sample_ids_sha256
-        and reference_report.get("datasets", {})
-        .get("wikitext", {})
-        .get("scored_tokens")
+        and reference_report.get("datasets", {}).get("wikitext", {}).get("scored_tokens")
         == scored_tokens
     )
     gate = evaluate_quality(

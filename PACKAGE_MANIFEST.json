@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "package": "EdgeFlow",
-  "generated_at": "2026-08-04T01:54:06.662085+00:00",
-  "file_count": 201,
-  "total_bytes": 1564722,
+  "generated_at": "2026-08-04T02:51:52.781424+00:00",
+  "file_count": 219,
+  "total_bytes": 1632437,
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
@@ -129,6 +129,11 @@
       "path": "dashboard/styles.css",
       "bytes": 20779,
       "sha256": "5d456511b9ba24fb74b6ffaeb9d55522e272d061cc9ee7428314a9813050c28a"
+    },
+    {
+      "path": "datasets/grounded_questions.jsonl",
+      "bytes": 4728,
+      "sha256": "a6faee368c7eca28e2186b00c9833a4933f3cedeadc3481df32878222331bb98"
     },
     {
       "path": "diagrams/README.md",
@@ -342,13 +347,18 @@
     },
     {
       "path": "scripts/README.md",
-      "bytes": 2630,
-      "sha256": "da19a3e5c5076ec7cf1d59814ba5ca11f28e9156a2bc46addf43002649997123"
+      "bytes": 3592,
+      "sha256": "f625851a0b1db9655d40131a106228608e1b18cb4c20a20b44dec7d8a47c3e08"
     },
     {
       "path": "scripts/audit_formal_readiness.py",
-      "bytes": 5289,
-      "sha256": "76291b96ba2a4b64f5ad5dccf740b87bf63789009b019ad1f41d20f62439ff41"
+      "bytes": 5564,
+      "sha256": "b5eb8b3b9de04c3ec5caef57d2364f57f7d68b580e4f725cb50cbe2bf827307f"
+    },
+    {
+      "path": "scripts/audit_learned_layer.py",
+      "bytes": 2122,
+      "sha256": "675de1b1df6a1530796475edae26d87905b2c92163b8c34faabc7349e2c47326"
     },
     {
       "path": "scripts/audit_runtime_fairness.py",
@@ -381,6 +391,11 @@
       "sha256": "70302531ed1457587e021821ec2da2d64c1315daa263c7ddd0ec8e2fb2dd7047"
     },
     {
+      "path": "scripts/evaluate_llama_cpp_quality.py",
+      "bytes": 2632,
+      "sha256": "c1ba2aaad4a8ab964012f58a36bbeeaaef9a089584e4a64e4eaf0c45def78ed9"
+    },
+    {
       "path": "scripts/evaluate_openai_runtime_quality.py",
       "bytes": 2066,
       "sha256": "b87a053a169b20c6336311a3c459bc9ca167d27c43ca2247077b5b95bc685eac"
@@ -401,14 +416,34 @@
       "sha256": "caf299cf7aeb080b0ff9b486de5c9fb7baf04f8bba3849e3157a88605d3ddc5d"
     },
     {
+      "path": "scripts/run_e10_grid.py",
+      "bytes": 7932,
+      "sha256": "a6054c6873586a8f69d40d5619f82ce3ae4eadb646bb4bf59fae4a0878ee2f1c"
+    },
+    {
+      "path": "scripts/run_e21_profile_selection.py",
+      "bytes": 5392,
+      "sha256": "ee64f209d91492d41f84ab274b7979f4b8758c676ccd1919c8004128616c0258"
+    },
+    {
       "path": "scripts/run_e24_integration.py",
       "bytes": 10864,
       "sha256": "477e724891e72caa857a15e6164d77cc6c768cc09a607606ba3040ac44d75cb2"
     },
     {
+      "path": "scripts/run_external_bucket.py",
+      "bytes": 5985,
+      "sha256": "b73d6bb2d066fc8f41b07ecd950d051be5ea11690a555e3adeac10fd3cdf0e7d"
+    },
+    {
       "path": "scripts/run_foundation_experiments.py",
       "bytes": 1299,
       "sha256": "a904b77b9f31661c4dfd8635b28be45025eae8a47700d12e3028d3f4fee6054e"
+    },
+    {
+      "path": "scripts/run_grounding_test.py",
+      "bytes": 1010,
+      "sha256": "5fbc8eb9ba3bd34fc8cc2b534f3fb2b1cb2eb4384f9de911d89e9842bed198d1"
     },
     {
       "path": "scripts/run_pytorch_matrix.py",
@@ -422,18 +457,18 @@
     },
     {
       "path": "scripts/start_llama_cpp_server.sh",
-      "bytes": 1121,
-      "sha256": "b726df9f5bf823f8371e98273231bae5c775a082180821acbec82ee885435c78"
+      "bytes": 1450,
+      "sha256": "b4f202da592547fd95e06c7a0c917f78d891058733292cc7ec0299d7fa146acf"
     },
     {
       "path": "scripts/start_vllm_server.sh",
-      "bytes": 1728,
-      "sha256": "6224d3cc0f8341b34fcb6f6916f4211b041b78f3dde21cb8463b6f29795433d9"
+      "bytes": 2424,
+      "sha256": "46df4670587976f9b62760cdaf05c444bffc3a1332b4350ea9d74a428723e893"
     },
     {
       "path": "scripts/validate_package.py",
-      "bytes": 14686,
-      "sha256": "878ba99ebfde0c93afc203825f0c59bc8ed49c217e2e223bbca265a66dbdcda4"
+      "bytes": 15035,
+      "sha256": "3a15ab1e78a4fe124bab2028062e6a9c302bb6243941832409bf7b06fd7a28f6"
     },
     {
       "path": "scripts/verify_results.py",
@@ -472,13 +507,18 @@
     },
     {
       "path": "specs/dataset_registry.yaml",
-      "bytes": 3322,
-      "sha256": "640873270592cc120f799d18ba580355a758ac7813c93dba83e22a859cc385ba"
+      "bytes": 3439,
+      "sha256": "b393006b0b47ac19c3047002bf51fa0dfc68906ce9a574a509555910b9cead2e"
     },
     {
       "path": "specs/deployment_policy.schema.json",
       "bytes": 1905,
       "sha256": "59af7e4845adaf9dbf8ff04c130e97971ef537ecae1e4771264e48e32ca047ea"
+    },
+    {
+      "path": "specs/e10_grid.yaml",
+      "bytes": 763,
+      "sha256": "f05d31c4d0384ae0456a40befab5b3d8fc1884d4cb4d3626db61b75b98347dc7"
     },
     {
       "path": "specs/evidence_record.schema.json",
@@ -492,8 +532,13 @@
     },
     {
       "path": "specs/experiment_matrix.yaml",
-      "bytes": 6019,
-      "sha256": "87e55c50ed65ea2efd65e3124cda2508b4fcea7bd9301bc0b1b929756372e93b"
+      "bytes": 6092,
+      "sha256": "5f417b1659e420ce9bc199941bf5e6120e2514901d59be3752f413043677d6df"
+    },
+    {
+      "path": "specs/grounded_question.schema.json",
+      "bytes": 665,
+      "sha256": "ebff84b6e9b7f15da37ef6f354b362097bedc92d9a311f49d2748919ac25e51f"
     },
     {
       "path": "specs/hardware_fingerprint.schema.json",
@@ -507,8 +552,8 @@
     },
     {
       "path": "specs/model_registry.yaml",
-      "bytes": 3300,
-      "sha256": "94391d2511e6d1246bd2da155cf5a80a1689ba8ea6efb40c9f8c8e73ec85c896"
+      "bytes": 3442,
+      "sha256": "6eb19d2dbf817434ff40c7e612f894c6ae2a063118888a6aefec253a1c7e3921"
     },
     {
       "path": "specs/profiler_summary.schema.json",
@@ -576,6 +621,16 @@
       "sha256": "8d4ba5144a343afed0d8a3e3fcede9b6018fddfa9e572ca3b2efd8e9e2eeb5e5"
     },
     {
+      "path": "src/edgeflow/copilot/__init__.py",
+      "bytes": 153,
+      "sha256": "1bf9375761b72efaaea9a3cd2abbadb6fae32c696f3d28f0a266c89325f37434"
+    },
+    {
+      "path": "src/edgeflow/copilot/grounded.py",
+      "bytes": 6910,
+      "sha256": "577cde73358cdfe4c6aea9e1bc6ca3ffe6ee1c8ba6a348eaa3c1b5fdeee84f60"
+    },
+    {
       "path": "src/edgeflow/core/__init__.py",
       "bytes": 51,
       "sha256": "20bc451e17c3aa08b98fa211b4e9aa09c5414dafb08fd154d4220ae8e70d2a68"
@@ -602,8 +657,8 @@
     },
     {
       "path": "src/edgeflow/experiments/analysis.py",
-      "bytes": 10243,
-      "sha256": "85472cbf0b6c14a5ee199e2d4b630974d5c5c1781418ff8379265f2decff1040"
+      "bytes": 10875,
+      "sha256": "61d9bc563802c56f5382156c16bdaa3e68bab96b40a4ba3e674daf5f82595d08"
     },
     {
       "path": "src/edgeflow/experiments/catalog.py",
@@ -691,6 +746,16 @@
       "sha256": "dbc311dd6b58c41f109378cf41922fac657b402de0fe55b62b981101a70da570"
     },
     {
+      "path": "src/edgeflow/learned/__init__.py",
+      "bytes": 149,
+      "sha256": "9aa8500dab92c11e7defdc51dfc6392b8e926ca3ae25c4cf520d44d43e2403bb"
+    },
+    {
+      "path": "src/edgeflow/learned/datasets.py",
+      "bytes": 5359,
+      "sha256": "8838de0ac0ab118058261d6c38f9ba254e34a90281346c9070198e8d911f3572"
+    },
+    {
       "path": "src/edgeflow/local/__init__.py",
       "bytes": 172,
       "sha256": "74529f566dea08e0671c05d7a9e6ec411caee738ae7cd29aabcf4a0eea62b10a"
@@ -752,8 +817,13 @@
     },
     {
       "path": "src/edgeflow/profiler/__init__.py",
-      "bytes": 89,
-      "sha256": "30b06bd24c6f2cad016329b95dc62ae34f2d29e03acab6f3df2a072c56754a1f"
+      "bytes": 179,
+      "sha256": "f1aa962a94f5bb3790e77d492e31bb387de3c7631d325b45a6705a846914506c"
+    },
+    {
+      "path": "src/edgeflow/profiler/candidates.py",
+      "bytes": 2369,
+      "sha256": "e454dbe854f26e1a4460d194740eb85b5a4490d3b194aa9c3e9bb45a87672fc7"
     },
     {
       "path": "src/edgeflow/profiler/diagnosis.py",
@@ -762,8 +832,8 @@
     },
     {
       "path": "src/edgeflow/quality/__init__.py",
-      "bytes": 422,
-      "sha256": "4edc9ef43a60e99e372fafb501db4358914030bef1d019456feacbf3231f3196"
+      "bytes": 522,
+      "sha256": "a546e9a6cb45637f0929336bee4de30a68ec381770a5904bc92528d0a9d25749"
     },
     {
       "path": "src/edgeflow/quality/gates.py",
@@ -772,13 +842,18 @@
     },
     {
       "path": "src/edgeflow/quality/hf_reference.py",
-      "bytes": 8364,
-      "sha256": "176428c6dc882b07e619b0a99950c5ff084e2404435260a7cb78eab3d6077599"
+      "bytes": 9137,
+      "sha256": "10e95dbb685a16eaa5f0e66596c4c0a7f7f4887c1898089113d45daeb2caf5a6"
+    },
+    {
+      "path": "src/edgeflow/quality/llama_cpp.py",
+      "bytes": 11255,
+      "sha256": "6178f6a5c3c16bf3e3c780d8c6dad73ecf9d2c2140806ea506af956843aebf7e"
     },
     {
       "path": "src/edgeflow/quality/openai_runtime.py",
-      "bytes": 9696,
-      "sha256": "4ce2fdf58fc39799a205b100dd7e770ced1f5991cab6a6ed622595132a6cb8c1"
+      "bytes": 9907,
+      "sha256": "caf86fdd4c4a5428cbca9ea5a6342b219861e40b4a1bb5e1a1abf960ff2b0a90"
     },
     {
       "path": "src/edgeflow/quality/registry.py",
@@ -807,8 +882,8 @@
     },
     {
       "path": "src/edgeflow/runtimes/external.py",
-      "bytes": 10043,
-      "sha256": "51493f282faa5bdbe942c7ac93af6ccb42b8e0c336f437f29666c6b012a3b235"
+      "bytes": 10799,
+      "sha256": "d66d8ff4d3d48efbe596eb5383c2195874e799481bb74e5a1346f6096267847a"
     },
     {
       "path": "src/edgeflow/runtimes/pytorch.py",
@@ -946,6 +1021,16 @@
       "sha256": "8e557409fb0d6e56c9093f184ff5636512079b6fe96e4c4ec4b965e579464803"
     },
     {
+      "path": "tests/test_grounded_copilot.py",
+      "bytes": 1374,
+      "sha256": "c0a769239dac02a6a41eeccf011b339867e1bcb1b6bdc79f13ad5621725800bf"
+    },
+    {
+      "path": "tests/test_learned_datasets.py",
+      "bytes": 1590,
+      "sha256": "fa58881a00677928b25b9c4fd0e47d8f25e13da05ad02205a70bcdfbbdc32446"
+    },
+    {
       "path": "tests/test_local_web.py",
       "bytes": 9757,
       "sha256": "2327131c0d48045e02be0ff5ce52b91a285d2a2f906a9d9d3b3a311c80d3acfc"
@@ -956,9 +1041,14 @@
       "sha256": "9f171890983ba9bf63e96d67f6627f4acb8ce36c7c566b048284a94c81bb580e"
     },
     {
+      "path": "tests/test_profiler_candidates.py",
+      "bytes": 766,
+      "sha256": "b955dd0909f9e686f6c6489cbbc39384c3780f7e1da405ad0b7cffeb5a329765"
+    },
+    {
       "path": "tests/test_quality_registry_report.py",
-      "bytes": 3475,
-      "sha256": "9d100f04421891fb2578d350e6176c910549468ec8539c00138fa2ca04e67db8"
+      "bytes": 4531,
+      "sha256": "54afdd20f5fba19354b32e889b320e8736a036641b9ffa9eccb6204311f6aaf4"
     },
     {
       "path": "tests/test_statistics.py",

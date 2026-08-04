@@ -18,12 +18,33 @@ case "${profile}" in
     dtype="bfloat16"
     memory_utilization="0.75"
     served_model="llama32-3b-edgeflow"
+    max_model_len="4096"
+    max_batched_tokens="4096"
+    max_sequences="1"
+    ;;
+  ministral3-3b-grid-mbt32768|ministral3-3b-grid-mbt65536)
+    model="mistralai/Ministral-3-3B-Instruct-2512-BF16"
+    revision="b6d637bef2393152b3da2b2fde72eecdee30557e"
+    dtype="bfloat16"
+    memory_utilization="0.90"
+    served_model="ministral3-3b-edgeflow"
+    max_model_len="8192"
+    max_sequences="8"
+    if [[ "${profile}" == *"32768" ]]; then
+      max_batched_tokens="32768"
+    else
+      max_batched_tokens="65536"
+    fi
     ;;
   *)
     echo "Unsupported EDGEFLOW_VLLM_PROFILE: ${profile}" >&2
     exit 2
     ;;
 esac
+
+max_model_len="${max_model_len:-4096}"
+max_batched_tokens="${max_batched_tokens:-4096}"
+max_sequences="${max_sequences:-1}"
 
 if [[ ! -x "${vllm}" ]]; then
   echo "vLLM is not installed; run scripts/bootstrap_vllm.sh first." >&2
@@ -45,14 +66,14 @@ exec "${vllm}" serve "${model}" \
   --host 127.0.0.1 \
   --port "${EDGEFLOW_VLLM_PORT:-8002}" \
   --dtype "${dtype}" \
-  --max-model-len 4096 \
+  --max-model-len "${max_model_len}" \
   --gpu-memory-utilization "${memory_utilization}" \
   --served-model-name "${served_model}" \
   --enforce-eager \
   --no-enable-prefix-caching \
   --no-async-scheduling \
-  --max-num-batched-tokens 4096 \
-  --max-num-seqs 1 \
+  --max-num-batched-tokens "${max_batched_tokens}" \
+  --max-num-seqs "${max_sequences}" \
   --generation-config vllm \
   --disable-fastapi-docs \
   "${authentication[@]}"

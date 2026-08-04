@@ -20,7 +20,8 @@ datasets:
     source: HuggingFaceH4/ultrachat_200k
     revision: 8049631c405ae6576f93f445c6b8166f76f5505a
     split: test_sft
-    license: CHECK_DATASET_CARD_AT_PIN
+    license: mit
+    license_evidence: https://huggingface.co/datasets/HuggingFaceH4/ultrachat_200k/blob/8049631c405ae6576f93f445c6b8166f76f5505a/README.md
     public_raw: false
     usage:
       latency: external_validity

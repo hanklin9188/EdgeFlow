@@ -81,7 +81,9 @@ class _HTTPRuntime(PreparedRuntime):
                 text = item.get("choices", [{}])[0].get("text", "")
                 if text:
                     text_parts.append(text)
-                    current_ids = self.tokenizer.encode("".join(text_parts), add_special_tokens=False)
+                    current_ids = self.tokenizer.encode(
+                        "".join(text_parts), add_special_tokens=False
+                    )
                     current_time = (time.perf_counter_ns() - started) / 1_000_000
                     timestamps.extend([current_time] * max(0, len(current_ids) - token_count))
                     token_count = len(current_ids)
@@ -91,7 +93,11 @@ class _HTTPRuntime(PreparedRuntime):
             # A backend that rewrites previous text cannot support token-boundary normalization.
             timestamps = []
         ttft = timestamps[0] if timestamps else None
-        tpot = (timestamps[-1] - timestamps[0]) / (len(timestamps) - 1) if len(timestamps) > 1 else None
+        tpot = (
+            (timestamps[-1] - timestamps[0]) / (len(timestamps) - 1)
+            if len(timestamps) > 1
+            else None
+        )
         return GenerationResult(
             tuple(output_ids),
             tuple(timestamps),
@@ -147,7 +153,14 @@ class _OpenAIAdapter(RuntimeAdapter):
         located = shutil.which(self.executable) if self.executable else None
         if located:
             candidates.append(Path(located))
-        return next((str(path.resolve()) for path in candidates if path.is_file() and os.access(path, os.X_OK)), None)
+        return next(
+            (
+                str(path.resolve())
+                for path in candidates
+                if path.is_file() and os.access(path, os.X_OK)
+            ),
+            None,
+        )
 
     def _installed_version(self) -> tuple[str | None, str | None]:
         try:
@@ -221,14 +234,22 @@ class _OpenAIAdapter(RuntimeAdapter):
         api_key = os.environ.get("EDGEFLOW_RUNTIME_API_KEY")
         if not self._server_ready(base_url, api_key):
             raise RuntimeUnavailable(f"{self.name} server is not ready at {base_url}")
-        from transformers import AutoTokenizer
+        from transformers import AutoConfig, AutoTokenizer
 
         tokenizer_ref = str(plan.backend_args.get("tokenizer", model_ref))
         tokenizer_revision = plan.backend_args.get("tokenizer_revision")
+        config = AutoConfig.from_pretrained(
+            tokenizer_ref,
+            revision=str(tokenizer_revision) if tokenizer_revision else None,
+            local_files_only=local_files_only,
+            trust_remote_code=False,
+        )
         tokenizer = AutoTokenizer.from_pretrained(
             tokenizer_ref,
             revision=str(tokenizer_revision) if tokenizer_revision else None,
             local_files_only=local_files_only,
+            trust_remote_code=False,
+            fix_mistral_regex=config.model_type == "mistral3",
         )
         configured_model = str(plan.backend_args.get("served_model_name", "")).strip()
         served_model = configured_model or self._served_model(base_url, model_ref, api_key)
@@ -237,7 +258,10 @@ class _OpenAIAdapter(RuntimeAdapter):
             served_model,
             tokenizer,
             api_key,
-            exact_token_prompts=self.name == "vllm",
+            # Both registered servers accept token-id arrays on /v1/completions.
+            # Text round-trips can change the prompt length and are not eligible for
+            # an exact cross-runtime workload comparison.
+            exact_token_prompts=True,
         ), tokenizer
 
 
