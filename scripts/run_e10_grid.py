@@ -52,6 +52,34 @@ def _wait_for_server(process: subprocess.Popen[str], timeout: int = 900) -> None
     raise TimeoutError("vLLM server did not become ready within 15 minutes")
 
 
+def _wait_for_gpu_idle(timeout: int = 120) -> None:
+    """Require two consecutive idle samples between formal bucket blocks."""
+
+    deadline = time.monotonic() + timeout
+    consecutive_idle = 0
+    while time.monotonic() < deadline:
+        completed = subprocess.run(
+            [
+                "nvidia-smi",
+                "--query-gpu=utilization.gpu",
+                "--format=csv,noheader,nounits",
+            ],
+            capture_output=True,
+            check=False,
+            text=True,
+            timeout=5,
+        )
+        try:
+            utilization = float(completed.stdout.splitlines()[0].strip())
+        except (IndexError, ValueError):
+            utilization = float("inf")
+        consecutive_idle = consecutive_idle + 1 if utilization < 5.0 else 0
+        if consecutive_idle >= 2:
+            return
+        time.sleep(1)
+    raise TimeoutError("GPU did not remain below 5% utilization between E10 buckets")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Resume one preregistered E10 vLLM plan grid")
     parser.add_argument(
@@ -115,6 +143,7 @@ def main() -> int:
                     prior = cases.get(case_id, {})
                     if prior.get("status") == "PASS" and _eligible(str(prior.get("run_id"))):
                         continue
+                    _wait_for_gpu_idle()
                     command = [
                         str(VLLM_PYTHON),
                         str(ROOT / "scripts" / "run_external_bucket.py"),
