@@ -24,12 +24,19 @@ from edgeflow.runtimes.base import (
 
 class _HTTPRuntime(PreparedRuntime):
     def __init__(
-        self, base_url: str, model: str, tokenizer: Any, api_key: str | None = None
+        self,
+        base_url: str,
+        model: str,
+        tokenizer: Any,
+        api_key: str | None = None,
+        *,
+        exact_token_prompts: bool = False,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.model = model
         self.tokenizer = tokenizer
         self.api_key = api_key
+        self.exact_token_prompts = exact_token_prompts
         self.load_ms = 0.0
         self.compile_ms = 0.0
 
@@ -37,7 +44,11 @@ class _HTTPRuntime(PreparedRuntime):
         # OpenAI-compatible servers apply their model's BOS policy. Removing the
         # synthetic leading BOS here avoids a double-BOS prompt while preserving
         # the requested token count once the server adds its own special token.
-        prompt = self.tokenizer.decode(token_ids, skip_special_tokens=True)
+        prompt: str | list[int] = (
+            token_ids
+            if self.exact_token_prompts
+            else self.tokenizer.decode(token_ids, skip_special_tokens=True)
+        )
         payload = json.dumps(
             {
                 "model": self.model,
@@ -82,7 +93,16 @@ class _HTTPRuntime(PreparedRuntime):
         ttft = timestamps[0] if timestamps else None
         tpot = (timestamps[-1] - timestamps[0]) / (len(timestamps) - 1) if len(timestamps) > 1 else None
         return GenerationResult(
-            tuple(output_ids), tuple(timestamps), wall_ms, ttft, tpot, None, {"protocol": "openai_http"}
+            tuple(output_ids),
+            tuple(timestamps),
+            wall_ms,
+            ttft,
+            tpot,
+            None,
+            {
+                "protocol": "openai_http",
+                "prompt_transport": "exact_token_ids" if self.exact_token_prompts else "text",
+            },
         )
 
     def warmup(self, token_ids: list[int], output_tokens: int) -> GenerationResult:
@@ -212,7 +232,13 @@ class _OpenAIAdapter(RuntimeAdapter):
         )
         configured_model = str(plan.backend_args.get("served_model_name", "")).strip()
         served_model = configured_model or self._served_model(base_url, model_ref, api_key)
-        return _HTTPRuntime(base_url, served_model, tokenizer, api_key), tokenizer
+        return _HTTPRuntime(
+            base_url,
+            served_model,
+            tokenizer,
+            api_key,
+            exact_token_prompts=self.name == "vllm",
+        ), tokenizer
 
 
 class LlamaCppAdapter(_OpenAIAdapter):

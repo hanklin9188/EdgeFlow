@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "package": "EdgeFlow",
-  "generated_at": "2026-08-04T01:03:39.161382+00:00",
-  "file_count": 198,
-  "total_bytes": 1542510,
+  "generated_at": "2026-08-04T01:12:49.857031+00:00",
+  "file_count": 201,
+  "total_bytes": 1559890,
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
@@ -381,6 +381,11 @@
       "sha256": "70302531ed1457587e021821ec2da2d64c1315daa263c7ddd0ec8e2fb2dd7047"
     },
     {
+      "path": "scripts/evaluate_openai_runtime_quality.py",
+      "bytes": 2066,
+      "sha256": "b87a053a169b20c6336311a3c459bc9ca167d27c43ca2247077b5b95bc685eac"
+    },
+    {
       "path": "scripts/render_ui_preview.py",
       "bytes": 1243,
       "sha256": "a27a92d6b01355e1973948326043abe7ff30f50e7e956a160cd9cdc89d0b6267"
@@ -411,14 +416,19 @@
       "sha256": "5822a50aff0e96670db2cfa5f4946feb2a8006c59ee19ea12e0774406cf92425"
     },
     {
+      "path": "scripts/run_vllm_bucket.py",
+      "bytes": 4011,
+      "sha256": "1ef6832b33cfdf964fbde16edf03c004407b68478f1cf7d96669c99c0a26c137"
+    },
+    {
       "path": "scripts/start_llama_cpp_server.sh",
       "bytes": 1121,
       "sha256": "b726df9f5bf823f8371e98273231bae5c775a082180821acbec82ee885435c78"
     },
     {
       "path": "scripts/start_vllm_server.sh",
-      "bytes": 1031,
-      "sha256": "6d9befb2ccf7df2330ba68df4a58d099512789df439aa8f81566493c0892a8ff"
+      "bytes": 1562,
+      "sha256": "83085587e825a0d7cfd990913661e7fe5306e2859d73b8aa2544905e68f4edfe"
     },
     {
       "path": "scripts/validate_package.py",
@@ -752,8 +762,8 @@
     },
     {
       "path": "src/edgeflow/quality/__init__.py",
-      "bytes": 307,
-      "sha256": "d91b25f1756ff465e352dd6d0f1c307fc68313fd06971621f457c4531706070c"
+      "bytes": 422,
+      "sha256": "4edc9ef43a60e99e372fafb501db4358914030bef1d019456feacbf3231f3196"
     },
     {
       "path": "src/edgeflow/quality/gates.py",
@@ -764,6 +774,11 @@
       "path": "src/edgeflow/quality/hf_reference.py",
       "bytes": 8364,
       "sha256": "176428c6dc882b07e619b0a99950c5ff084e2404435260a7cb78eab3d6077599"
+    },
+    {
+      "path": "src/edgeflow/quality/openai_runtime.py",
+      "bytes": 9696,
+      "sha256": "4ce2fdf58fc39799a205b100dd7e770ced1f5991cab6a6ed622595132a6cb8c1"
     },
     {
       "path": "src/edgeflow/quality/registry.py",
@@ -792,8 +807,8 @@
     },
     {
       "path": "src/edgeflow/runtimes/external.py",
-      "bytes": 9482,
-      "sha256": "d06f079143a972d7be8c5ac66fa40fa89fc6da252269f8792610b23eac0af0ae"
+      "bytes": 10043,
+      "sha256": "51493f282faa5bdbe942c7ac93af6ccb42b8e0c336f437f29666c6b012a3b235"
     },
     {
       "path": "src/edgeflow/runtimes/pytorch.py",
@@ -942,8 +957,8 @@
     },
     {
       "path": "tests/test_quality_registry_report.py",
-      "bytes": 3075,
-      "sha256": "4c0e62800f616947afe700381c8f8af8a40210a2295a943ac4cbcefe411fa2e3"
+      "bytes": 3475,
+      "sha256": "9d100f04421891fb2578d350e6176c910549468ec8539c00138fa2ca04e67db8"
     },
     {
       "path": "tests/test_statistics.py",

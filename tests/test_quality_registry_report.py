@@ -8,6 +8,7 @@ from edgeflow.core.models import ExecutionPlan
 from edgeflow.core.serialization import write_json
 from edgeflow.models import ModelRegistry
 from edgeflow.quality import evaluate_quality, find_compatible_quality_report
+from edgeflow.quality.openai_runtime import prompt_token_logprobs
 from edgeflow.reports import render_run_report
 from edgeflow.validation.correctness import compare_tensors, compare_token_sequences
 
@@ -82,6 +83,20 @@ def test_tensor_and_token_correctness() -> None:
     reference = torch.tensor([1.0, 2.0])
     assert compare_tensors(reference, reference.clone(), dtype="fp32")["pass"] is True
     assert compare_token_sequences([1, 2, 3], [1, 9, 3])["first_divergent_token"] == 1
+
+
+def test_openai_runtime_prompt_logprobs_exclude_probe_token() -> None:
+    payload = {
+        "choices": [
+            {
+                "logprobs": {
+                    "token_logprobs": [None, -1.0, -2.0, -3.0],
+                }
+            }
+        ]
+    }
+
+    assert prompt_token_logprobs(payload, 3) == [None, -1.0, -2.0]
 
 
 def test_report_is_rebuilt_from_raw_rows(valid_run_dir: Path) -> None:
