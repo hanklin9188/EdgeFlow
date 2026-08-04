@@ -53,6 +53,9 @@ class FakeRuntime:
             for batch in token_id_batches
         ]
 
+    def generate(self, token_ids: list[int], output_tokens: int) -> GenerationResult:
+        return self.generate_batch([token_ids], output_tokens)[0]
+
     def shutdown(self) -> None:
         return None
 

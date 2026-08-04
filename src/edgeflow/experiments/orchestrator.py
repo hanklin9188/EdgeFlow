@@ -586,8 +586,24 @@ class RunOrchestrator:
                 )
                 for member, count in enumerate(correctness_counts)
             ]
-            correctness_a = runtime.generate_batch(correctness_ids, workload.output_tokens)
-            correctness_b = runtime.generate_batch(correctness_ids, workload.output_tokens)
+            if grouping_kind == "concurrency" and request_group_size > 1:
+                # HTTP arrival order can change scheduler batch slots between
+                # otherwise identical concurrent repeats. Verify every fixed
+                # prompt independently so G2 measures runtime/model correctness;
+                # the measured block below still exercises true concurrency.
+                correctness_a = [
+                    runtime.generate(token_ids, workload.output_tokens)
+                    for token_ids in correctness_ids
+                ]
+                correctness_b = [
+                    runtime.generate(token_ids, workload.output_tokens)
+                    for token_ids in correctness_ids
+                ]
+                correctness_reference = "pinned_runtime_sequential_prompt_repeat"
+            else:
+                correctness_a = runtime.generate_batch(correctness_ids, workload.output_tokens)
+                correctness_b = runtime.generate_batch(correctness_ids, workload.output_tokens)
+                correctness_reference = "pinned_runtime_deterministic_repeat"
             deterministic = [self._output_identity(item) for item in correctness_a] == [
                 self._output_identity(item) for item in correctness_b
             ]
@@ -606,7 +622,7 @@ class RunOrchestrator:
                     "schema_version": "1.0",
                     "pass": correctness_pass,
                     "nan_count": 0,
-                    "reference_type": "pinned_runtime_deterministic_repeat",
+                    "reference_type": correctness_reference,
                     "prompt_tokens": correctness_counts[0],
                     "prompt_token_counts": correctness_counts,
                     "requested_output_tokens": workload.output_tokens,
