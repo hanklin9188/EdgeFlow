@@ -70,15 +70,15 @@ def main() -> int:
     # and graph settings must be carried into the immutable execution-plan hash.
     plan = plan.model_copy(
         update={
-            "max_num_batched_tokens": 2048,
+            "max_num_batched_tokens": 4096,
             "max_num_seqs": 1,
             "backend_args": {
                 **plan.backend_args,
-                "server_profile": "llama32-3b-bf16-eager-mbt2048-ms1",
+                "server_profile": "llama32-3b-bf16-eager-mbt4096-ms1",
                 "enforce_eager": True,
                 "enable_prefix_caching": False,
                 "async_scheduling": False,
-                "enable_chunked_prefill": False,
+                "enable_chunked_prefill": True,
             },
         }
     ).with_hash()
