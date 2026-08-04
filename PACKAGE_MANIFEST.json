@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "package": "EdgeFlow",
-  "generated_at": "2026-08-04T03:04:26.436182+00:00",
+  "generated_at": "2026-08-04T03:06:03.208034+00:00",
   "file_count": 219,
-  "total_bytes": 1633193,
+  "total_bytes": 1633342,
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
@@ -852,8 +852,8 @@
     },
     {
       "path": "src/edgeflow/quality/openai_runtime.py",
-      "bytes": 9907,
-      "sha256": "caf86fdd4c4a5428cbca9ea5a6342b219861e40b4a1bb5e1a1abf960ff2b0a90"
+      "bytes": 10056,
+      "sha256": "c3788705b310a11ff2119a660b16fb6b02de0eb3a1ac1433893a028ae7d2b0db"
     },
     {
       "path": "src/edgeflow/quality/registry.py",

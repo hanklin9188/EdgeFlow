@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import random
 import urllib.request
 from pathlib import Path
@@ -33,10 +34,13 @@ def prompt_token_logprobs(payload: dict[str, Any], expected_tokens: int) -> list
 
 def _request_json(base_url: str, endpoint: str, payload: dict[str, Any] | None = None) -> Any:
     data = json.dumps(payload).encode("utf-8") if payload is not None else None
+    headers = {"Content-Type": "application/json"}
+    if api_key := os.environ.get("EDGEFLOW_RUNTIME_API_KEY"):
+        headers["Authorization"] = f"Bearer {api_key}"
     request = urllib.request.Request(
         base_url.rstrip("/") + endpoint,
         data=data,
-        headers={"Content-Type": "application/json"},
+        headers=headers,
         method="POST" if data is not None else "GET",
     )
     with urllib.request.urlopen(request, timeout=300) as response:
