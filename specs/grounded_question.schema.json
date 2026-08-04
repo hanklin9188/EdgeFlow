@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edgeflow.local/schemas/grounded-question-1.0.json",
+  "additionalProperties": false,
+  "properties": {
+    "expected_status": {"enum": ["MEASURED", "INFERRED", "HYPOTHESIS", "NOT_AVAILABLE"]},
+    "expected_value": {},
+    "json_pointer": {"type": "string"},
+    "question": {"minLength": 3, "type": "string"},
+    "question_id": {"pattern": "^GQ-[0-9]{3}$", "type": "string"},
+    "source": {"type": "string"}
+  },
+  "required": ["question_id", "question", "expected_status", "expected_value", "source", "json_pointer"],
+  "title": "EdgeFlow grounded question",
+  "type": "object"
+}

@@ -71,19 +71,21 @@ class BenchmarkSubmission(BaseModel):
             and self.model_format != "safetensors"
         ):
             raise ValueError(f"{self.backend} jobs require a safetensors source")
-        if (
-            self.backend == "torch_compile"
-            and self.compile_mode == "reduce-overhead"
-            and self.cuda_graph
-        ):
+        if self.backend == "torch_compile" and self.compile_mode in {
+            "reduce-overhead",
+            "max-autotune",
+        }:
             raise ValueError(
-                "reduce-overhead with mutable-KV CUDA Graph is pruned after correctness failure"
+                f"{self.compile_mode} enables an internal CUDA Graph path that is incompatible "
+                "with this adapter's mutable token-by-token KV cache"
             )
+        if self.backend in {"pytorch_eager", "torch_compile"} and self.concurrency != 1:
+            raise ValueError("PyTorch runtimes use batch_size; concurrency must be 1")
+        if self.backend in {"llama_cpp", "vllm"} and self.batch_size != 1:
+            raise ValueError("HTTP runtimes use concurrency; batch_size must be 1")
         if self.backend in {"llama_cpp", "vllm"}:
             base_url = self.external_base_url or (
-                "http://127.0.0.1:8001"
-                if self.backend == "llama_cpp"
-                else "http://127.0.0.1:8002"
+                "http://127.0.0.1:8001" if self.backend == "llama_cpp" else "http://127.0.0.1:8002"
             )
             parsed = urlparse(base_url)
             if parsed.scheme != "http" or parsed.hostname not in {"127.0.0.1", "localhost", "::1"}:
@@ -97,7 +99,10 @@ class BenchmarkSubmission(BaseModel):
             else "mix-" + "-".join(str(item.tokens) for item in self.prompt_tokens)
         )
         return WorkloadSpec(
-            workload_id=f"{self.label}-p{prompt_slug}-o{self.output_tokens}-c{self.concurrency}",
+            workload_id=(
+                f"{self.label}-p{prompt_slug}-o{self.output_tokens}"
+                f"-b{self.batch_size}-c{self.concurrency}"
+            ),
             model_id=self.model_id,
             prompt_source=PromptSource(type="synthetic", name="edgeflow-corpus-v1", revision="1.0"),
             prompt_tokens=self.prompt_tokens,
@@ -123,9 +128,7 @@ class BenchmarkSubmission(BaseModel):
         }
         if self.backend in {"llama_cpp", "vllm"}:
             base_url = self.external_base_url or (
-                "http://127.0.0.1:8001"
-                if self.backend == "llama_cpp"
-                else "http://127.0.0.1:8002"
+                "http://127.0.0.1:8001" if self.backend == "llama_cpp" else "http://127.0.0.1:8002"
             )
             tokenizer_ref = model_ref
             tokenizer_revision = revision

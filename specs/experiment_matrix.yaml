@@ -1,4 +1,4 @@
-schema_version: "1.0"
+schema_version: "1.1"
 strategy:
   stages: [screening, focused_sweep, confirmatory]
   screening:
@@ -17,50 +17,200 @@ strategy:
     online_requests_min: 200
     bootstrap_resamples: 10000
 
+# Engineering status describes executable support, not a measured conclusion.
+# Validation status is derived at runtime from local experiment artifacts and run verdicts.
 experiments:
+  E00:
+    name: hardware_software_fingerprint
+    phase: measurement_integrity
+    kind: foundation
+    engineering_status: implemented
+  E01:
+    name: timer_calibration
+    phase: measurement_integrity
+    kind: foundation
+    engineering_status: implemented
+  E02:
+    name: thermal_background_noise
+    phase: measurement_integrity
+    kind: foundation
+    engineering_status: implemented
+  E03:
+    name: repetition_confidence_stability
+    phase: measurement_integrity
+    kind: foundation
+    engineering_status: implemented
+
   E04:
     name: pytorch_eager_baseline
+    phase: runtime_baselines
+    kind: benchmark
+    engineering_status: implemented
+    web_runnable: true
     models: [ministral3-3b-instruct-2512, llama-3.2-3b-instruct]
     backends: [pytorch_eager]
     dtypes: [bf16]
-
   E05:
     name: torch_compile_modes
+    phase: runtime_baselines
+    kind: benchmark
+    engineering_status: implemented
+    web_runnable: true
     models: [ministral3-3b-instruct-2512, llama-3.2-3b-instruct]
     backends: [torch_compile]
     compile_modes: [default, reduce-overhead, max-autotune, max-autotune-no-cudagraphs]
     dynamic_shapes: [false, auto, true]
-
+  E06:
+    name: dynamic_shape_recompilation
+    phase: runtime_baselines
+    kind: intervention
+    engineering_status: implemented
+    sequence: [128, 128, 1024, 128, 2048, 1024, 4096]
   E07:
     name: llama_cpp_quantization
+    phase: runtime_baselines
+    kind: benchmark
+    engineering_status: implemented
+    web_runnable: true
     models: [ministral3-3b-instruct-2512, ministral3-8b-instruct-2512-gguf]
     backends: [llama_cpp]
     quantizations: [Q8_0, Q6_K, Q5_K_M, Q4_K_M]
-
   E08:
     name: vllm_scheduler
+    phase: runtime_baselines
+    kind: benchmark
+    engineering_status: implemented
+    web_runnable: true
     models: [ministral3-3b-instruct-2512, llama-3.2-3b-instruct]
     backends: [vllm]
     max_num_batched_tokens: [1024, 2048, 4096, 8192]
     max_num_seqs: [1, 4, 8, 16]
+  E09:
+    name: cross_runtime_fairness_audit
+    phase: runtime_baselines
+    kind: audit
+    engineering_status: implemented
 
   E10:
     name: fixed_plan_dominance
+    phase: policy_causal
+    kind: analysis
+    engineering_status: implemented
     input: validated_pareto_plans
-
+  E11:
+    name: policy_synthesis_baselines
+    phase: policy_causal
+    kind: analysis
+    engineering_status: partial
+  E12:
+    name: real_distribution_replay
+    phase: policy_causal
+    kind: dataset
+    engineering_status: planned
   E13:
     name: launch_overhead_intervention
+    phase: policy_causal
+    kind: intervention
+    engineering_status: partial
     triggers:
       kernel_gap_ratio_min: 0.15
       median_kernel_us_max: 15
     interventions: [reduce_overhead, cuda_graph, operator_fusion, batch_increase]
-
+  E14:
+    name: memory_bandwidth_intervention
+    phase: policy_causal
+    kind: intervention
+    engineering_status: partial
+  E15:
+    name: compute_bound_prefill_intervention
+    phase: policy_causal
+    kind: intervention
+    engineering_status: partial
+  E16:
+    name: kv_cache_capacity_long_context
+    phase: policy_causal
+    kind: capacity
+    engineering_status: planned
+  E17:
+    name: scheduler_bound_mixed_workload
+    phase: policy_causal
+    kind: intervention
+    engineering_status: partial
+    support: heterogeneous_prompt_buckets_within_http_concurrency_groups
+  E18:
+    name: negative_control_diagnosis
+    phase: policy_causal
+    kind: audit
+    engineering_status: implemented
   E19:
     name: session_break_even
+    phase: amortization
+    kind: analysis
+    engineering_status: implemented
     session_requests: [1, 5, 20, 100, 1000]
+  E20:
+    name: cold_start_warm_restart
+    phase: amortization
+    kind: benchmark
+    engineering_status: implemented
 
+  E21:
+    name: kernel_candidate_selection
+    phase: custom_kernel
+    kind: profiler
+    engineering_status: implemented
   E22:
     name: triton_correctness
+    phase: custom_kernel
+    kind: kernel
+    engineering_status: implemented
     hidden_sizes: [768, 1024, 1536, 2048, 3072, 4096]
     token_rows: [1, 2, 4, 8, 16, 32, 128, 512]
     dtypes: [fp32, fp16, bf16]
+  E23:
+    name: triton_performance_sweep
+    phase: custom_kernel
+    kind: kernel
+    engineering_status: implemented
+  E24:
+    name: end_to_end_kernel_integration
+    phase: custom_kernel
+    kind: intervention
+    engineering_status: implemented
+
+  E25:
+    name: cost_model_dataset
+    phase: optional_learned
+    kind: learned
+    engineering_status: implemented_prerequisite_gated
+    prerequisite: 2000_unique_validated_points
+  E26:
+    name: cost_model_evaluation
+    phase: optional_learned
+    kind: learned
+    engineering_status: implemented_prerequisite_gated
+    prerequisite: E25
+  E27:
+    name: bottleneck_classifier
+    phase: optional_learned
+    kind: learned
+    engineering_status: implemented_prerequisite_gated
+    prerequisite: intervention_labels
+  E28:
+    name: copilot_grounding_test
+    phase: external_validation
+    kind: copilot
+    engineering_status: implemented
+    prerequisite: grounded_question_set
+  E29:
+    name: ui_usability_audit
+    phase: external_validation
+    kind: human_study
+    engineering_status: external
+    external_requirement: five_domain_participants
+  E30:
+    name: reproducibility_challenge
+    phase: external_validation
+    kind: reproduction
+    engineering_status: external
+    external_requirement: second_clean_machine

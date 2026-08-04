@@ -12,6 +12,9 @@ models:
       gguf:
         repo: mistralai/Ministral-3-3B-Instruct-2512-GGUF
         revision: eb599d408350ea2bb60452cb86be7c7b2fc28227
+        base_source:
+          repo: mistralai/Ministral-3-3B-Instruct-2512-BF16
+          revision: b6d637bef2393152b3da2b2fde72eecdee30557e
         quantizations: [BF16, Q8_0, Q6_K, Q5_K_M, Q4_K_M]
     license: apache-2.0
     gated: false

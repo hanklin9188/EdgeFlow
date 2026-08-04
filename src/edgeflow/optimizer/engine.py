@@ -9,7 +9,12 @@ from edgeflow.core.models import CapabilityReport, ExecutionPlan
 
 
 def estimate_memory_bytes(
-    *, parameter_count: int, bytes_per_parameter: float, prompt_tokens: int, concurrency: int, hidden_size: int = 3072
+    *,
+    parameter_count: int,
+    bytes_per_parameter: float,
+    prompt_tokens: int,
+    concurrency: int,
+    hidden_size: int = 3072,
 ) -> int:
     model = parameter_count * bytes_per_parameter
     # Conservative two-buffer KV proxy. Model-specific plugins may override it.
@@ -43,37 +48,48 @@ def build_candidates(
         if plan.backend not in available:
             pruned.append({"plan_id": plan.plan_id, "reason": "backend_unavailable"})
         elif memory > int(vram_bytes * 0.92):
-            pruned.append({"plan_id": plan.plan_id, "reason": f"estimated_memory_{memory}_exceeds_safe_vram"})
+            pruned.append(
+                {"plan_id": plan.plan_id, "reason": f"estimated_memory_{memory}_exceeds_safe_vram"}
+            )
         else:
             candidates.append(plan.with_hash())
 
     for dtype in ("bf16", "fp16"):
         add(
             ExecutionPlan(
-                plan_id=f"pytorch-eager-{dtype}", model_id=model_id, backend="pytorch_eager",
-                model_format="safetensors", dtype=dtype, custom_kernels=(), backend_args={},
+                plan_id=f"pytorch-eager-{dtype}",
+                model_id=model_id,
+                backend="pytorch_eager",
+                model_format="safetensors",
+                dtype=dtype,
+                custom_kernels=(),
+                backend_args={},
             ),
             2.0,
         )
-    compile_cudagraph = bool(
-        available.get("torch_compile", CapabilityReport(backend="torch_compile", available=False))
-        .features.get("manual_decode_cudagraph", False)
-    )
     for mode, dynamic in itertools.product(
         ("default", "reduce-overhead", "max-autotune", "max-autotune-no-cudagraphs"),
         (False, True),
     ):
         plan_id = f"torch-compile-{mode}-{'dynamic' if dynamic else 'static'}-bf16"
-        if mode == "reduce-overhead" and not compile_cudagraph:
-            pruned.append({"plan_id": plan_id, "reason": "manual_decode_cudagraph_unsupported"})
+        if mode in {"reduce-overhead", "max-autotune"}:
+            pruned.append(
+                {"plan_id": plan_id, "reason": "internal_cudagraph_mutable_kv_unsupported"}
+            )
             continue
         add(
             ExecutionPlan(
                 plan_id=plan_id,
-                model_id=model_id, backend="torch_compile", model_format="safetensors", dtype="bf16",
-                compile_mode=mode, dynamic_shapes=dynamic, fullgraph=False,
+                model_id=model_id,
+                backend="torch_compile",
+                model_format="safetensors",
+                dtype="bf16",
+                compile_mode=mode,
+                dynamic_shapes=dynamic,
+                fullgraph=False,
                 cuda_graph=mode == "reduce-overhead" and not dynamic,
-                custom_kernels=(), backend_args={},
+                custom_kernels=(),
+                backend_args={},
             ),
             2.0,
         )
@@ -81,8 +97,13 @@ def build_candidates(
     for quantization, bpp in quant_bytes.items():
         add(
             ExecutionPlan(
-                plan_id=f"llama-cpp-{quantization.lower()}", model_id=model_id, backend="llama_cpp",
-                model_format="gguf", quantization=quantization, flash_attention=True, custom_kernels=(),
+                plan_id=f"llama-cpp-{quantization.lower()}",
+                model_id=model_id,
+                backend="llama_cpp",
+                model_format="gguf",
+                quantization=quantization,
+                flash_attention=True,
+                custom_kernels=(),
                 backend_args={"n_gpu_layers": -1},
             ),
             bpp,
@@ -90,9 +111,16 @@ def build_candidates(
     for token_budget, sequences in itertools.product((1024, 2048, 4096, 8192), (1, 4, 8)):
         add(
             ExecutionPlan(
-                plan_id=f"vllm-b{token_budget}-s{sequences}-bf16", model_id=model_id, backend="vllm",
-                model_format="safetensors", dtype="bf16", max_num_batched_tokens=token_budget,
-                max_num_seqs=sequences, kv_cache_dtype="auto", custom_kernels=(), backend_args={},
+                plan_id=f"vllm-b{token_budget}-s{sequences}-bf16",
+                model_id=model_id,
+                backend="vllm",
+                model_format="safetensors",
+                dtype="bf16",
+                max_num_batched_tokens=token_budget,
+                max_num_seqs=sequences,
+                kv_cache_dtype="auto",
+                custom_kernels=(),
+                backend_args={},
             ),
             2.0,
         )
@@ -118,25 +146,46 @@ def _minmax(values: np.ndarray) -> np.ndarray:
     return (values - low) / (high - low)
 
 
-def score_candidates(rows: list[dict[str, Any]], *, objective: str = "interactive") -> list[dict[str, Any]]:
+def score_candidates(
+    rows: list[dict[str, Any]], *, objective: str = "interactive"
+) -> list[dict[str, Any]]:
     eligible = [
-        dict(row) for row in rows
+        dict(row)
+        for row in rows
         if row.get("validation", {}).get("policy_eligible") is True
         and row.get("validation", {}).get("quality_pass") is True
     ]
     if not eligible:
         return []
     if objective == "interactive":
-        weights = {"ttft_ms": 0.35, "tpot_ms": 0.35, "p95_itl_ms": 0.15, "peak_vram_bytes": 0.10, "startup_ms": 0.05}
+        weights = {
+            "ttft_ms": 0.35,
+            "tpot_ms": 0.35,
+            "p95_itl_ms": 0.15,
+            "peak_vram_bytes": 0.10,
+            "startup_ms": 0.05,
+        }
         directions = {key: 1.0 for key in weights}
     elif objective == "throughput":
-        weights = {"throughput_tokens_s": 0.55, "p95_latency_ms": 0.20, "peak_vram_bytes": 0.15, "failure_rate": 0.10}
-        directions = {"throughput_tokens_s": -1.0, "p95_latency_ms": 1.0, "peak_vram_bytes": 1.0, "failure_rate": 1.0}
+        weights = {
+            "throughput_tokens_s": 0.55,
+            "p95_latency_ms": 0.20,
+            "peak_vram_bytes": 0.15,
+            "failure_rate": 0.10,
+        }
+        directions = {
+            "throughput_tokens_s": -1.0,
+            "p95_latency_ms": 1.0,
+            "peak_vram_bytes": 1.0,
+            "failure_rate": 1.0,
+        }
     elif objective == "session":
         for row in eligible:
             metrics = row["metrics"]
             requests = int(row.get("session_requests", 20))
-            row["objective_score"] = float(metrics.get("startup_ms", 0)) + requests * float(metrics["request_latency_ms"])
+            row["objective_score"] = float(metrics.get("startup_ms", 0)) + requests * float(
+                metrics["request_latency_ms"]
+            )
         return sorted(eligible, key=lambda item: item["objective_score"])
     else:
         raise ValueError(f"unsupported objective: {objective}")
@@ -146,7 +195,9 @@ def score_candidates(rows: list[dict[str, Any]], *, objective: str = "interactiv
         values = np.asarray([float(row["metrics"][metric]) for row in eligible])
         normalized = _minmax(values) * directions[metric]
         for row, value in zip(eligible, normalized, strict=True):
-            row["objective_score"] = row.get("objective_score", 0.0) + weights[metric] * float(value)
+            row["objective_score"] = row.get("objective_score", 0.0) + weights[metric] * float(
+                value
+            )
     return sorted(eligible, key=lambda item: item["objective_score"])
 
 

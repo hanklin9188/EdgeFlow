@@ -19,6 +19,7 @@ from edgeflow import __version__
 from edgeflow.api.schemas import BenchmarkSubmission
 from edgeflow.core.models import CapabilityReport, WorkloadSpec
 from edgeflow.core.serialization import project_root
+from edgeflow.experiments import experiment_progress
 from edgeflow.hardware import inspect_hardware
 from edgeflow.local import LocalJobManager, LocalRuntimeServiceManager
 from edgeflow.metrics.statistics import paired_bootstrap
@@ -31,10 +32,12 @@ MAX_REQUEST_BYTES = 1024 * 1024
 SAFE_ARTIFACT_NAMES = {
     "VALIDATION.md",
     "checksums.sha256",
+    "correctness.json",
     "execution_plan.json",
     "hardware_fingerprint.json",
     "metrics.jsonl",
     "monitor.jsonl",
+    "quality.json",
     "run_manifest.json",
     "summary.json",
     "validation_verdict.json",
@@ -237,6 +240,31 @@ def create_app(
             "experiments": matrix["experiments"],
         }
 
+    @application.get("/api/v1/experiment-progress")
+    def get_experiment_progress() -> dict[str, Any]:
+        return experiment_progress(
+            root=project_path,
+            artifact_root=artifacts,
+            runs=db.list_runs(limit=10_000),
+        )
+
+    @application.get("/api/v1/formal-readiness")
+    def get_formal_readiness() -> dict[str, Any]:
+        path = artifacts / "experiments" / "formal-readiness.json"
+        if not path.is_file():
+            return {
+                "schema_version": "1.0",
+                "status": "NOT_RUN",
+                "claim_scope": "Run scripts/audit_formal_readiness.py to create the local audit.",
+            }
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise HTTPException(status_code=500, detail="formal readiness artifact is invalid") from exc
+        if not isinstance(value, dict):
+            raise HTTPException(status_code=500, detail="formal readiness artifact is invalid")
+        return value
+
     @application.get("/api/v1/runs")
     def list_runs(eligible_only: bool = False, limit: int = 100) -> list[dict[str, Any]]:
         return db.list_runs(eligible_only=eligible_only, limit=min(max(limit, 1), 1000))
@@ -362,6 +390,11 @@ def create_app(
                     raise RuntimeError(
                         f"stop managed {service['backend']} before running {submission.backend}"
                     )
+                if submission.model_id != service.get("model_id"):
+                    raise RuntimeError(
+                        f"managed {service['backend']} serves {service.get('model_id')}; "
+                        f"the submitted model is {submission.model_id}"
+                    )
                 if resolved_plan.backend_args.get("base_url") != service["base_url"]:
                     raise RuntimeError(
                         f"managed {service['backend']} is available at {service['base_url']}"
@@ -370,6 +403,10 @@ def create_app(
             experiment = matrix["experiments"].get(submission.experiment_id)
             if experiment is None:
                 raise ValueError(f"experiment {submission.experiment_id} is not registered")
+            if experiment.get("kind") != "benchmark" or not experiment.get("web_runnable"):
+                raise ValueError(
+                    f"{submission.experiment_id} is not a typed Web App benchmark workflow"
+                )
             allowed_backends = experiment.get("backends")
             if allowed_backends and submission.backend not in allowed_backends:
                 raise ValueError(

@@ -3,8 +3,54 @@ set -euo pipefail
 
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 vllm="${project_root}/.runtime/vllm/.venv/bin/vllm"
-model="HuggingFaceTB/SmolLM2-360M-Instruct"
-revision="a10cc1512eabd3dde888204e902eca88bddb4951"
+profile="${EDGEFLOW_VLLM_PROFILE:-smoke}"
+multimodal=()
+execution=()
+case "${profile}" in
+  smoke)
+    model="HuggingFaceTB/SmolLM2-360M-Instruct"
+    revision="a10cc1512eabd3dde888204e902eca88bddb4951"
+    dtype="half"
+    memory_utilization="0.35"
+    served_model="smollm2-edgeflow"
+    ;;
+  llama32-3b-bf16)
+    model="meta-llama/Llama-3.2-3B-Instruct"
+    revision="0cb88a4f764b7a12671c53f0838cd831a0843b95"
+    dtype="bfloat16"
+    memory_utilization="0.75"
+    served_model="llama32-3b-edgeflow"
+    max_model_len="4096"
+    max_batched_tokens="4096"
+    max_sequences="1"
+    ;;
+  ministral3-3b-grid-mbt32768|ministral3-3b-grid-mbt65536|ministral3-3b-grid-graph-mbt32768|ministral3-3b-grid-graph-mbt65536)
+    model="mistralai/Ministral-3-3B-Instruct-2512-BF16"
+    revision="b6d637bef2393152b3da2b2fde72eecdee30557e"
+    dtype="bfloat16"
+    memory_utilization="0.90"
+    served_model="ministral3-3b-edgeflow"
+    max_model_len="8192"
+    max_sequences="8"
+    multimodal=(--language-model-only --skip-mm-profiling --mm-processor-cache-gb 0)
+    if [[ "${profile}" == *"32768" ]]; then
+      max_batched_tokens="32768"
+    else
+      max_batched_tokens="65536"
+    fi
+    if [[ "${profile}" != *"-graph-"* ]]; then
+      execution=(--enforce-eager)
+    fi
+    ;;
+  *)
+    echo "Unsupported EDGEFLOW_VLLM_PROFILE: ${profile}" >&2
+    exit 2
+    ;;
+esac
+
+max_model_len="${max_model_len:-4096}"
+max_batched_tokens="${max_batched_tokens:-4096}"
+max_sequences="${max_sequences:-1}"
 
 if [[ ! -x "${vllm}" ]]; then
   echo "vLLM is not installed; run scripts/bootstrap_vllm.sh first." >&2
@@ -15,6 +61,7 @@ fi
 # compile against the current cu129 CCCL headers on SM89, so use the native sampler.
 export VLLM_WSL2_ENABLE_PIN_MEMORY=1
 export VLLM_USE_FLASHINFER_SAMPLER=0
+export VLLM_USE_V2_MODEL_RUNNER=0
 authentication=()
 if [[ -n "${EDGEFLOW_RUNTIME_API_KEY:-}" ]]; then
   authentication=(--api-key "${EDGEFLOW_RUNTIME_API_KEY}")
@@ -24,9 +71,16 @@ exec "${vllm}" serve "${model}" \
   --revision "${revision}" \
   --host 127.0.0.1 \
   --port "${EDGEFLOW_VLLM_PORT:-8002}" \
-  --dtype half \
-  --max-model-len 4096 \
-  --gpu-memory-utilization 0.35 \
-  --served-model-name smollm2-edgeflow \
+  --dtype "${dtype}" \
+  --max-model-len "${max_model_len}" \
+  --gpu-memory-utilization "${memory_utilization}" \
+  --served-model-name "${served_model}" \
+  "${execution[@]}" \
+  --no-enable-prefix-caching \
+  --no-async-scheduling \
+  --max-num-batched-tokens "${max_batched_tokens}" \
+  --max-num-seqs "${max_sequences}" \
+  --generation-config vllm \
   --disable-fastapi-docs \
+  "${multimodal[@]}" \
   "${authentication[@]}"

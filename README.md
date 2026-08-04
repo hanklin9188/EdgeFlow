@@ -40,8 +40,10 @@ pytest -q
 GPU data plane 需要現有 CUDA PyTorch/Transformers 環境，或：
 
 ```bash
-uv sync --extra dev --extra gpu
+uv sync --extra dev --extra gpu --extra quality
 ```
+
+`quality` extra 提供固定 revision 的 WikiText-2／ARC-Challenge evaluator；控制平面本身仍可維持 lean environment。
 
 ### 1. Inspect
 
@@ -106,6 +108,39 @@ artifacts/<run_id>/
 
 Formal policy eligibility 還要求 correctness 與 quality artifacts；單純 smoke latency 預期得到 `CONDITIONAL_PASS`，不會被包裝成完整結論。
 
+先建立可重用、精確綁定 model revision／dtype／backend 的本機 BF16 quality reference：
+
+```bash
+python scripts/evaluate_hf_quality.py \
+  --model-id llama-3.2-3b-instruct \
+  --wikitext-tokens 8192 \
+  --arc-samples 50 \
+  --allow-download
+```
+
+後續相同 scope 的 PyTorch eager／`torch.compile` run 會自動複製該 report；quantized 或不同 runtime 不會沿用，以免跨格式外推品質。
+
+正式 E04／E05 網格可續跑；每完成一個 case 就更新本機 matrix artifact，重新執行會略過已完成 case：
+
+```bash
+python scripts/run_pytorch_matrix.py E04 --model-id llama-3.2-3b-instruct
+python scripts/run_pytorch_matrix.py E05 --model-id llama-3.2-3b-instruct
+```
+
+正式模式會拒絕 dirty checkout 與缺少 exact-scope quality report 的模型；`--quick` 只用於工程 regression，永遠標為 `DEVELOPMENT`。
+固定 prompt bucket 會在 warmup、correctness 與所有 repetitions 重用完全相同的 token IDs；只有已註冊的 distribution replay 才會依 request 改變 deterministic sample。GPU telemetry 在同步 engine timer 關閉後取樣，避免 `nvidia-smi` driver query 干擾 latency-critical window。
+
+E06、正式分析／prerequisite audit 與 E24 end-to-end integration：
+
+```bash
+python scripts/run_dynamic_shape_study.py --model-id llama-3.2-3b-instruct
+python scripts/audit_formal_readiness.py
+python scripts/run_cold_warm_study.py --model-id llama-3.2-3b-instruct
+python scripts/run_e24_integration.py --model-id llama-3.2-3b-instruct
+```
+
+E20 每一對都由 fresh Python process 開始，將 cached-host time-to-first-usable 與同程序 warmed response 分開；它不會把未清除的 OS filesystem cache 稱為真正 cold boot。E24 使用成對 ABBA 順序，分開 search 與 untouched holdout prompt。若 search 或 holdout 的 95% CI／2% practical threshold 未通過，結果會明確維持 `MICRO_ONLY`，不宣稱模型端加速。
+
 ### 5. Validate and diagnose
 
 ```bash
@@ -123,9 +158,10 @@ python scripts/verify_results.py
 edgeflow kernel validate
 edgeflow kernel validate --full
 python scripts/benchmark_rmsnorm.py --quick
+python scripts/run_e24_integration.py --repetitions 30
 ```
 
-Dispatcher key 包含 kernel version、GPU、dtype 與 shape；cache 中沒有 `PASS` 時一定使用 PyTorch reference。
+Dispatcher key 包含 kernel version、GPU、dtype 與 shape；cache 中沒有 correctness `PASS` 與實測 practical speedup 時一定使用 PyTorch reference。Llama integration 可逐層復原原始 forward，任何未驗證 shape 都保留 fallback。
 
 ### 7. Start the Local-first Web App
 

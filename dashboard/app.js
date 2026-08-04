@@ -6,6 +6,8 @@ const state = {
   capabilities: [],
   services: [],
   experiments: {},
+  progress: null,
+  readiness: null,
   runs: [],
   jobs: [],
   policies: [],
@@ -99,7 +101,7 @@ function submissionPayload() {
     backend,
     prompt_tokens: parsePromptDistribution($("#promptTokens").value),
     output_tokens: numberValue("#outputTokens"),
-    batch_size: 1,
+    batch_size: numberValue("#batchSize"),
     concurrency: numberValue("#concurrency"),
     session_requests: numberValue("#sessionRequests"),
     quality_profile: $("#qualityProfile").value,
@@ -124,12 +126,12 @@ function workloadFromSubmission(payload) {
     ? `mix-${payload.prompt_tokens.map((item) => item.tokens).join("-")}` : payload.prompt_tokens;
   return {
     schema_version: "1.0",
-    workload_id: `${payload.label}-p${promptLabel}-o${payload.output_tokens}-c${payload.concurrency}`,
+    workload_id: `${payload.label}-p${promptLabel}-o${payload.output_tokens}-b${payload.batch_size}-c${payload.concurrency}`,
     model_id: payload.model_id,
     prompt_source: { type: "synthetic", revision: "1.0", name: "edgeflow-corpus-v1", split: null, sample_ids_sha256: null },
     prompt_tokens: payload.prompt_tokens,
     output_tokens: payload.output_tokens,
-    batch_size: 1,
+    batch_size: payload.batch_size,
     concurrency: payload.concurrency,
     arrival_pattern: "closed_loop",
     request_rate: null,
@@ -154,6 +156,50 @@ function renderCapabilities() {
   }).join("");
 }
 
+function renderExperimentProgress() {
+  const progress = state.progress;
+  if (!progress) return;
+  $("#experimentProgress").textContent = `${progress.validated} / ${progress.total}`;
+  $("#experimentProgressLabel").textContent = `${progress.validated_percent}% 已通過目前登錄的本機驗證門檻`;
+  $("#experimentProgressBar").style.width = `${Math.max(0, Math.min(100, progress.validated_percent))}%`;
+  $("#validatedExperiments").textContent = progress.validated;
+  $("#measuredExperiments").textContent = progress.measured;
+  $("#readyExperiments").textContent = progress.ready;
+  $("#externalExperiments").textContent = progress.external_required;
+  const statusLabels = {
+    validated: "已驗證",
+    measured: "已量測，尚未全通過",
+    ready: "工程可執行",
+    planned: "待實作",
+    deferred: "資料條件未達",
+    external_required: "需要外部條件",
+  };
+  $("#experimentPhases").innerHTML = progress.phases.map((phase) => {
+    const validated = phase.experiments.filter((item) => item.validation_status === "validated").length;
+    const dots = phase.experiments.map((item) => {
+      const status = item.validation_status;
+      const detail = `${item.experiment_id} · ${item.name} · ${statusLabels[status] || status}`;
+      return `<span class="experiment-dot ${escapeHtml(status)}" title="${escapeHtml(detail)}" aria-label="${escapeHtml(detail)}">${escapeHtml(item.experiment_id)}</span>`;
+    }).join("");
+    return `<article class="phase-card"><header><div><p class="eyebrow">${escapeHtml(phase.phase.replaceAll("_", " "))}</p><h3>${escapeHtml(phase.label)}</h3></div><span>${validated}/${phase.experiments.length}</span></header><div class="experiment-dots">${dots}</div></article>`;
+  }).join("");
+
+  const readiness = state.readiness;
+  const container = $("#formalReadiness");
+  if (!readiness || readiness.status === "NOT_RUN") {
+    container.innerHTML = '<p class="placeholder">尚未產生 formal readiness audit；這不等於驗證通過。</p>';
+    return;
+  }
+  const prerequisite = readiness.E25_E28?.experiments || {};
+  const cards = [
+    ["E10", "Policy grid", readiness.E10?.status, `${readiness.E10?.common_bucket_count || 0}/${readiness.E10?.expected_bucket_count || 45} common buckets`],
+    ["E19", "Break-even", readiness.E19?.status, `${readiness.E19?.comparison_count || 0} exact-scope pairs`],
+    ["E25", "Cost dataset", prerequisite.E25?.status, `${prerequisite.E25?.unique_validated_points || 0}/${prerequisite.E25?.required || 2000} unique points`],
+    ["E28", "Grounding", prerequisite.E28?.status, `${prerequisite.E28?.grounded_question_count || 0} fixed questions`],
+  ];
+  container.innerHTML = cards.map(([id, label, status, detail]) => `<article class="readiness-card"><header><b>${escapeHtml(id)} · ${escapeHtml(label)}</b>${badge(status)}</header><small>${escapeHtml(detail)}</small></article>`).join("");
+}
+
 function renderServices() {
   const container = $("#serviceList");
   if (!state.services.length) {
@@ -167,7 +213,8 @@ function renderServices() {
       ? `<button class="row-button" data-service-stop="${escapeHtml(item.backend)}" type="button">Stop</button>`
       : `<button class="row-button" data-service-start="${escapeHtml(item.backend)}" type="button" ${!item.installed || active ? "disabled" : ""}>Start</button>`;
     const detail = item.installed ? item.message : "Install this pinned runtime first.";
-    return `<div class="service-row"><div><b>${escapeHtml(item.backend)}</b><small>${escapeHtml(item.base_url)}</small></div>${badge(item.state)}<p>${escapeHtml(detail)}</p>${action}</div>`;
+    const model = item.model_id ? ` · ${item.model_id}` : "";
+    return `<div class="service-row"><div><b>${escapeHtml(item.backend)}</b><small>${escapeHtml(item.base_url)}${escapeHtml(model)}</small></div>${badge(item.state)}<p>${escapeHtml(detail)}</p>${action}</div>`;
   }).join("");
 }
 
@@ -191,6 +238,11 @@ function syncRuntimeFields() {
   $("#serverField").hidden = !["llama_cpp", "vllm"].includes(backend);
   $("#quantizationField").hidden = backend !== "llama_cpp";
   $("#dtype").disabled = backend === "llama_cpp";
+  const usesHttpConcurrency = ["llama_cpp", "vllm"].includes(backend);
+  $("#batchSize").disabled = usesHttpConcurrency;
+  $("#concurrency").disabled = !usesHttpConcurrency;
+  if (usesHttpConcurrency) $("#batchSize").value = "1";
+  else $("#concurrency").value = "1";
   if (backend === "llama_cpp") $("#serverUrl").value = "http://127.0.0.1:8001";
   if (backend === "vllm") $("#serverUrl").value = "http://127.0.0.1:8002";
   const experiment = { pytorch_eager: "E04", torch_compile: "E05", llama_cpp: "E07", vllm: "E08" }[backend];
@@ -392,13 +444,13 @@ async function stopService(backend) {
 }
 
 async function refreshOperationalData() {
-  const [runs, jobs, policies, evidence, services] = await Promise.all([
-    api("/api/v1/runs?limit=500"), api("/api/v1/jobs?limit=200"), api("/api/v1/policies"), api("/api/v1/evidence"), api("/api/v1/runtime-services"),
+  const [runs, jobs, policies, evidence, services, progress, readiness] = await Promise.all([
+    api("/api/v1/runs?limit=500"), api("/api/v1/jobs?limit=200"), api("/api/v1/policies"), api("/api/v1/evidence"), api("/api/v1/runtime-services"), api("/api/v1/experiment-progress"), api("/api/v1/formal-readiness"),
   ]);
-  state.runs = runs; state.jobs = jobs; state.policies = policies; state.evidence = evidence; state.services = services;
+  state.runs = runs; state.jobs = jobs; state.policies = policies; state.evidence = evidence; state.services = services; state.progress = progress; state.readiness = readiness;
   $("#runCount").textContent = runs.length;
   $("#eligibleCount").textContent = runs.filter((item) => item.validation?.policy_eligible).length;
-  renderJobs(); renderRuns(); renderPolicies(); renderEvidence(); renderServices();
+  renderJobs(); renderRuns(); renderPolicies(); renderEvidence(); renderServices(); renderExperimentProgress();
 }
 
 async function refreshAll() {

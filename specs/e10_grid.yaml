@@ -1,0 +1,50 @@
+schema_version: "1.0"
+experiment_id: E10
+model_id: ministral3-3b-instruct-2512
+prompt_tokens: [128, 512, 1024, 2048, 4096]
+output_tokens: [32, 128, 512]
+concurrency: [1, 4, 8]
+repetitions: 30
+warmup_requests: 10
+session_requests: 20
+plans:
+  - profile: ministral3-3b-grid-mbt32768
+    max_model_len: 8192
+    max_num_batched_tokens: 32768
+    max_num_seqs: 8
+    enforce_eager: true
+    prefix_caching: false
+    async_scheduling: false
+  - profile: ministral3-3b-grid-mbt65536
+    max_model_len: 8192
+    max_num_batched_tokens: 65536
+    max_num_seqs: 8
+    enforce_eager: true
+    prefix_caching: false
+    async_scheduling: false
+  - profile: ministral3-3b-grid-graph-mbt32768
+    max_model_len: 8192
+    max_num_batched_tokens: 32768
+    max_num_seqs: 8
+    enforce_eager: false
+    cuda_graph: true
+    prefix_caching: false
+    async_scheduling: false
+  - profile: ministral3-3b-grid-graph-mbt65536
+    max_model_len: 8192
+    max_num_batched_tokens: 65536
+    max_num_seqs: 8
+    enforce_eager: false
+    cuda_graph: true
+    prefix_caching: false
+    async_scheduling: false
+protocol_amendments:
+  - id: E10-A1
+    registered_before_graph_measurement: true
+    reason: Two eager-mode p1024-o128-c1 attempts failed the unchanged G4 stability gate despite fixed clocks and full quality/correctness gates.
+    decision: Retain eager failures as negative evidence and add distinct graph-mode plans; do not relabel or overwrite eager plans.
+acceptance:
+  common_bucket_count: 45
+  minimum_eligible_plans: 2
+  lower_quality_gate: balanced
+  require_policy_eligible: true

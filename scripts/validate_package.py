@@ -234,6 +234,7 @@ def validate_ui(report: Report) -> None:
     api_source = (ROOT / "src" / "edgeflow" / "api" / "app.py").read_text(encoding="utf-8")
     required_ids = [
         'id="overview"',
+        'id="progress"',
         'id="serviceList"',
         'id="tune"',
         'id="jobs"',
@@ -249,6 +250,8 @@ def validate_ui(report: Report) -> None:
         report.fail("Production UI lacks typed CSRF-protected local job control")
     if "/api/v1/runtime-services" not in production_js or "LocalRuntimeServiceManager" not in api_source:
         report.fail("Production UI lacks allowlisted managed runtime control")
+    if "/api/v1/experiment-progress" not in production_js:
+        report.fail("Production UI lacks evidence-derived E00-E30 progress")
     if "prefers-reduced-motion" not in production_css:
         report.fail("Production UI lacks reduced-motion handling")
     if 'data-source-type="demo"' in production_html:
@@ -301,6 +304,14 @@ def validate_required_structure(report: Report) -> None:
         "scripts/bootstrap_vllm.sh",
         "scripts/start_llama_cpp_server.sh",
         "scripts/start_vllm_server.sh",
+        "scripts/evaluate_llama_cpp_quality.py",
+        "scripts/run_external_bucket.py",
+        "scripts/run_e10_grid.py",
+        "scripts/run_e21_profile_selection.py",
+        "scripts/run_grounding_test.py",
+        "scripts/audit_learned_layer.py",
+        "datasets/grounded_questions.jsonl",
+        "specs/grounded_question.schema.json",
         "src/edgeflow/local/jobs.py",
         "src/edgeflow/local/services.py",
     ]

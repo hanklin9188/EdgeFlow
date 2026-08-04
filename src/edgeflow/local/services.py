@@ -20,9 +20,13 @@ from edgeflow.core.models import utc_now
 class LocalRuntimeServiceManager:
     """Own one allowlisted loopback inference service at a time."""
 
-    _definitions: ClassVar[dict[str, tuple[str, int]]] = {
-        "llama_cpp": ("scripts/start_llama_cpp_server.sh", 8001),
-        "vllm": ("scripts/start_vllm_server.sh", 8002),
+    _definitions: ClassVar[dict[str, tuple[str, int, str]]] = {
+        "llama_cpp": (
+            "scripts/start_llama_cpp_server.sh",
+            8001,
+            "ministral3-3b-instruct-2512",
+        ),
+        "vllm": ("scripts/start_vllm_server.sh", 8002, "smollm2-360m-instruct"),
     }
 
     def __init__(self, *, project_root: Path, artifact_root: Path) -> None:
@@ -96,13 +100,14 @@ class LocalRuntimeServiceManager:
     def services(self) -> list[dict[str, Any]]:
         current = self.status()
         rows: list[dict[str, Any]] = []
-        for backend, (_script_name, port) in self._definitions.items():
+        for backend, (_script_name, port, model_id) in self._definitions.items():
             selected = current.get("backend") == backend
             rows.append(
                 {
                     "backend": backend,
                     "state": current["state"] if selected else "STOPPED",
                     "base_url": f"http://127.0.0.1:{port}",
+                    "model_id": model_id,
                     "pid": current.get("pid") if selected else None,
                     "started_at": current.get("started_at") if selected else None,
                     "ready_at": current.get("ready_at") if selected else None,
@@ -126,7 +131,7 @@ class LocalRuntimeServiceManager:
                 raise RuntimeError(
                     f"{current['backend']} is already {str(current['state']).lower()}"
                 )
-            script_name, port = self._definitions[backend]
+            script_name, port, model_id = self._definitions[backend]
             script = (self.project_root / script_name).resolve()
             if not script.is_file() or not os.access(script, os.X_OK):
                 raise RuntimeError(f"pinned launcher is unavailable: {script_name}")
@@ -161,6 +166,7 @@ class LocalRuntimeServiceManager:
                 "state": "STARTING",
                 "backend": backend,
                 "base_url": base_url,
+                "model_id": model_id,
                 "pid": process.pid,
                 "started_at": utc_now(),
                 "ready_at": None,

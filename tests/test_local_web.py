@@ -49,6 +49,11 @@ class FakeRuntimeManager:
                 "backend": backend,
                 "state": self.current["state"] if self.current["backend"] == backend else "STOPPED",
                 "base_url": f"http://127.0.0.1:{port}",
+                "model_id": (
+                    "ministral3-3b-instruct-2512"
+                    if backend == "llama_cpp"
+                    else "smollm2-360m-instruct"
+                ),
                 "installed": True,
                 "message": "test",
             }
@@ -63,6 +68,9 @@ class FakeRuntimeManager:
             "state": "RUNNING",
             "backend": backend,
             "base_url": f"http://127.0.0.1:{port}",
+            "model_id": (
+                "ministral3-3b-instruct-2512" if backend == "llama_cpp" else "smollm2-360m-instruct"
+            ),
             "message": "ready",
         }
         return self.status()
@@ -106,9 +114,29 @@ def test_benchmark_submission_rejects_unsafe_or_invalid_runtime_input() -> None:
             {
                 **valid_submission(),
                 "backend": "torch_compile",
-                "compile_mode": "reduce-overhead",
-                "cuda_graph": True,
+                "compile_mode": "max-autotune",
                 "experiment_id": "E05",
+            }
+        )
+    with pytest.raises(ValidationError):
+        BenchmarkSubmission.model_validate(
+            {
+                **valid_submission(),
+                "backend": "torch_compile",
+                "compile_mode": "reduce-overhead",
+                "experiment_id": "E05",
+            }
+        )
+    with pytest.raises(ValidationError):
+        BenchmarkSubmission.model_validate({**valid_submission(), "concurrency": 2})
+    with pytest.raises(ValidationError):
+        BenchmarkSubmission.model_validate(
+            {
+                **valid_submission(),
+                "backend": "llama_cpp",
+                "model_format": "gguf",
+                "experiment_id": "E07",
+                "batch_size": 2,
             }
         )
 
@@ -190,6 +218,13 @@ def test_local_control_security_headers_host_and_size_limit(tmp_path: Path) -> N
     for capability in capabilities.json():
         executable = capability.get("features", {}).get("isolated_executable")
         assert executable in {True, False, None}
+    progress = client.get("/api/v1/experiment-progress")
+    assert progress.status_code == 200
+    assert progress.json()["total"] == 31
+    assert progress.json()["external_required"] == 2
+    readiness = client.get("/api/v1/formal-readiness")
+    assert readiness.status_code == 200
+    assert readiness.json()["status"] == "NOT_RUN"
 
 
 def test_job_manager_marks_stale_worker_interrupted_and_rejects_bad_id(tmp_path: Path) -> None:
@@ -205,7 +240,9 @@ def test_job_manager_marks_stale_worker_interrupted_and_rejects_bad_id(tmp_path:
 
 
 def test_runtime_manager_exposes_only_allowlisted_launchers(tmp_path: Path) -> None:
-    manager = LocalRuntimeServiceManager(project_root=tmp_path, artifact_root=tmp_path / "artifacts")
+    manager = LocalRuntimeServiceManager(
+        project_root=tmp_path, artifact_root=tmp_path / "artifacts"
+    )
     assert {item["backend"] for item in manager.services()} == {"llama_cpp", "vllm"}
     assert all(not item["installed"] for item in manager.services())
     with pytest.raises(ValueError):
@@ -218,11 +255,23 @@ def test_dashboard_is_local_first_and_has_required_workflows() -> None:
     script = (root / "dashboard" / "app.js").read_text(encoding="utf-8")
     style = (root / "dashboard" / "styles.css").read_text(encoding="utf-8")
     assert "Local Control Console" in html
-    assert all(anchor in html for anchor in ['id="tune"', 'id="jobs"', 'id="runs"', 'id="evidence"', 'id="serviceList"'])
+    assert all(
+        anchor in html
+        for anchor in [
+            'id="progress"',
+            'id="tune"',
+            'id="jobs"',
+            'id="runs"',
+            'id="evidence"',
+            'id="serviceList"',
+        ]
+    )
     assert "X-EdgeFlow-Token" in script
     assert "jobs/benchmark" in script
     assert "runtime-services" in script
-    assert "data-source-type=\"demo\"" not in html
+    assert "experiment-progress" in script
+    assert 'id="batchSize"' in html
+    assert 'data-source-type="demo"' not in html
     assert "prefers-reduced-motion" in style
     assert "http://127.0.0.1:8001" in html
     assert "http://127.0.0.1:8002" in script

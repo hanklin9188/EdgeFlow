@@ -18,9 +18,10 @@ datasets:
   - dataset_id: ultrachat-200k
     role: real_chat_distribution
     source: HuggingFaceH4/ultrachat_200k
-    revision: PIN_AT_IMPLEMENTATION
+    revision: 8049631c405ae6576f93f445c6b8166f76f5505a
     split: test_sft
-    license: CHECK_DATASET_CARD_AT_PIN
+    license: mit
+    license_evidence: https://huggingface.co/datasets/HuggingFaceH4/ultrachat_200k/blob/8049631c405ae6576f93f445c6b8166f76f5505a/README.md
     public_raw: false
     usage:
       latency: external_validity
@@ -34,7 +35,7 @@ datasets:
   - dataset_id: lmsys-chat-1m
     role: optional_real_world_distribution
     source: lmsys/lmsys-chat-1m
-    revision: PIN_AT_IMPLEMENTATION
+    revision: PIN_AFTER_USER_ACCEPTS_GATED_AGREEMENT
     split: train
     license: gated_dataset_agreement
     gated: true
@@ -52,7 +53,7 @@ datasets:
     role: perplexity_quality_gate
     source: Salesforce/wikitext
     config: wikitext-2-raw-v1
-    revision: PIN_AT_IMPLEMENTATION
+    revision: b08601e04326c79dfdd32d625aee71d232d685c3
     split: test
     license: cc-by-sa/gfdl-see-card
     public_raw: via_upstream
@@ -65,7 +66,7 @@ datasets:
     role: multiple_choice_quality_gate
     source: allenai/ai2_arc
     config: ARC-Challenge
-    revision: PIN_AT_IMPLEMENTATION
+    revision: 210d026faf9955653af8916fad021475a3f00453
     split: test
     license: CHECK_DATASET_CARD_AT_PIN
     usage:
@@ -80,7 +81,7 @@ datasets:
     role: reasoning_quality_extension
     source: openai/gsm8k
     config: main
-    revision: PIN_AT_IMPLEMENTATION
+    revision: 740312add88f781978c0658806c59bc2815b9866
     split: test
     license: mit
     usage:

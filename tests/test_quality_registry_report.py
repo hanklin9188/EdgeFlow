@@ -4,8 +4,16 @@ from pathlib import Path
 
 import pytest
 
+from edgeflow.core.models import ExecutionPlan
+from edgeflow.core.serialization import write_json
 from edgeflow.models import ModelRegistry
-from edgeflow.quality import evaluate_quality
+from edgeflow.quality import evaluate_quality, find_compatible_quality_report
+from edgeflow.quality.llama_cpp import (
+    build_multiple_choice_payload,
+    parse_llama_multiple_choice,
+    parse_llama_perplexity,
+)
+from edgeflow.quality.openai_runtime import prompt_token_logprobs
 from edgeflow.reports import render_run_report
 from edgeflow.validation.correctness import compare_tensors, compare_token_sequences
 
@@ -33,11 +41,92 @@ def test_quality_gate_is_hard_constraint() -> None:
     assert failing["pass"] is False
 
 
+def test_quality_registry_requires_exact_runtime_scope(tmp_path: Path) -> None:
+    report = {
+        "pass": True,
+        "protocol_status": "FORMAL",
+        "scope": {
+            "model_id": "model",
+            "model_revision": "revision",
+            "model_format": "safetensors",
+            "dtype": "bf16",
+            "quantization": None,
+            "applicable_backends": ["pytorch_eager", "torch_compile"],
+        },
+    }
+    write_json(tmp_path / "quality" / "reference.json", report)
+    plan = ExecutionPlan(
+        plan_id="quality-plan",
+        model_id="model",
+        backend="pytorch_eager",
+        model_format="safetensors",
+        dtype="bf16",
+    )
+    assert (
+        find_compatible_quality_report(
+            artifact_root=tmp_path,
+            model_id="model",
+            model_revision="revision",
+            plan=plan,
+        )
+        is not None
+    )
+    mismatched = plan.model_copy(update={"dtype": "fp16"})
+    assert (
+        find_compatible_quality_report(
+            artifact_root=tmp_path,
+            model_id="model",
+            model_revision="revision",
+            plan=mismatched,
+        )
+        is None
+    )
+
+
 def test_tensor_and_token_correctness() -> None:
     torch = pytest.importorskip("torch")
     reference = torch.tensor([1.0, 2.0])
     assert compare_tensors(reference, reference.clone(), dtype="fp32")["pass"] is True
     assert compare_token_sequences([1, 2, 3], [1, 9, 3])["first_divergent_token"] == 1
+
+
+def test_openai_runtime_prompt_logprobs_exclude_probe_token() -> None:
+    payload = {
+        "choices": [
+            {
+                "logprobs": {
+                    "token_logprobs": [None, -1.0, -2.0, -3.0],
+                }
+            }
+        ]
+    }
+
+    assert prompt_token_logprobs(payload, 3) == [None, -1.0, -2.0]
+
+
+def test_llama_cpp_quality_protocol_helpers() -> None:
+    rows = [
+        {
+            "id": "arc-1",
+            "question": "Two plus two?",
+            "choices": {"label": ["A", "B"], "text": ["3", "4"]},
+            "answerKey": "B",
+        }
+    ]
+    payload = build_multiple_choice_payload(rows)
+    assert payload[:4] == (1).to_bytes(4, "little")
+    assert int.from_bytes(payload[4:8], "little") == 8
+    assert parse_llama_multiple_choice("Final result: 44.0000 +/- 7.0000") == 0.44
+    assert parse_llama_perplexity(
+        "have 12345 tokens. computing over 17 chunks, n_ctx=768\n"
+        "Final estimate: PPL = 7.1234 +/- 0.10"
+    ) == {"perplexity": 7.1234, "input_tokens": 12345, "chunks": 17, "context_size": 768}
+    assert (
+        parse_llama_perplexity(
+            "have 12345 tokens. computing over 17 chunks, n_ctx=768\n[16]7.2,[17]7.1,"
+        )["perplexity"]
+        == 7.1
+    )
 
 
 def test_report_is_rebuilt_from_raw_rows(valid_run_dir: Path) -> None:

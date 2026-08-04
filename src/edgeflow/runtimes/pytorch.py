@@ -35,26 +35,40 @@ class PytorchRuntime(PreparedRuntime):
             torch.cuda.synchronize()
 
     def generate(self, token_ids: list[int], output_tokens: int) -> GenerationResult:
+        return self.generate_batch([token_ids], output_tokens)[0]
+
+    def generate_batch(
+        self, token_id_batches: list[list[int]], output_tokens: int
+    ) -> list[GenerationResult]:
         import torch
 
         if output_tokens < 1:
             raise ValueError("output_tokens must be positive")
+        if not token_id_batches:
+            raise ValueError("token_id_batches cannot be empty")
+        prompt_lengths = {len(token_ids) for token_ids in token_id_batches}
+        if len(prompt_lengths) != 1:
+            raise ValueError("PyTorch measured batches require equal prompt lengths")
         device = next(self.model.parameters()).device
-        inputs = torch.tensor([token_ids], dtype=torch.long, device=device)
+        inputs = torch.tensor(token_id_batches, dtype=torch.long, device=device)
         if device.type == "cuda":
             torch.cuda.reset_peak_memory_stats(device)
         self._synchronize()
         started = time.perf_counter_ns()
-        timestamps: list[float] = []
-        generated: list[int] = []
+        token_events: list[Any] = []
+        generated_steps: list[Any] = []
+        engine_start = torch.cuda.Event(enable_timing=True) if device.type == "cuda" else None
+        engine_end = torch.cuda.Event(enable_timing=True) if device.type == "cuda" else None
+        if engine_start is not None:
+            engine_start.record()
         past_key_values = None
-        if self.cuda_graph:
+        if self.compiled or self.cuda_graph:
             from transformers.cache_utils import StaticCache
 
             model_config = getattr(self.model, "config", None) or self.model._orig_mod.config
             past_key_values = StaticCache(
                 config=model_config,
-                max_cache_len=len(token_ids) + output_tokens,
+                max_cache_len=len(token_id_batches[0]) + output_tokens,
             )
         current = inputs
         with torch.inference_mode():
@@ -69,26 +83,46 @@ class PytorchRuntime(PreparedRuntime):
                 )
                 next_token = outputs.logits[:, -1, :].argmax(dim=-1, keepdim=True)
                 past_key_values = outputs.past_key_values
-                self._synchronize()
-                timestamps.append((time.perf_counter_ns() - started) / 1_000_000)
-                generated.append(int(next_token.item()))
+                generated_steps.append(next_token)
+                if device.type == "cuda":
+                    token_event = torch.cuda.Event(enable_timing=True)
+                    token_event.record()
+                    token_events.append(token_event)
                 current = next_token
-        self._synchronize()
-        wall_ms = (time.perf_counter_ns() - started) / 1_000_000
+        if engine_end is not None and engine_start is not None:
+            engine_end.record()
+            engine_end.synchronize()
+            wall_ms = float(engine_start.elapsed_time(engine_end))
+            timestamps = [float(engine_start.elapsed_time(event)) for event in token_events]
+        else:
+            self._synchronize()
+            wall_ms = (time.perf_counter_ns() - started) / 1_000_000
+            timestamps = []
+        host_wall_ms = (time.perf_counter_ns() - started) / 1_000_000
+        generated = torch.cat(generated_steps, dim=1).tolist()
         ttft_ms = timestamps[0] if timestamps else None
         tpot_ms = None
         if len(timestamps) > 1:
             tpot_ms = (timestamps[-1] - timestamps[0]) / (len(timestamps) - 1)
         peak = torch.cuda.max_memory_allocated(device) if device.type == "cuda" else None
-        return GenerationResult(
-            output_token_ids=tuple(generated),
-            token_timestamps_ms=tuple(timestamps),
-            wall_ms=wall_ms,
-            ttft_ms=ttft_ms,
-            tpot_ms=tpot_ms,
-            peak_vram_bytes=peak,
-            native_metrics={"device": str(device), "cache_enabled": True},
-        )
+        return [
+            GenerationResult(
+                output_token_ids=tuple(output_ids),
+                token_timestamps_ms=tuple(timestamps),
+                wall_ms=wall_ms,
+                ttft_ms=ttft_ms,
+                tpot_ms=tpot_ms,
+                peak_vram_bytes=peak,
+                native_metrics={
+                    "device": str(device),
+                    "cache_enabled": True,
+                    "measured_batch_size": len(token_id_batches),
+                    "timer": "cuda_event" if device.type == "cuda" else "synchronized_perf_counter",
+                    "host_wall_ms": host_wall_ms,
+                },
+            )
+            for output_ids in generated
+        ]
 
     def warmup(self, token_ids: list[int], output_tokens: int) -> GenerationResult:
         return self.generate(token_ids, output_tokens)
@@ -144,10 +178,10 @@ class PytorchAdapter(RuntimeAdapter):
             raise RuntimeUnavailable("; ".join(report.reasons))
         if plan.backend != self.name:
             raise ValueError(f"Plan backend {plan.backend} does not match adapter {self.name}")
-        if self.compiled and plan.compile_mode == "reduce-overhead" and plan.cuda_graph:
+        if self.compiled and plan.compile_mode in {"reduce-overhead", "max-autotune"}:
             raise RuntimeUnavailable(
-                "manual token-by-token decode with a mutated KV cache is not CUDA-Graph-safe in this "
-                "adapter; use compile_mode=default or max-autotune-no-cudagraphs"
+                f"{plan.compile_mode}'s internal CUDA Graph path is not safe with this adapter's "
+                "mutable token-by-token KV cache; use default or max-autotune-no-cudagraphs"
             )
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
