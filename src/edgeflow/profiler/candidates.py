@@ -4,15 +4,15 @@ from typing import Any
 
 _CANDIDATES = {
     "fused-swiglu-v1": {
-        "patterns": ("silu", "mul"),
+        "patterns": ("aten::silu", "aten::mul"),
         "description": "Fuse SiLU activation and elementwise gate multiplication.",
     },
     "fused-rope-v1": {
-        "patterns": ("cos", "sin", "mul", "add"),
+        "patterns": ("aten::cos", "aten::sin", "aten::mul", "aten::add"),
         "description": "Fuse rotary-position elementwise transforms around attention projection.",
     },
     "fused-scaled-softmax-v1": {
-        "patterns": ("softmax", "mul"),
+        "patterns": ("aten::softmax", "aten::mul"),
         "description": "Fuse registered scaling with attention softmax where shape support is bounded.",
     },
 }
@@ -38,7 +38,7 @@ def rank_kernel_candidates(
             continue
         matched: dict[str, list[dict[str, Any]]] = {}
         for pattern in definition["patterns"]:
-            matched[pattern] = [row for row in normalized if pattern in row["name"]]
+            matched[pattern] = [row for row in normalized if row["name"] == pattern]
         if any(not rows for rows in matched.values()):
             continue
         calls = sum(row["calls"] for rows in matched.values() for row in rows)

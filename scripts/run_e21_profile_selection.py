@@ -87,6 +87,7 @@ def main() -> int:
                 "cpu_time_total_us": float(getattr(event, "cpu_time_total", 0.0)),
             }
             for event in profiler.key_averages()
+            if str(event.key).startswith("aten::")
         ],
         key=lambda row: (-row["self_device_time_us"], row["name"]),
     )
