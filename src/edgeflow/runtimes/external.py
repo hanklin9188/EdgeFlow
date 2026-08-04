@@ -116,12 +116,28 @@ class _HTTPRuntime(PreparedRuntime):
         if len(timestamps) != server_output_tokens:
             # A backend that rewrites previous text cannot support token-boundary normalization.
             timestamps = []
-        ttft = timestamps[0] if timestamps else None
-        tpot = (
-            (timestamps[-1] - timestamps[0]) / (len(timestamps) - 1)
-            if len(timestamps) > 1
-            else None
-        )
+        if timestamps:
+            ttft = timestamps[0]
+            tpot = (
+                (timestamps[-1] - timestamps[0]) / (len(timestamps) - 1)
+                if len(timestamps) > 1
+                else None
+            )
+        elif streamed_parts:
+            # Unicode byte-token buffering can make per-token boundaries
+            # unavailable even though the server reports exact cardinality.
+            # Preserve the empty boundary series and normalize TPOT only from
+            # the observed first/last stream endpoints.
+            ttft = streamed_parts[0][1]
+            tpot = (
+                (streamed_parts[-1][1] - streamed_parts[0][1])
+                / (server_output_tokens - 1)
+                if server_output_tokens > 1
+                else None
+            )
+        else:
+            ttft = None
+            tpot = None
         return GenerationResult(
             tuple(output_ids),
             tuple(timestamps),
