@@ -48,11 +48,43 @@ def _write_run(
         "source_type": "measured",
         "profiler_level": "none",
     }
-    plan = {"plan_id": f"{backend}-plan", "backend": backend}
+    plan = {
+        "plan_id": f"{backend}-plan",
+        "backend": backend,
+        "model_format": "safetensors",
+        "dtype": "bf16",
+        "quantization": None,
+        "cuda_graph": backend == "torch_compile",
+        "max_num_batched_tokens": None,
+        "max_num_seqs": None,
+        "backend_args": {"execution_mode": "graph" if backend == "torch_compile" else "eager"},
+    }
+    fingerprint = {
+        "gpu": {
+            "vendor": "NVIDIA",
+            "name": "test-gpu",
+            "uuid": hardware,
+            "vram_bytes": 1,
+            "compute_capability": "8.9",
+            "driver_version": "1",
+            "power_limit_w": 1,
+        },
+        "host": {
+            "cpu": "test-cpu",
+            "logical_cores": 1,
+            "physical_cores": 1,
+            "ram_bytes": 1,
+            "execution_mode": "test",
+            "kernel": "test",
+            "os": "test",
+            "wsl_version": None,
+        },
+    }
     validation = {"policy_eligible": eligible, "quality_pass": eligible}
     (path / "run_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
     (path / "workload.json").write_text(json.dumps(workload), encoding="utf-8")
     (path / "execution_plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    (path / "hardware_fingerprint.json").write_text(json.dumps(fingerprint), encoding="utf-8")
     (path / "validation_verdict.json").write_text(json.dumps(validation), encoding="utf-8")
     rows = [
         {
@@ -81,6 +113,8 @@ def test_fairness_audit_passes_only_matched_eligible_runtimes(tmp_path: Path) ->
     assert report["status"] == "PASS"
     assert report["pass"] is True
     assert set(report["descriptive_latency_order"]) == {"eager", "compiled"}
+    assert report["causal_runtime_isolation"] is False
+    assert report["comparison_caveats"]
 
 
 def test_fairness_audit_refuses_mismatched_scope(tmp_path: Path) -> None:

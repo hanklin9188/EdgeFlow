@@ -24,6 +24,26 @@ _SCOPE_FIELDS = (
     "quality_profile",
 )
 
+_GPU_IDENTITY_FIELDS = (
+    "vendor",
+    "name",
+    "uuid",
+    "vram_bytes",
+    "compute_capability",
+    "driver_version",
+    "power_limit_w",
+)
+_HOST_IDENTITY_FIELDS = (
+    "cpu",
+    "logical_cores",
+    "physical_cores",
+    "ram_bytes",
+    "execution_mode",
+    "kernel",
+    "os",
+    "wsl_version",
+)
+
 
 def _percentile(values: list[float], percentile: float) -> float | None:
     if not values:
@@ -55,6 +75,37 @@ def _read_metric_rows(path: Path) -> list[dict[str, Any]]:
     ]
 
 
+def _hardware_identity(fingerprint: dict[str, Any]) -> dict[str, Any]:
+    """Exclude capture time, git state, and the selected runtime service.
+
+    Those values must remain in each provenance artifact, but they are expected to
+    differ across runtime runs and cannot identify whether the physical test host
+    changed.
+    """
+
+    gpu = fingerprint.get("gpu", {})
+    host = fingerprint.get("host", {})
+    return {
+        "gpu": {key: gpu.get(key) for key in _GPU_IDENTITY_FIELDS},
+        "host": {key: host.get(key) for key in _HOST_IDENTITY_FIELDS},
+    }
+
+
+def _plan_scope(plan: dict[str, Any], manifest: dict[str, Any]) -> dict[str, Any]:
+    backend_args = plan.get("backend_args", {})
+    return {
+        "backend": plan.get("backend"),
+        "model_revision": manifest.get("model_revision"),
+        "model_format": plan.get("model_format"),
+        "dtype": plan.get("dtype"),
+        "quantization": plan.get("quantization"),
+        "execution_mode": backend_args.get("execution_mode"),
+        "cuda_graph": plan.get("cuda_graph"),
+        "max_num_batched_tokens": plan.get("max_num_batched_tokens"),
+        "max_num_seqs": plan.get("max_num_seqs"),
+    }
+
+
 def audit_runtime_fairness(
     run_dirs: list[Path], *, minimum_repetitions: int = 30
 ) -> dict[str, Any]:
@@ -64,7 +115,7 @@ def audit_runtime_fairness(
         raise ValueError("fairness audit requires at least two run directories")
     records: list[dict[str, Any]] = []
     reference_scope: dict[str, Any] | None = None
-    reference_hardware: str | None = None
+    reference_hardware: dict[str, Any] | None = None
     global_issues: list[dict[str, str]] = []
 
     for raw_path in run_dirs:
@@ -73,6 +124,7 @@ def audit_runtime_fairness(
             "run_manifest.json",
             "workload.json",
             "execution_plan.json",
+            "hardware_fingerprint.json",
             "metrics.jsonl",
             "validation_verdict.json",
         )
@@ -92,6 +144,7 @@ def audit_runtime_fairness(
         workload = read_json(path / "workload.json")
         plan = read_json(path / "execution_plan.json")
         validation = read_json(path / "validation_verdict.json")
+        fingerprint = read_json(path / "hardware_fingerprint.json")
         measured = [
             row
             for row in _read_metric_rows(path / "metrics.jsonl")
@@ -100,7 +153,7 @@ def audit_runtime_fairness(
         request_latencies = _metric_values(measured, "request_latency_ms")
         issues: list[str] = []
         current_scope = _scope(workload)
-        hardware = str(manifest.get("hardware_fingerprint_sha256") or "")
+        hardware = _hardware_identity(fingerprint)
 
         if reference_scope is None:
             reference_scope = current_scope
@@ -109,7 +162,7 @@ def audit_runtime_fairness(
             if current_scope != reference_scope:
                 issues.append("workload scope differs from the first run")
             if hardware != reference_hardware:
-                issues.append("hardware fingerprint differs from the first run")
+                issues.append("stable hardware identity differs from the first run")
         if manifest.get("source_type") != "measured":
             issues.append("source_type is not measured")
         if manifest.get("profiler_level") != "none":
@@ -134,6 +187,8 @@ def audit_runtime_fairness(
                 "backend": plan.get("backend"),
                 "plan_id": plan.get("plan_id"),
                 "model_revision": manifest.get("model_revision"),
+                "hardware_capture_sha256": manifest.get("hardware_fingerprint_sha256"),
+                "plan_scope": _plan_scope(plan, manifest),
                 "eligible": not issues,
                 "issues": issues,
                 "measured_request_groups": repetition_count,
@@ -190,6 +245,19 @@ def audit_runtime_fairness(
                 key=lambda item: item["metrics"]["median_request_latency_ms"],
             )
         ]
+    plan_scopes = [row["plan_scope"] for row in eligible]
+    differing_plan_fields = sorted(
+        key
+        for key in (plan_scopes[0] if plan_scopes else {})
+        if key != "backend" and len({json.dumps(scope.get(key), sort_keys=True) for scope in plan_scopes}) > 1
+    )
+    comparison_caveats = []
+    if differing_plan_fields:
+        comparison_caveats.append(
+            "Plans differ in "
+            + ", ".join(differing_plan_fields)
+            + "; the result is a quality-gated plan comparison, not a pure runtime causal effect."
+        )
     identity = {
         "run_ids": sorted(str(row.get("run_id")) for row in records),
         "scope": reference_scope,
@@ -203,15 +271,20 @@ def audit_runtime_fairness(
         "status": status,
         "pass": status == "PASS",
         "minimum_repetitions": minimum_repetitions,
-        "hardware_fingerprint_sha256": reference_hardware,
+        "stable_hardware_identity": reference_hardware,
+        "stable_hardware_identity_sha256": (
+            sha256_value(reference_hardware) if reference_hardware is not None else None
+        ),
         "comparison_scope": reference_scope,
         "runs": records,
         "descriptive_latency_order": descriptive_order,
         "issues": global_issues,
+        "comparison_caveats": comparison_caveats,
+        "causal_runtime_isolation": status == "PASS" and not differing_plan_fields,
         "created_at": utc_now(),
         "claim_scope": (
-            "Descriptive ordering within the exact audited workload only; no extrapolation or "
-            "causal claim."
+            "Descriptive ordering of independently quality-gated plans within the exact audited "
+            "workload only; no extrapolation and no pure-runtime causal claim when plan scopes differ."
             if status == "PASS"
             else "No cross-runtime ordering is permitted until every fairness gate passes."
         ),
