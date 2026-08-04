@@ -49,6 +49,10 @@ exec "${vllm}" serve "${model}" \
   --served-model-name "${served_model}" \
   --enforce-eager \
   --no-enable-prefix-caching \
+  --no-async-scheduling \
+  --no-enable-chunked-prefill \
+  --max-num-batched-tokens 2048 \
+  --max-num-seqs 1 \
   --generation-config vllm \
   --disable-fastapi-docs \
   "${authentication[@]}"

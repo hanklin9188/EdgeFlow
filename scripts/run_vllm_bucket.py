@@ -66,6 +66,22 @@ def main() -> int:
         experiment_id="E08",
     )
     model_ref, revision, plan = submission.resolve(registry)
+    # The server is an independently managed process, so its registered scheduler
+    # and graph settings must be carried into the immutable execution-plan hash.
+    plan = plan.model_copy(
+        update={
+            "max_num_batched_tokens": 2048,
+            "max_num_seqs": 1,
+            "backend_args": {
+                **plan.backend_args,
+                "server_profile": "llama32-3b-bf16-eager-mbt2048-ms1",
+                "enforce_eager": True,
+                "enable_prefix_caching": False,
+                "async_scheduling": False,
+                "enable_chunked_prefill": False,
+            },
+        }
+    ).with_hash()
     quality = find_compatible_quality_report(
         artifact_root=ROOT / "artifacts",
         model_id=arguments.model_id,
