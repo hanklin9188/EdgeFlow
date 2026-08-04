@@ -82,7 +82,8 @@ class _HTTPRuntime(PreparedRuntime):
                 usage = item.get("usage") or {}
                 if isinstance(usage.get("completion_tokens"), int):
                     reported_output_tokens = int(usage["completion_tokens"])
-                text = item.get("choices", [{}])[0].get("text", "")
+                choices = item.get("choices") or [{}]
+                text = choices[0].get("text", "")
                 if text:
                     current_time = (time.perf_counter_ns() - started) / 1_000_000
                     streamed_parts.append((text, current_time))
