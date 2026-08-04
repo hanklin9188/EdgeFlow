@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "package": "EdgeFlow",
-  "generated_at": "2026-08-03T18:40:09.028347+00:00",
-  "file_count": 174,
-  "total_bytes": 1151845,
+  "generated_at": "2026-08-04T21:18:18.269650+00:00",
+  "file_count": 186,
+  "total_bytes": 1418372,
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
@@ -67,8 +67,13 @@
     },
     {
       "path": "README.md",
-      "bytes": 9755,
-      "sha256": "eda585d72b34d5d881e066d15e7c4d3de36211c5753fd350ac377c545077d0df"
+      "bytes": 14894,
+      "sha256": "97b658ab238ac03c8269538204378a752609f28acd20181a835947eee65daa4f"
+    },
+    {
+      "path": "README.zh-TW.md",
+      "bytes": 13938,
+      "sha256": "0e9fe4a07b99070bfae081e9ee5616e1a47b9bdc7e12e9ed329dfaab0d72c636"
     },
     {
       "path": "SECURITY.md",
@@ -154,6 +159,11 @@
       "path": "diagrams/validation_pipeline.mmd",
       "bytes": 572,
       "sha256": "94b4664e56cd7a8567073ba2f35cdbf36006acdbdf714e68c28d98f61b80d248"
+    },
+    {
+      "path": "docs/.nojekyll",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
       "path": "docs/00_EXECUTIVE_BLUEPRINT.md",
@@ -244,6 +254,56 @@
       "path": "docs/IMPLEMENTATION_STATUS.md",
       "bytes": 4122,
       "sha256": "ed925b59431347a33977777240f0576cec330f53b2b1f5abcf8879a9779b33d8"
+    },
+    {
+      "path": "docs/assets/architecture.svg",
+      "bytes": 6635,
+      "sha256": "d0483df33a14845063cc826a124ceaca3440f92f3ca62c99bb7cf138b96d89ee"
+    },
+    {
+      "path": "docs/assets/banner.svg",
+      "bytes": 6192,
+      "sha256": "711ff47a5b2491a150a20bd18a08b3f437dce8724f229558353e356b0bf42ef4"
+    },
+    {
+      "path": "docs/assets/console-preview.svg",
+      "bytes": 9209,
+      "sha256": "ffe282058dcea005246cd589804795296a72a82e31072f003abe88d0ee96e867"
+    },
+    {
+      "path": "docs/assets/logo.png",
+      "bytes": 31502,
+      "sha256": "d1512c8e479af697c031fa862d637611ec8285b27682ddcaceb267216f5e928a"
+    },
+    {
+      "path": "docs/assets/logo.svg",
+      "bytes": 898,
+      "sha256": "b87ae7f1ce63b900eadcabe3ac39368bd53ca92cc40765223126f3c60e144665"
+    },
+    {
+      "path": "docs/assets/screenshots/README.md",
+      "bytes": 1821,
+      "sha256": "bad625a0b149bb3a83e109db8daf04932836cac72301385f364800f9688731ce"
+    },
+    {
+      "path": "docs/assets/social-preview.png",
+      "bytes": 159482,
+      "sha256": "d9885d21ff1dcf24a0765a4425a15605277a1d9a9d73b5c9dd63c2602c2fc4ff"
+    },
+    {
+      "path": "docs/assets/social-preview.svg",
+      "bytes": 3195,
+      "sha256": "5d4565d9a8e6954945c42731f72ff194e61db5ab6a41f5a4c557a0dbaad3b29a"
+    },
+    {
+      "path": "docs/assets/validation-gates.svg",
+      "bytes": 6023,
+      "sha256": "8435a866ad218bd80b12d3fa8316893b315842da091e6b585b00f329ecd64415"
+    },
+    {
+      "path": "docs/index.html",
+      "bytes": 22493,
+      "sha256": "b4152a6ac3bbca0a785bdb4b45e593924a3d899faa79834d857489729207dd47"
     },
     {
       "path": "environment.yml",
