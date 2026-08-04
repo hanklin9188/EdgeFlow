@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import random
+import statistics
 import subprocess
 import threading
 import time
@@ -547,7 +548,11 @@ class RunOrchestrator:
                     drift = abs(recent - previous) / previous if previous > 0 else float("inf")
                     temperature_stable = (
                         len(warmup_temperatures) >= 10
-                        and max(warmup_temperatures[-10:]) - min(warmup_temperatures[-10:]) <= 2.0
+                        and abs(
+                            statistics.median(warmup_temperatures[-10:-5])
+                            - statistics.median(warmup_temperatures[-5:])
+                        )
+                        <= 1.0
                     )
                     clock_stable = (
                         len(warmup_clocks) >= 10
@@ -564,7 +569,7 @@ class RunOrchestrator:
             if not warmup_converged:
                 manifest["notes"] += (
                     " Warmup did not satisfy the registered 2% median-drift, 10% robust-CV, "
-                    "2°C recent temperature-range, and 0.97 active-clock-ratio thresholds "
+                    "1°C recent median-temperature-drift, and 0.97 active-clock-ratio thresholds "
                     f"within {maximum_warmup} request groups; validation must decide eligibility."
                 )
             correctness_counts = _prompt_counts_for_group(
