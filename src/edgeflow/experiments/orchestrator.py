@@ -438,6 +438,8 @@ class RunOrchestrator:
             manifest["status"] = "WARMING"
             write_json(temporary / "run_manifest.json", manifest)
             warmup_latencies: list[float] = []
+            warmup_temperatures: list[float] = []
+            warmup_clocks: list[float] = []
             if plan.backend == "torch_compile":
                 prompt_counts = _prompt_counts_for_group(
                     workload,
@@ -473,7 +475,7 @@ class RunOrchestrator:
                         notes="First graph compile/autotune execution; excluded from warmup and steady-state.",
                     )
                 )
-            maximum_warmup = max(config.warmup_requests, 50)
+            maximum_warmup = max(config.warmup_requests, 300)
             warmup_converged = False
             for iteration in range(maximum_warmup):
                 prompt_counts = _prompt_counts_for_group(
@@ -503,6 +505,11 @@ class RunOrchestrator:
                     len(warmup_results) // 2
                 ]
                 warmup_latencies.append(warmup_engine_ms)
+                warmup_telemetry = monitor.sample()
+                if warmup_telemetry["temperature_c"] is not None:
+                    warmup_temperatures.append(float(warmup_telemetry["temperature_c"]))
+                if warmup_telemetry["sm_clock_mhz"] is not None:
+                    warmup_clocks.append(float(warmup_telemetry["sm_clock_mhz"]))
                 append(
                     MetricRecord(
                         run_id=run_id,
@@ -513,7 +520,14 @@ class RunOrchestrator:
                         prompt_tokens=prompt_counts[0],
                         output_tokens=len(result.output_token_ids),
                         metrics=MetricValues(
-                            wall_ms=warmup_wall_ms, ttft_ms=result.ttft_ms, tpot_ms=result.tpot_ms
+                            wall_ms=warmup_wall_ms,
+                            ttft_ms=result.ttft_ms,
+                            tpot_ms=result.tpot_ms,
+                            temperature_c=warmup_telemetry["temperature_c"],
+                            sm_clock_mhz=warmup_telemetry["sm_clock_mhz"],
+                            memory_clock_mhz=warmup_telemetry["memory_clock_mhz"],
+                            gpu_utilization_pct=warmup_telemetry["gpu_utilization_pct"],
+                            power_w=warmup_telemetry["power_w"],
                         ),
                         token_timestamps_ms=result.token_timestamps_ms,
                         notes=f"Excluded from steady-state summary; {grouping_kind}={request_group_size}.",
@@ -523,13 +537,27 @@ class RunOrchestrator:
                     previous = sorted(warmup_latencies[-10:-5])[2]
                     recent = sorted(warmup_latencies[-5:])[2]
                     drift = abs(recent - previous) / previous if previous > 0 else float("inf")
-                    if drift < 0.02 and robust_cv(warmup_latencies[-10:]) <= 0.10:
+                    temperature_stable = (
+                        len(warmup_temperatures) >= 10
+                        and max(warmup_temperatures[-10:]) - min(warmup_temperatures[-10:]) <= 2.0
+                    )
+                    clock_stable = (
+                        len(warmup_clocks) >= 10
+                        and min(warmup_clocks[-10:]) / max(warmup_clocks[-10:]) >= 0.97
+                    )
+                    if (
+                        drift < 0.02
+                        and robust_cv(warmup_latencies[-10:]) <= 0.10
+                        and temperature_stable
+                        and clock_stable
+                    ):
                         warmup_converged = True
                         break
             if not warmup_converged:
                 manifest["notes"] += (
-                    " Warmup did not satisfy the registered 2% median-drift and 10% robust-CV "
-                    f"threshold within {maximum_warmup} request groups; validation must decide eligibility."
+                    " Warmup did not satisfy the registered 2% median-drift, 10% robust-CV, "
+                    "2°C recent temperature-range, and 0.97 active-clock-ratio thresholds "
+                    f"within {maximum_warmup} request groups; validation must decide eligibility."
                 )
             correctness_counts = _prompt_counts_for_group(
                 workload,
