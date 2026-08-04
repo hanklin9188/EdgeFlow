@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "package": "EdgeFlow",
-  "generated_at": "2026-08-04T03:06:03.208034+00:00",
+  "generated_at": "2026-08-04T05:42:20.911792+00:00",
   "file_count": 219,
-  "total_bytes": 1633342,
+  "total_bytes": 1646758,
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
@@ -252,8 +252,8 @@
     },
     {
       "path": "docs/IMPLEMENTATION_STATUS.md",
-      "bytes": 9384,
-      "sha256": "973641455af081b6ac81f39b31794c1cc422e2c831e2764b7924d759984b26b0"
+      "bytes": 9296,
+      "sha256": "18d8a3d14506c5fa5a94c9aa8cdea6b1be325d8c96a1f90d4ee7d6519867e32b"
     },
     {
       "path": "environment.yml",
@@ -417,8 +417,8 @@
     },
     {
       "path": "scripts/run_e10_grid.py",
-      "bytes": 7932,
-      "sha256": "a6054c6873586a8f69d40d5619f82ce3ae4eadb646bb4bf59fae4a0878ee2f1c"
+      "bytes": 9177,
+      "sha256": "61fb3538067160ef67be49d778ff84aa2aa048976fdfa2232d409f2fe4fdbd26"
     },
     {
       "path": "scripts/run_e21_profile_selection.py",
@@ -432,8 +432,8 @@
     },
     {
       "path": "scripts/run_external_bucket.py",
-      "bytes": 6438,
-      "sha256": "f56b00c61be0ef123f7a5452d212b7704b3f2c61980785ef2b2ce12d4f9d8b71"
+      "bytes": 6770,
+      "sha256": "bb6d2084c3af2328bd911d0a76fa341ae818aa24956cb1f9e5a030fb2a5ac640"
     },
     {
       "path": "scripts/run_foundation_experiments.py",
@@ -462,8 +462,8 @@
     },
     {
       "path": "scripts/start_vllm_server.sh",
-      "bytes": 2546,
-      "sha256": "e396e421bebcbc346a7bdc023b027b5647b2c337d2b1c7c001d1c99ef16cff8c"
+      "bytes": 2717,
+      "sha256": "b9333455f0904d9951786badfc4b0354c4c0909bfb4529756fa21fc9a631904d"
     },
     {
       "path": "scripts/validate_package.py",
@@ -517,8 +517,8 @@
     },
     {
       "path": "specs/e10_grid.yaml",
-      "bytes": 763,
-      "sha256": "f05d31c4d0384ae0456a40befab5b3d8fc1884d4cb4d3626db61b75b98347dc7"
+      "bytes": 1574,
+      "sha256": "88c60b5428dd6a2b16d40bb32ce0c6727c8a7877ae29778233682ec2cef74b5b"
     },
     {
       "path": "specs/evidence_record.schema.json",
@@ -672,8 +672,8 @@
     },
     {
       "path": "src/edgeflow/experiments/fairness.py",
-      "bytes": 7962,
-      "sha256": "c1ce50e4478d9f592a3cb1e7318f4e6505a0fd3c218d05e3ceca0c805d34e90b"
+      "bytes": 10626,
+      "sha256": "41df40fbc1905e010bd46d022ce02272ed26ca580cdb67624fc95ce69ccafb9f"
     },
     {
       "path": "src/edgeflow/experiments/foundation.py",
@@ -692,8 +692,8 @@
     },
     {
       "path": "src/edgeflow/experiments/orchestrator.py",
-      "bytes": 29506,
-      "sha256": "b08a34dbbe5f9376cef3524314cd0e855e1d9d695373d495a2e97c63afb2b82e"
+      "bytes": 33981,
+      "sha256": "3fb7ba6232534420a4bc8be740af7dfb12859ec47cc7f240d6681f599f8f95a1"
     },
     {
       "path": "src/edgeflow/hardware/__init__.py",
@@ -877,13 +877,13 @@
     },
     {
       "path": "src/edgeflow/runtimes/base.py",
-      "bytes": 1917,
-      "sha256": "6015f8a8ba25a808a2e383cfb28ef3ba608f3a61ff86607a13e90d78c9018a8e"
+      "bytes": 2000,
+      "sha256": "c4c403317624e2137fdcaff697b36094e17e3ce4c8c8702b3f067c345f7e57fb"
     },
     {
       "path": "src/edgeflow/runtimes/external.py",
-      "bytes": 10799,
-      "sha256": "d66d8ff4d3d48efbe596eb5383c2195874e799481bb74e5a1346f6096267847a"
+      "bytes": 13281,
+      "sha256": "83c692f6d54632dc244aa89703daa2b50d016b0127a73cc8f0dccbd2ea30d571"
     },
     {
       "path": "src/edgeflow/runtimes/pytorch.py",
@@ -1002,13 +1002,13 @@
     },
     {
       "path": "tests/test_experiment_execution.py",
-      "bytes": 13153,
-      "sha256": "3d0ebbe96b7574452240a841b6f4a86d2b551bf342f09134054ddc4358501fc6"
+      "bytes": 13306,
+      "sha256": "c8a435a9f48bdec8f3393b183b4e5c407745a9b70b9b434751ab8eb40bbb7d42"
     },
     {
       "path": "tests/test_fairness_audit.py",
-      "bytes": 3651,
-      "sha256": "ab4dc111279576dbf60494cea3e424ec1240ae4b635b55552667309975dbe7dc"
+      "bytes": 4739,
+      "sha256": "d65af47c1a5fba26c220d2afdab0d7337ffe3668d9a1a1a4c8825c2ebe7ab406"
     },
     {
       "path": "tests/test_formal_analysis.py",
