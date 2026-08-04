@@ -31,6 +31,7 @@ def main() -> int:
     parser.add_argument("--base-url")
     parser.add_argument("--served-model")
     parser.add_argument("--server-profile", required=True)
+    parser.add_argument("--execution-mode", choices=["eager", "graph"], default="eager")
     parser.add_argument("--prompt-tokens", type=int, default=1024)
     parser.add_argument("--output-tokens", type=int, default=128)
     parser.add_argument("--concurrency", type=int, default=1)
@@ -90,6 +91,8 @@ def main() -> int:
         **plan.backend_args,
         "server_profile": arguments.server_profile,
         "exact_token_prompts": True,
+        "execution_mode": arguments.execution_mode,
+        "enforce_eager": arguments.execution_mode == "eager",
     }
     if arguments.served_model:
         backend_args["served_model_name"] = arguments.served_model
@@ -113,6 +116,7 @@ def main() -> int:
             )
         update.update(
             {
+                "cuda_graph": arguments.execution_mode == "graph",
                 "max_num_batched_tokens": arguments.max_num_batched_tokens,
                 "max_num_seqs": arguments.max_num_seqs,
             }
@@ -139,6 +143,8 @@ def main() -> int:
         arguments.model_id,
         "--server-profile",
         arguments.server_profile,
+        "--execution-mode",
+        arguments.execution_mode,
         "--prompt-tokens",
         str(arguments.prompt_tokens),
         "--output-tokens",

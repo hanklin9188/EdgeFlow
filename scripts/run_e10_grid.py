@@ -56,7 +56,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Resume one preregistered E10 vLLM plan grid")
     parser.add_argument(
         "--profile",
-        choices=["ministral3-3b-grid-mbt32768", "ministral3-3b-grid-mbt65536"],
+        choices=[
+            "ministral3-3b-grid-mbt32768",
+            "ministral3-3b-grid-mbt65536",
+            "ministral3-3b-grid-graph-mbt32768",
+            "ministral3-3b-grid-graph-mbt65536",
+        ],
         required=True,
     )
     parser.add_argument("--no-start-server", action="store_true")
@@ -121,6 +126,8 @@ def main() -> int:
                         "ministral3-3b-edgeflow",
                         "--server-profile",
                         arguments.profile,
+                        "--execution-mode",
+                        "graph" if "-graph-" in arguments.profile else "eager",
                         "--prompt-tokens",
                         str(prompt_tokens),
                         "--output-tokens",

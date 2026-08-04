@@ -5,6 +5,7 @@ project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 vllm="${project_root}/.runtime/vllm/.venv/bin/vllm"
 profile="${EDGEFLOW_VLLM_PROFILE:-smoke}"
 multimodal=()
+execution=()
 case "${profile}" in
   smoke)
     model="HuggingFaceTB/SmolLM2-360M-Instruct"
@@ -23,7 +24,7 @@ case "${profile}" in
     max_batched_tokens="4096"
     max_sequences="1"
     ;;
-  ministral3-3b-grid-mbt32768|ministral3-3b-grid-mbt65536)
+  ministral3-3b-grid-mbt32768|ministral3-3b-grid-mbt65536|ministral3-3b-grid-graph-mbt32768|ministral3-3b-grid-graph-mbt65536)
     model="mistralai/Ministral-3-3B-Instruct-2512-BF16"
     revision="b6d637bef2393152b3da2b2fde72eecdee30557e"
     dtype="bfloat16"
@@ -36,6 +37,9 @@ case "${profile}" in
       max_batched_tokens="32768"
     else
       max_batched_tokens="65536"
+    fi
+    if [[ "${profile}" != *"-graph-"* ]]; then
+      execution=(--enforce-eager)
     fi
     ;;
   *)
@@ -71,7 +75,7 @@ exec "${vllm}" serve "${model}" \
   --max-model-len "${max_model_len}" \
   --gpu-memory-utilization "${memory_utilization}" \
   --served-model-name "${served_model}" \
-  --enforce-eager \
+  "${execution[@]}" \
   --no-enable-prefix-caching \
   --no-async-scheduling \
   --max-num-batched-tokens "${max_batched_tokens}" \
