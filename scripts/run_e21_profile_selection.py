@@ -69,6 +69,7 @@ def main() -> int:
             activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
             record_shapes=True,
             profile_memory=True,
+            acc_events=True,
         ) as profiler,
         torch.inference_mode(),
     ):
