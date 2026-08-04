@@ -1,34 +1,80 @@
-# EdgeFlow
+<div align="center">
 
-> **Causal, workload-conditioned autotuning for local LLM inference on an RTX 4080 SUPER.**
+<img src="docs/assets/banner.svg" alt="EdgeFlow — evidence-backed autotuning for local LLM inference" width="100%">
 
-EdgeFlow turns local LLM deployment from ad-hoc benchmark chasing into an evidence-backed, workload-conditioned optimization process.
+<p>
+  <a href="https://github.com/hanklin9188/EdgeFlow/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/hanklin9188/EdgeFlow/actions/workflows/ci.yml/badge.svg"></a>
+  <img alt="Python 3.11–3.13" src="https://img.shields.io/badge/python-3.11%20–%203.13-1e2d36?style=flat-square&logo=python&logoColor=78d5c8&labelColor=152129">
+  <img alt="CUDA 13.0" src="https://img.shields.io/badge/CUDA-13.0-1e2d36?style=flat-square&logo=nvidia&logoColor=78d5c8&labelColor=152129">
+  <img alt="Verified on RTX 4080 SUPER" src="https://img.shields.io/badge/verified%20on-RTX%204080%20SUPER-1e2d36?style=flat-square&labelColor=152129">
+  <img alt="Control plane: localhost only" src="https://img.shields.io/badge/control%20plane-localhost%20only-1e2d36?style=flat-square&labelColor=152129">
+  <a href="LICENSE"><img alt="Apache 2.0" src="https://img.shields.io/badge/license-Apache%202.0-1e2d36?style=flat-square&labelColor=152129"></a>
+</p>
 
-它不假設某個 runtime 或量化永遠最快。EdgeFlow 先保存逐 request 原始量測，經過 correctness、timing、stability、statistics、quality 與 provenance gate，再用 profiler observation 產生可反駁的 bottleneck hypothesis，最後只從通過驗證的 runs 建立 deployment policy。
+**English** · [繁體中文](README.zh-TW.md) · [Docs](docs/) · [Implementation status](docs/IMPLEMENTATION_STATUS.md)
 
-```text
-Observe → Diagnose → Intervene → Verify → Synthesize Policy
+</div>
+
+---
+
+EdgeFlow turns local LLM deployment from ad-hoc benchmark chasing into an **evidence-backed, workload-conditioned optimization process**.
+
+It does not assume that one runtime or one quantization is always fastest. EdgeFlow preserves every per-request raw measurement, pushes it through correctness, timing, stability, statistics, quality and provenance gates, derives *falsifiable* bottleneck hypotheses from profiler observations, and only then builds a deployment policy — using nothing but runs that survived validation.
+
+```
+Observe  →  Diagnose  →  Intervene  →  Verify  →  Synthesize policy
 ```
 
 > [!IMPORTANT]
-> Repository 內的 `examples/` 與 `ui-prototype/` 永遠標示為 `demo`，不得支持性能結論。正式產品是 localhost-only 的 Local-first Web App；模型、GPU 工作與 artifacts 不上傳雲端。目前 README 不刊登尚未完成 confirmatory/holdout 的性能數字。
+> `examples/` and `ui-prototype/` are permanently labelled `demo` and may never support a performance conclusion. The shipping product is a **localhost-only, local-first web app** — models, GPU work and artifacts never touch the cloud. This README publishes **no performance numbers** until confirmatory and holdout experiments are complete.
 
-## 已完成的工程面
+---
 
-- RTX 4080 SUPER hardware/software fingerprint 與 environment doctor。
-- Pydantic + JSON Schema contracts：workload、plan、manifest、metric、profile、evidence、verdict、policy。
-- PyTorch eager／`torch.compile` data plane；llama.cpp／vLLM OpenAI-compatible adapters 與 capability-safe skip。
-- 精確 target-tokenizer synthetic prompt、隔離 run artifact、逐 request JSONL、SQLite index。
-- G0–G8 validation engine、robust statistics、10,000-sample paired bootstrap、thermal/drift checks。
-- Deterministic bottleneck diagnosis、controlled-intervention drafts、session-aware objective 與 decision-list policy。
-- Correctness-cached Triton fused residual + RMSNorm，任何未驗證 shape 自動 fallback。
-- Typer CLI、localhost FastAPI、隔離背景 worker、白名單 runtime service manager、Prometheus endpoint、無假數據 Local-first Web App、測試與 CI。
+## Why this is different
 
-完整 phase 狀態與尚需正式 GPU 實驗的項目見 [Implementation Status](docs/IMPLEMENTATION_STATUS.md)。研究設計仍完整保留在 [Executive Blueprint](docs/00_EXECUTIVE_BLUEPRINT.md) 與 [Experiment Catalog](docs/03_EXPERIMENT_CATALOG.md)。
+|                              | Typical benchmark repo             | EdgeFlow                                                              |
+| ---------------------------- | ---------------------------------- | --------------------------------------------------------------------- |
+| **Unit of truth**            | A summary table                    | Per-request raw JSONL, re-derived on every validation                 |
+| **Workload**                 | One prompt length, one batch       | Exact-token distributions, concurrency and session length as inputs   |
+| **Cold vs steady**           | Blended into one number            | Cold start, compile, capture and steady state stored separately       |
+| **Cause**                    | Asserted from a chart              | `HYPOTHESIS` until a matched intervention plus mediator confirms it   |
+| **Quality**                  | Footnote, or absent                | A hard gate — a quantized plan cannot buy latency with accuracy       |
+| **Recommendation**           | "X is faster"                      | A scoped decision list that reports `STALE` when the fingerprint moves |
 
-## 快速開始
+---
 
-環境需求：Python 3.11–3.13、NVIDIA driver、CUDA-enabled PyTorch。推薦使用 WSL2 Ubuntu 或原生 Ubuntu。
+## The Local Control Console
+
+<div align="center">
+<img src="docs/assets/console-preview.svg" alt="EdgeFlow Local Control Console" width="100%">
+</div>
+
+One command, one browser tab, one machine:
+
+```bash
+edgeflow serve --host 127.0.0.1 --port 8787
+```
+
+The console can start and stop pinned llama.cpp / vLLM builds, define a workload, screen candidates, submit **one** controlled GPU benchmark, cancel the local worker, and read runtime capability, validation verdicts, raw artifacts, evidence and policy. The OpenAPI contract lives at `/openapi.json`, Prometheus metrics at `/metrics`.
+
+Port `8787` is EdgeFlow's reserved default so it never collides with other localhost services in the workspace.
+
+<details>
+<summary><strong>Security posture of the control plane</strong></summary>
+
+- One managed runtime and one GPU job at a time.
+- Managed runtimes bind `127.0.0.1` with a random API key held only in process memory.
+- Control writes additionally require a token that exists only in page memory.
+- The server rejects non-loopback hosts, cross-origin writes, bodies over 1 MiB, and any shell, path or environment argument supplied by the browser.
+- A public site is never a control plane. If GitHub Pages ever publishes results, it may carry only sanitised, validated, read-only JSON and charts.
+
+</details>
+
+---
+
+## Quickstart
+
+**Requirements** — Python 3.11–3.13, an NVIDIA driver, and CUDA-enabled PyTorch. WSL2 Ubuntu or native Ubuntu recommended.
 
 ```bash
 uv sync --extra dev
@@ -37,13 +83,15 @@ edgeflow doctor
 pytest -q
 ```
 
-GPU data plane 需要現有 CUDA PyTorch/Transformers 環境，或：
+The GPU data plane needs an existing CUDA PyTorch/Transformers environment, or:
 
 ```bash
 uv sync --extra dev --extra gpu
 ```
 
-### 1. Inspect
+### 1 · Inspect
+
+*Fingerprint the machine before anything is measured.*
 
 ```bash
 edgeflow inspect
@@ -51,7 +99,9 @@ edgeflow inspect --json --output artifacts/hardware_fingerprint.json
 edgeflow doctor
 ```
 
-### 2. Define a workload
+### 2 · Define a workload
+
+*Prompt length, output length, concurrency and session length are explicit inputs — not defaults.*
 
 ```bash
 edgeflow workload create \
@@ -64,9 +114,11 @@ edgeflow workload create \
   --save configs/generated/smoke-workload.json
 ```
 
-分布格式同樣支援 `512:0.25,1024:0.45,2048:0.30`；每次實際 request 會在目標 tokenizer 下精確生成指定 token 數。
+`--prompt-distribution` also accepts mixtures such as `512:0.25,1024:0.45,2048:0.30`. Every request is generated to the exact token count under the *target* tokenizer.
 
-### 3. Screen capabilities
+### 3 · Screen capabilities
+
+*Capability, memory and duplicate pruning only — the output is candidates, never a recommendation.*
 
 ```bash
 edgeflow tune screen \
@@ -75,9 +127,9 @@ edgeflow tune screen \
   --save artifacts/planned_candidates.json
 ```
 
-Screening 只做 capability/memory/duplicate pruning，輸出是候選，不是 recommendation。
+### 4 · Benchmark
 
-### 4. Benchmark
+*One isolated run, one artifact directory.*
 
 ```bash
 edgeflow benchmark run \
@@ -89,24 +141,24 @@ edgeflow benchmark run \
   --experiment-id E04
 ```
 
-每個 run 會產生：
-
-```text
+```
 artifacts/<run_id>/
 ├── run_manifest.json
 ├── hardware_fingerprint.json
 ├── workload.json
 ├── execution_plan.json
-├── metrics.jsonl
+├── metrics.jsonl              ← per-request raw rows
 ├── stdout.log
 ├── stderr.log
 ├── validation_verdict.json
 └── VALIDATION.md
 ```
 
-Formal policy eligibility 還要求 correctness 與 quality artifacts；單純 smoke latency 預期得到 `CONDITIONAL_PASS`，不會被包裝成完整結論。
+Formal policy eligibility also demands correctness and quality artifacts. A bare latency smoke is expected to land on `CONDITIONAL_PASS` — and it is never dressed up as a finished conclusion.
 
-### 5. Validate and diagnose
+### 5 · Validate and diagnose
+
+*Profiled latency never overwrites unprofiled production timing.*
 
 ```bash
 edgeflow validate artifacts/<run_id>
@@ -115,9 +167,9 @@ edgeflow diagnose --profile examples/sample_profiler_summary.json
 python scripts/verify_results.py
 ```
 
-`profile` 會產生隔離 diagnostic rerun 命令。Profiler-enabled latency 永不覆寫 unprofiled production timing。
+### 6 · Validate the Triton path
 
-### 6. Validate the Triton path
+*No cached `PASS` for this kernel / GPU / dtype / shape → the PyTorch reference runs, always.*
 
 ```bash
 edgeflow kernel validate
@@ -125,32 +177,108 @@ edgeflow kernel validate --full
 python scripts/benchmark_rmsnorm.py --quick
 ```
 
-Dispatcher key 包含 kernel version、GPU、dtype 與 shape；cache 中沒有 `PASS` 時一定使用 PyTorch reference。
+### 7 · Start the console
 
-### 7. Start the Local-first Web App
-
-選用 llama.cpp／vLLM 前，先建立互不污染的固定版本環境：
+*Optionally build isolated, pinned runtimes first so they cannot contaminate each other.*
 
 ```bash
 ./scripts/bootstrap_llama_cpp.sh
 ./scripts/bootstrap_vllm.sh
-```
-
-```bash
 edgeflow serve --host 127.0.0.1 --port 8787
 ```
 
-開啟 `http://127.0.0.1:8787`。OpenAPI contract 位於 `/openapi.json`，metrics 位於 `/metrics`。`8787` 是 EdgeFlow 的專用預設 port，避免與工作區內其他 localhost 服務混淆。
+---
 
-Web App 可一鍵啟停固定版本 llama.cpp／vLLM、建立 workload、screen 候選、提交一個受控 GPU benchmark、取消本機 worker，以及查看 runtime 能力、run validation、raw artifacts、evidence 與 policy。第一次啟動 runtime 可下載 registry 鎖定的模型檔；推論 prompt、結果、SQLite 與 artifacts 仍只留本機。
+## Architecture
 
-一次只允許一個 managed runtime 與一個 GPU job。Managed runtime 綁定 `127.0.0.1`，使用程序記憶體中的隨機 API key；控制寫入另需只存在分頁記憶體的 token。server 拒絕非 loopback host、跨來源寫入、超過 1 MiB 的 request，以及任意 shell/path/environment 參數。
+<div align="center">
+<img src="docs/assets/architecture.svg" alt="EdgeFlow architecture — control plane, data plane and evidence plane" width="100%">
+</div>
 
-公開網站不是控制平面。若後續輸出 GitHub Pages，只能包含經清理且 validated 的唯讀 JSON／圖表，不得啟動本機實驗或讀取私人 artifacts。
+Full dependency design for the control, data and presentation planes: [System Architecture](docs/01_SYSTEM_ARCHITECTURE.md).
+
+---
+
+## Validation gates
+
+<div align="center">
+<img src="docs/assets/validation-gates.svg" alt="EdgeFlow validation gates G0 to G8" width="100%">
+</div>
+
+| Gate | Enforced invariant |
+| --- | --- |
+| **G0** Schema | Required artifacts, schemas, IDs, canonical hashes, raw JSONL |
+| **G1** Environment | GPU scope, and no unapproved background GPU process |
+| **G2** Correctness | Reference parity / no NaN / kernel contract |
+| **G3** Timing | Warmup split, monotonic timestamps, no profiler contamination |
+| **G4** Stability | Robust CV, and first-vs-last-third drift ≤ 3% |
+| **G5** Statistics | ≥ 30 engine requests, or ≥ 100 kernel iterations |
+| **G6** Quality | Profile-specific hard gate; quantized plans cannot bypass it |
+| **G7** Provenance | Pinned revision, exact command, git and source state |
+| **G8** Eligibility | Only measured `PASS` runs may enter a policy |
+
+Verdicts are `PASS`, `CONDITIONAL_PASS`, `FAIL`, `INVALID` and `SKIPPED`. `FAIL` and `INVALID` raw artifacts stay on disk for audit.
+
+---
+
+## Evidence and claim rules
+
+- `demo`, `estimated` and profiled latency never appear in a headline.
+- A plan that fails correctness or quality is never ranked.
+- Cold start, compile, capture and steady state are stored separately.
+- Engine-only and HTTP end-to-end results are never ranked against each other.
+- Bottleneck diagnosis is a `HYPOTHESIS`; only a matched intervention plus a mediator promotes it.
+- When the runtime, driver or model fingerprint changes, the policy reports `STALE` and falls back.
+- RTX 4080 SUPER results are never extrapolated to multi-GPU or datacenter GPUs.
+
+---
+
+## What is built, and what is not
+
+**Engineering, complete on this checkout**
+
+- RTX 4080 SUPER hardware/software fingerprint and an environment doctor.
+- Pydantic + JSON Schema contracts for workload, plan, manifest, metric, profile, evidence, verdict and policy.
+- PyTorch eager / `torch.compile` data plane; llama.cpp and vLLM OpenAI-compatible adapters with capability-safe skip.
+- Exact target-tokenizer synthetic prompts, isolated run artifacts, per-request JSONL, SQLite index.
+- G0–G8 validation engine, robust statistics, 10,000-sample paired bootstrap, thermal and drift checks.
+- Deterministic bottleneck diagnosis, controlled-intervention drafts, session-aware objectives, decision-list policy.
+- Correctness-cached Triton fused residual + RMSNorm, with automatic fallback for any unvalidated shape.
+- Typer CLI, localhost FastAPI, isolated background worker, allowlisted runtime service manager, Prometheus endpoint, a local-first web app with no fake data, tests and CI.
+
+> [!NOTE]
+> **Research conclusions are deliberately not claimed yet.** Cross-runtime verdicts for the primary 3B model, quality datasets, matched interventions, holdout replay and end-to-end kernel integration still require formal GPU experiments. See [Implementation Status](docs/IMPLEMENTATION_STATUS.md) for the phase-by-phase split between *engineering done* and *experiment outstanding*.
+
+Research design lives in the [Executive Blueprint](docs/00_EXECUTIVE_BLUEPRINT.md) and the [Experiment Catalog](docs/03_EXPERIMENT_CATALOG.md).
+
+---
+
+## Repository map
+
+```
+src/edgeflow/
+├── api/             localhost FastAPI control/read surface
+├── cli/             Typer commands
+├── core/            immutable contracts and canonical hashing
+├── experiments/     isolated run orchestrator
+├── hardware/        RTX/CUDA/software fingerprint + doctor
+├── kernels/         correctness-gated Triton optimization
+├── local/           typed single-GPU job + allowlisted runtime managers
+├── metrics/         robust statistics and paired bootstrap
+├── optimizer/       pruning, objectives, break-even
+├── policy/          explainable scoped decision lists
+├── profiler/        bounded diagnosis rules
+├── runtimes/        PyTorch, compile, llama.cpp, vLLM adapters
+├── storage/         SQLite migrations and evidence index
+├── validation/      G0–G8 final authority
+└── workloads/       exact-token controlled inputs
+```
+
+---
 
 ## CLI surface
 
-```text
+```
 edgeflow inspect [--json]
 edgeflow doctor [--strict-optional]
 edgeflow workload create ...
@@ -166,54 +294,24 @@ edgeflow kernel validate [--full]
 edgeflow serve
 ```
 
-## Validation gates
+---
 
-| Gate | Enforced invariant |
-|---|---|
-| G0 Schema | Required artifacts, schemas, IDs, canonical hashes, raw JSONL |
-| G1 Environment | GPU scope and no unapproved background GPU process |
-| G2 Correctness | Reference parity / no NaN / kernel contract |
-| G3 Timing | Warmup split, monotonic timestamps, no profiler contamination |
-| G4 Stability | Robust CV and first-vs-last-third drift ≤ 3% |
-| G5 Statistics | ≥30 engine requests or ≥100 kernel iterations |
-| G6 Quality | Profile-specific hard gate; quantized plans cannot bypass it |
-| G7 Provenance | Pinned revision, exact command, git/source state |
-| G8 Eligibility | Only measured `PASS` runs may enter policies |
+## Documentation
 
-Verdicts are `PASS`, `CONDITIONAL_PASS`, `FAIL`, `INVALID`, and `SKIPPED`. `FAIL`/`INVALID` raw artifacts remain available for audit.
+| | |
+| --- | --- |
+| [00 · Executive Blueprint](docs/00_EXECUTIVE_BLUEPRINT.md) | Why the project exists and what counts as success |
+| [01 · System Architecture](docs/01_SYSTEM_ARCHITECTURE.md) | Control, data and presentation planes |
+| [02 · Experiment Master Plan](docs/02_EXPERIMENT_MASTER_PLAN.md) | How E00–E30 fit together |
+| [03 · Experiment Catalog](docs/03_EXPERIMENT_CATALOG.md) | Every experiment, its hypothesis and its exit criteria |
+| [05 · Autotuning & Causal Method](docs/05_AUTOTUNING_AND_CAUSAL_METHOD.md) | Interventions, mediators, policy synthesis |
+| [06 · Profiling & Kernel Plan](docs/06_PROFILING_AND_KERNEL_PLAN.md) | Nsight workflow and the Triton path |
+| [07 · Validation & Statistics](docs/07_VALIDATION_AND_STATISTICS.md) | Gates, robust statistics, paired bootstrap |
+| [09 · UI/UX & Presentation](docs/09_UI_UX_GITHUB_PRESENTATION.md) | Design language and presentation rules |
+| [11 · Reproducibility & Security](docs/11_REPRODUCIBILITY_RELEASE_SECURITY.md) | Release, provenance and data handling |
+| [Implementation Status](docs/IMPLEMENTATION_STATUS.md) | Engineering done vs experiment outstanding |
 
-## Repository map
-
-```text
-src/edgeflow/
-├── api/             localhost FastAPI control/read surface
-├── cli/             Typer commands
-├── core/            immutable contracts and canonical hashing
-├── experiments/     isolated run orchestrator
-├── hardware/        RTX/CUDA/software fingerprint + doctor
-├── kernels/         correctness-gated Triton optimization
-├── local/           typed single-GPU job + allowlisted runtime service managers
-├── metrics/         robust statistics and paired bootstrap
-├── optimizer/       pruning, objectives, break-even
-├── policy/          explainable scoped decision lists
-├── profiler/        bounded diagnosis rules
-├── runtimes/        PyTorch, compile, llama.cpp, vLLM adapters
-├── storage/         SQLite migrations and evidence index
-├── validation/      G0–G8 final authority
-└── workloads/       exact-token controlled inputs
-```
-
-控制平面、資料平面與 presentation plane 的完整依賴設計見 [System Architecture](docs/01_SYSTEM_ARCHITECTURE.md)。
-
-## Evidence and claim rules
-
-- `demo`、`estimated`、profiled latency 不可進 headline。
-- correctness 或 quality fail 的 plan 永不排名。
-- cold start、compile、capture 與 steady state 分開保存。
-- engine-only 與 HTTP end-to-end 不在同一 ranking 比較。
-- bottleneck diagnosis 是 `HYPOTHESIS`；matched intervention + mediator 才能升級證據。
-- runtime/driver/model fingerprint 改變時 policy 回報 `STALE` 並 fallback。
-- RTX 4080 SUPER 的結果不外推成多 GPU 或資料中心 GPU 結論。
+---
 
 ## Development
 
@@ -224,12 +322,20 @@ python scripts/validate_package.py
 python scripts/verify_results.py
 ```
 
-Public CI 不需要 GPU，驗證 schemas、tests、lint、secret/model-weight policy。完整 GPU sweep 透過 self-hosted runner 或本機執行。
+Public CI needs no GPU: it validates schemas, tests, lint, and the secret / model-weight policy. Full GPU sweeps run on a self-hosted runner or locally. Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+---
 
 ## Security and data
 
-不提交模型權重、token、`.env`、gated prompt 原文、Nsight binary trace 或 private artifacts。HTTP adapters 只允許 loopback OpenAI-compatible endpoint；正式 run 不使用 `shell=True`，也不在 benchmark 過程安裝套件。詳見 [SECURITY.md](SECURITY.md) 與 [Reproducibility](docs/11_REPRODUCIBILITY_RELEASE_SECURITY.md)。
+Model weights, tokens, `.env` files, gated prompt text, Nsight binary traces and private artifacts are never committed. HTTP adapters accept loopback OpenAI-compatible endpoints only; formal runs never use `shell=True` and never install packages mid-benchmark. See [SECURITY.md](SECURITY.md) and [Reproducibility](docs/11_REPRODUCIBILITY_RELEASE_SECURITY.md).
 
-## License
+---
 
-EdgeFlow 原始碼採 [Apache License 2.0](LICENSE)。模型、資料集與 runtime 保留各自授權；正式 run 必須記錄 revision 與條款。
+## License and citation
+
+EdgeFlow source is licensed under the [Apache License 2.0](LICENSE). Models, datasets and runtimes keep their own licenses; every formal run records the revision and the terms. Citation metadata: [CITATION.cff](CITATION.cff).
+
+<div align="center">
+<sub>Built and verified on a single NVIDIA GeForce RTX 4080 SUPER workstation.</sub>
+</div>
