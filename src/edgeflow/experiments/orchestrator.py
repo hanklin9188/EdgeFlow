@@ -34,6 +34,9 @@ from edgeflow.storage import EdgeFlowDB
 from edgeflow.validation import validate_run
 from edgeflow.workloads.builder import build_exact_token_ids, choose_prompt_tokens
 
+_NVML_HANDLE: Any | None = None
+_NVML_UNAVAILABLE = False
+
 
 def _prompt_counts_for_group(
     workload: WorkloadSpec,
@@ -78,6 +81,38 @@ def _prompt_seed(
 
 
 def _gpu_telemetry() -> dict[str, float | None]:
+    global _NVML_HANDLE, _NVML_UNAVAILABLE
+    if not _NVML_UNAVAILABLE:
+        try:
+            import pynvml
+        except ImportError:
+            _NVML_UNAVAILABLE = True
+        else:
+            try:
+                if _NVML_HANDLE is None:
+                    pynvml.nvmlInit()
+                    _NVML_HANDLE = pynvml.nvmlDeviceGetHandleByIndex(0)
+                utilization = pynvml.nvmlDeviceGetUtilizationRates(_NVML_HANDLE)
+                return {
+                    "temperature_c": float(
+                        pynvml.nvmlDeviceGetTemperature(
+                            _NVML_HANDLE, pynvml.NVML_TEMPERATURE_GPU
+                        )
+                    ),
+                    "sm_clock_mhz": float(
+                        pynvml.nvmlDeviceGetClockInfo(_NVML_HANDLE, pynvml.NVML_CLOCK_SM)
+                    ),
+                    "memory_clock_mhz": float(
+                        pynvml.nvmlDeviceGetClockInfo(_NVML_HANDLE, pynvml.NVML_CLOCK_MEM)
+                    ),
+                    "gpu_utilization_pct": float(utilization.gpu),
+                    "power_w": float(pynvml.nvmlDeviceGetPowerUsage(_NVML_HANDLE)) / 1000.0,
+                }
+            except pynvml.NVMLError:
+                _NVML_UNAVAILABLE = True
+        # NVML is optional in the lightweight control-plane environment. A
+        # runtime environment that supplies it avoids spawning nvidia-smi
+        # between short timed requests; otherwise preserve the old fallback.
     try:
         result = subprocess.run(
             [
