@@ -69,9 +69,7 @@ class _HTTPRuntime(PreparedRuntime):
             method="POST",
         )
         started = time.perf_counter_ns()
-        timestamps: list[float] = []
-        text_parts: list[str] = []
-        token_count = 0
+        streamed_parts: list[tuple[str, float]] = []
         with urllib.request.urlopen(request, timeout=300) as response:
             for raw_line in response:
                 line = raw_line.decode("utf-8").strip()
@@ -80,14 +78,23 @@ class _HTTPRuntime(PreparedRuntime):
                 item = json.loads(line[6:])
                 text = item.get("choices", [{}])[0].get("text", "")
                 if text:
-                    text_parts.append(text)
-                    current_ids = self.tokenizer.encode(
-                        "".join(text_parts), add_special_tokens=False
-                    )
                     current_time = (time.perf_counter_ns() - started) / 1_000_000
-                    timestamps.extend([current_time] * max(0, len(current_ids) - token_count))
-                    token_count = len(current_ids)
+                    streamed_parts.append((text, current_time))
         wall_ms = (time.perf_counter_ns() - started) / 1_000_000
+
+        # Reconstruct token boundaries only after the timed response has closed.
+        # Re-tokenizing the complete prefix for every streamed chunk is O(n^2)
+        # client work and used to contaminate engine latency and its stability
+        # estimate. Deferring the identical reconstruction preserves TTFT/TPOT
+        # evidence without charging host-side reporting work to the runtime.
+        text_parts: list[str] = []
+        timestamps: list[float] = []
+        token_count = 0
+        for text, current_time in streamed_parts:
+            text_parts.append(text)
+            current_ids = self.tokenizer.encode("".join(text_parts), add_special_tokens=False)
+            timestamps.extend([current_time] * max(0, len(current_ids) - token_count))
+            token_count = len(current_ids)
         output_ids = self.tokenizer.encode("".join(text_parts), add_special_tokens=False)
         if len(timestamps) != len(output_ids):
             # A backend that rewrites previous text cannot support token-boundary normalization.
