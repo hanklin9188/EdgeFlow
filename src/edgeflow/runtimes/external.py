@@ -87,15 +87,24 @@ class _HTTPRuntime(PreparedRuntime):
         # client work and used to contaminate engine latency and its stability
         # estimate. Deferring the identical reconstruction preserves TTFT/TPOT
         # evidence without charging host-side reporting work to the runtime.
-        text_parts: list[str] = []
-        timestamps: list[float] = []
-        token_count = 0
-        for text, current_time in streamed_parts:
-            text_parts.append(text)
-            current_ids = self.tokenizer.encode("".join(text_parts), add_special_tokens=False)
-            timestamps.extend([current_time] * max(0, len(current_ids) - token_count))
-            token_count = len(current_ids)
-        output_ids = self.tokenizer.encode("".join(text_parts), add_special_tokens=False)
+        output_text = "".join(text for text, _ in streamed_parts)
+        output_ids = self.tokenizer.encode(output_text, add_special_tokens=False)
+        if len(streamed_parts) == len(output_ids):
+            # vLLM and llama.cpp normally emit one non-empty delta per token.
+            # This is an exact O(n) mapping and avoids 512 repeated tokenizer
+            # passes for a 512-token completion.
+            timestamps = [current_time for _, current_time in streamed_parts]
+        else:
+            # A backend may buffer multiple byte-level tokens into one Unicode
+            # chunk. Reconstruct those uncommon boundaries conservatively.
+            text_parts: list[str] = []
+            timestamps = []
+            token_count = 0
+            for text, current_time in streamed_parts:
+                text_parts.append(text)
+                current_ids = self.tokenizer.encode("".join(text_parts), add_special_tokens=False)
+                timestamps.extend([current_time] * max(0, len(current_ids) - token_count))
+                token_count = len(current_ids)
         if len(timestamps) != len(output_ids):
             # A backend that rewrites previous text cannot support token-boundary normalization.
             timestamps = []
@@ -115,6 +124,11 @@ class _HTTPRuntime(PreparedRuntime):
             {
                 "protocol": "openai_http",
                 "prompt_transport": "exact_token_ids" if self.exact_token_prompts else "text",
+                "timestamp_reconstruction": (
+                    "direct_stream_delta"
+                    if len(streamed_parts) == len(output_ids)
+                    else "retokenized_prefix_fallback"
+                ),
             },
         )
 
