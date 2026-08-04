@@ -103,6 +103,14 @@ def main() -> int:
         )
         update.update({"dtype": None, "flash_attention": True})
     else:
+        if arguments.model_id == "ministral3-3b-instruct-2512":
+            backend_args.update(
+                {
+                    "language_model_only": True,
+                    "skip_mm_profiling": True,
+                    "mm_processor_cache_gb": 0,
+                }
+            )
         update.update(
             {
                 "max_num_batched_tokens": arguments.max_num_batched_tokens,

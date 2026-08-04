@@ -4,6 +4,7 @@ set -euo pipefail
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 vllm="${project_root}/.runtime/vllm/.venv/bin/vllm"
 profile="${EDGEFLOW_VLLM_PROFILE:-smoke}"
+multimodal=()
 case "${profile}" in
   smoke)
     model="HuggingFaceTB/SmolLM2-360M-Instruct"
@@ -30,6 +31,7 @@ case "${profile}" in
     served_model="ministral3-3b-edgeflow"
     max_model_len="8192"
     max_sequences="8"
+    multimodal=(--language-model-only --skip-mm-profiling --mm-processor-cache-gb 0)
     if [[ "${profile}" == *"32768" ]]; then
       max_batched_tokens="32768"
     else
@@ -76,4 +78,5 @@ exec "${vllm}" serve "${model}" \
   --max-num-seqs "${max_sequences}" \
   --generation-config vllm \
   --disable-fastapi-docs \
+  "${multimodal[@]}" \
   "${authentication[@]}"
