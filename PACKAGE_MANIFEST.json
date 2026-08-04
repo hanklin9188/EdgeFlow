@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "package": "EdgeFlow",
-  "generated_at": "2026-08-03T22:08:11.706882+00:00",
-  "file_count": 197,
-  "total_bytes": 1537840,
+  "generated_at": "2026-08-04T01:03:39.161382+00:00",
+  "file_count": 198,
+  "total_bytes": 1542510,
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
@@ -612,8 +612,8 @@
     },
     {
       "path": "src/edgeflow/experiments/foundation.py",
-      "bytes": 15646,
-      "sha256": "de13f4ee742b1221a449903962a3fa77735f2db5e8d70fc16279136aee44be0f"
+      "bytes": 18658,
+      "sha256": "379a8326bac1feb79a44b05f84e542ffc7b96acace2254caa8a71099431d5358"
     },
     {
       "path": "src/edgeflow/experiments/interventions.py",
@@ -924,6 +924,11 @@
       "path": "tests/test_formal_analysis.py",
       "bytes": 9048,
       "sha256": "470210cff929a788135a3cdfd0f18ab8749609bd1c0d1a8b50dbeb5cb4648e04"
+    },
+    {
+      "path": "tests/test_foundation.py",
+      "bytes": 1658,
+      "sha256": "8e557409fb0d6e56c9093f184ff5636512079b6fe96e4c4ec4b965e579464803"
     },
     {
       "path": "tests/test_local_web.py",

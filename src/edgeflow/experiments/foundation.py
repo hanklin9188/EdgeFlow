@@ -84,6 +84,64 @@ def _wall_sync_us(function: Callable[[], Any], iterations: int) -> list[float]:
     return values
 
 
+def evaluate_thermal_block(
+    *,
+    stabilized: list[float],
+    background: list[float],
+    stabilized_before: dict[str, float | None],
+    stabilized_after: dict[str, float | None],
+    pre_run: dict[str, float | None],
+    required_iterations: int,
+) -> dict[str, Any]:
+    """Apply the registered E02 thresholds to a completed thermal block."""
+
+    midpoint = len(stabilized) // 2
+    first_half = statistics.median(stabilized[:midpoint])
+    second_half = statistics.median(stabilized[midpoint:])
+    latency_drift = abs(second_half - first_half) / first_half if first_half > 0 else float("inf")
+    stable_cv = robust_cv(stabilized)
+    background_cv = robust_cv(background)
+    background_effect = statistics.median(background) / statistics.median(stabilized)
+
+    before_temperature = stabilized_before.get("temperature_c")
+    after_temperature = stabilized_after.get("temperature_c")
+    temperature_delta = (
+        abs(float(after_temperature) - float(before_temperature))
+        if before_temperature is not None and after_temperature is not None
+        else None
+    )
+    before_clock = stabilized_before.get("sm_clock_mhz")
+    after_clock = stabilized_after.get("sm_clock_mhz")
+    clock_drift = (
+        abs(float(after_clock) - float(before_clock)) / float(before_clock)
+        if before_clock not in {None, 0} and after_clock is not None
+        else None
+    )
+    pre_run_utilization = pre_run.get("utilization_pct")
+    checks = {
+        "protocol_iterations": len(stabilized) >= required_iterations
+        and len(background) >= required_iterations,
+        "pre_run_gpu_idle": pre_run_utilization is not None
+        and float(pre_run_utilization) < 5.0,
+        "stabilized_latency_drift": latency_drift <= 0.03,
+        "stabilized_robust_cv": stable_cv <= 0.10,
+        "matched_temperature": temperature_delta is not None and temperature_delta <= 5.0,
+        "active_clock_drift": clock_drift is not None and clock_drift <= 0.03,
+        "negative_control_detected": background_effect > 1.05 or background_cv > stable_cv,
+    }
+    return {
+        "pass": all(checks.values()),
+        "checks": checks,
+        "stabilized_latency_drift": latency_drift,
+        "stabilized_robust_cv": stable_cv,
+        "background_robust_cv": background_cv,
+        "background_latency_ratio": background_effect,
+        "matched_temperature_delta_c": temperature_delta,
+        "active_clock_drift": clock_drift,
+        "pre_run_gpu_utilization_pct": pre_run_utilization,
+    }
+
+
 def _wall_after_us(function: Callable[[], Any], iterations: int) -> list[float]:
     import torch
 
@@ -229,8 +287,9 @@ def run_e01(root: Path, artifact_root: Path, *, quick: bool = False) -> dict[str
 def run_e02(root: Path, artifact_root: Path, *, quick: bool = False) -> dict[str, Any]:
     import torch
 
-    iterations = 20 if quick else 80
-    warmup_seconds = 1.0 if quick else 8.0
+    iterations = 20 if quick else 1_000
+    warmup_seconds = 1.0 if quick else 30.0
+    pre_run = _telemetry()
     matrix_a = torch.randn((1536, 1536), device="cuda", dtype=torch.float16)
     matrix_b = torch.randn_like(matrix_a)
 
@@ -274,16 +333,22 @@ def run_e02(root: Path, artifact_root: Path, *, quick: bool = False) -> dict[str
     cold_summary = summary(cold)
     stable_summary = summary(stable)
     background_summary = summary(background)
-    background_effect = background_summary["median_us"] / stable_summary["median_us"]
-    midpoint = len(stable) // 2
-    first_half = statistics.median(stable[:midpoint])
-    second_half = statistics.median(stable[midpoint:])
-    latency_drift = abs(second_half - first_half) / first_half if first_half > 0 else float("inf")
-    passed = all(np.isfinite(value) and value > 0 for value in cold + stable + background)
+    required_iterations = 20 if quick else 1_000
+    gate = evaluate_thermal_block(
+        stabilized=stable,
+        background=background,
+        stabilized_before=stable_before,
+        stabilized_after=stable_after,
+        pre_run=pre_run,
+        required_iterations=required_iterations,
+    )
+    finite_positive = all(np.isfinite(value) and value > 0 for value in cold + stable + background)
+    passed = bool(finite_positive and gate["pass"])
     measurement_policy = {
         "schema_version": "1.0",
         "pre_run_gpu_utilization_pct_max": 5.0,
         "matched_temperature_delta_c_max": 5.0,
+        "active_clock_drift_max": 0.03,
         "latency_drift_max": 0.03,
         "robust_cv_max": 0.10,
         "clock_samples_only_when_gpu_active": True,
@@ -301,6 +366,7 @@ def run_e02(root: Path, artifact_root: Path, *, quick: bool = False) -> dict[str
             "stabilization_seconds": warmup_seconds,
             "timer": "cuda_event",
             "negative_control": "concurrent CUDA GEMM stream",
+            "protocol_status": "DEVELOPMENT" if quick else "FORMAL",
         },
         "conditions": {
             "cold": cold_summary,
@@ -308,15 +374,23 @@ def run_e02(root: Path, artifact_root: Path, *, quick: bool = False) -> dict[str
             "background_cuda": background_summary,
         },
         "telemetry": {
+            "pre_run": pre_run,
             "stabilized_before": stable_before,
             "stabilized_after": stable_after,
             "background": background_telemetry,
         },
-        "background_latency_ratio": background_effect,
-        "stabilized_latency_drift": latency_drift,
-        "hypothesis_supported": background_effect > 1.05
-        or background_summary["robust_cv"] > stable_summary["robust_cv"],
+        "background_latency_ratio": gate["background_latency_ratio"],
+        "stabilized_latency_drift": gate["stabilized_latency_drift"],
+        "matched_temperature_delta_c": gate["matched_temperature_delta_c"],
+        "active_clock_drift": gate["active_clock_drift"],
+        "gate_checks": gate["checks"],
+        "hypothesis_supported": gate["checks"]["negative_control_detected"],
         "measurement_policy": measurement_policy,
+        "samples_us": {
+            "cold": cold,
+            "stabilized": stable,
+            "background_cuda": background,
+        },
     }
     destination = artifact_root / "experiments" / "E02"
     write_json(destination / "result.json", result)
