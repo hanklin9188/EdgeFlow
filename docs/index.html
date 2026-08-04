@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EdgeFlow · Evidence-backed autotuning for local LLM inference</title>
+<meta name="description" content="EdgeFlow turns local LLM deployment into an evidence-backed, workload-conditioned optimization process. Local-first, loopback-only, G0–G8 validated.">
+<link rel="icon" href="assets/logo.svg">
+<meta property="og:title" content="EdgeFlow — local inference tuning, without losing the evidence.">
+<meta property="og:description" content="Evidence-backed, workload-conditioned autotuning for local LLM inference on an RTX 4080 SUPER.">
+<meta property="og:image" content="https://hanklin9188.github.io/EdgeFlow/assets/social-preview.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+:root{
+  --canvas:#152129; --sidebar:#18262f; --surface:#1e2d36; --raised:#273943; --soft:#304650;
+  --ink:#f2f6f3; --muted:#b7c5c7; --faint:#8fa2a7; --border:#38505b;
+  --primary:#78d5c8; --indigo:#aaa7ff; --amber:#f0c36d; --green:#8adeb0; --red:#ff9e9e;
+  --shadow:0 18px 48px #06101738; --radius:18px;
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;
+  --maxw:1120px;
+}
+html[data-theme="light"]{
+  --canvas:#f5f7f5; --sidebar:#eef2ef; --surface:#ffffff; --raised:#eef2ef; --soft:#e4eae6;
+  --ink:#17212b; --muted:#3f4d59; --faint:#62707d; --border:#dce4e0;
+  --primary:#0f766e; --indigo:#4f46e5; --amber:#b7791f; --green:#2f855a; --red:#b54747;
+  --shadow:0 14px 36px #17212b14;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:var(--primary);text-decoration:none}
+a:hover{text-decoration:underline}
+code,pre{font-family:var(--mono)}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:2.6px;color:var(--primary);text-transform:uppercase;margin:0 0 14px}
+
+/* header */
+header{position:sticky;top:0;z-index:20;backdrop-filter:blur(14px);background:color-mix(in srgb,var(--canvas) 82%,transparent);border-bottom:1px solid var(--border)}
+.nav{display:flex;align-items:center;gap:22px;height:64px}
+.brand{display:flex;align-items:center;gap:11px;font-weight:700;letter-spacing:-.4px;font-size:18px;color:var(--ink)}
+.brand:hover{text-decoration:none}
+.brand img{width:30px;height:30px;border-radius:9px}
+.nav nav{display:flex;gap:20px;margin-left:auto;font-size:14.5px}
+.nav nav a{color:var(--muted)}
+.nav nav a:hover{color:var(--ink);text-decoration:none}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--ink);font-size:14.5px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{border-color:var(--primary);text-decoration:none}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:var(--canvas)}
+html[data-theme="light"] .btn.primary{color:#fff}
+.btn.icon{padding:9px 11px}
+@media(max-width:860px){.nav nav{display:none}}
+
+/* hero */
+.hero{position:relative;overflow:hidden;padding:84px 0 64px;border-bottom:1px solid var(--border)}
+.hero::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(60% 80% at 12% 0%, color-mix(in srgb,var(--primary) 16%,transparent), transparent 70%),
+  radial-gradient(50% 70% at 95% 100%, color-mix(in srgb,var(--indigo) 12%,transparent), transparent 70%);
+  pointer-events:none}
+.hero::after{content:"";position:absolute;inset:0;opacity:.5;pointer-events:none;
+  background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:44px 44px;
+  -webkit-mask-image:linear-gradient(to bottom,#000,transparent 75%);
+  mask-image:linear-gradient(to bottom,#000,transparent 75%)}
+.hero .wrap{position:relative;z-index:1}
+h1{font-size:clamp(38px,6vw,68px);line-height:1.03;letter-spacing:-3px;font-weight:700;margin:0 0 22px;max-width:14ch}
+h1 span{color:var(--primary)}
+.lede{font-size:19px;color:var(--muted);max-width:62ch;margin:0 0 28px}
+.cta{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:30px}
+.pills{display:flex;flex-wrap:wrap;gap:10px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-size:13.5px;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+
+/* pipeline */
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:34px;font-size:14.5px}
+.flow .step{padding:9px 16px;border-radius:12px;border:1px solid var(--border);background:var(--surface)}
+.flow .step.last{border-color:color-mix(in srgb,var(--primary) 55%,transparent);color:var(--primary);font-weight:600}
+.flow .arw{color:var(--primary)}
+
+section{padding:72px 0;border-bottom:1px solid var(--border)}
+h2{font-size:clamp(26px,3.4vw,36px);letter-spacing:-1.2px;line-height:1.15;margin:0 0 14px;font-weight:700}
+.sub{color:var(--faint);max-width:66ch;margin:0 0 34px}
+
+/* cards */
+.grid{display:grid;gap:16px}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:960px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr}}
+@media(max-width:640px){.g4,.g2{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 8px;font-size:17px;letter-spacing:-.3px}
+.card p{margin:0;color:var(--faint);font-size:14.5px}
+.card .k{font-family:var(--mono);font-size:11.5px;letter-spacing:2px;color:var(--primary);display:block;margin-bottom:12px}
+
+figure{margin:0}
+figure img{width:100%;display:block;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow)}
+figcaption{color:var(--faint);font-size:13px;margin-top:12px;text-align:center}
+
+/* table */
+table{width:100%;border-collapse:collapse;font-size:14.5px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+th,td{text-align:left;padding:13px 16px;border-bottom:1px solid var(--border);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-family:var(--mono);font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:var(--faint);background:var(--raised)}
+td:first-child{white-space:nowrap;font-weight:600}
+td .gate{font-family:var(--mono);color:var(--primary);margin-right:8px}
+
+/* code */
+.code{position:relative;background:var(--sidebar);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.code .bar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;color:var(--faint)}
+.code pre{margin:0;padding:18px;overflow-x:auto;font-size:13.5px;line-height:1.75;color:var(--muted)}
+.code .cm{color:var(--faint)}
+.code .cmd{color:var(--primary)}
+.copy{margin-left:auto;border:1px solid var(--border);background:var(--surface);color:var(--muted);border-radius:8px;padding:3px 10px;font-size:11.5px;cursor:pointer;font-family:var(--mono)}
+.copy:hover{color:var(--ink);border-color:var(--primary)}
+
+/* callout */
+.note{border:1px solid var(--border);border-left:3px solid var(--amber);background:var(--surface);border-radius:14px;padding:18px 22px}
+.note strong{color:var(--amber)}
+.note.teal{border-left-color:var(--primary)}
+.note.teal strong{color:var(--primary)}
+
+/* doc list */
+.docs a{display:flex;gap:14px;align-items:baseline;padding:14px 18px;border:1px solid var(--border);border-radius:14px;background:var(--surface);color:var(--ink)}
+.docs a:hover{border-color:var(--primary);text-decoration:none}
+.docs .n{font-family:var(--mono);font-size:12px;color:var(--primary);min-width:22px}
+.docs .d{display:block;color:var(--faint);font-size:13.5px;font-weight:400}
+.docs strong{font-size:15px;letter-spacing:-.2px}
+
+footer{padding:44px 0 60px;color:var(--faint);font-size:14px}
+.footrow{display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="#top"><img src="assets/logo.svg" alt="">EdgeFlow</a>
+    <nav>
+      <a href="#why">Why</a>
+      <a href="#console">Console</a>
+      <a href="#gates">Validation</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#start">Quickstart</a>
+      <a href="#docs">Docs</a>
+    </nav>
+    <button class="btn icon" id="theme" title="Toggle theme" aria-label="Toggle theme">◐</button>
+    <a class="btn" href="https://github.com/hanklin9188/EdgeFlow">GitHub</a>
+  </div>
+</header>
+
+<div class="hero" id="top">
+  <div class="wrap">
+    <p class="eyebrow">RTX workstation · evidence control plane</p>
+    <h1>Local inference tuning,<br><span>without losing the evidence.</span></h1>
+    <p class="lede">EdgeFlow turns local LLM deployment from ad-hoc benchmark chasing into an evidence-backed, workload-conditioned optimization process. Models, GPU work and raw artifacts never leave the machine.</p>
+    <div class="cta">
+      <a class="btn primary" href="#start">Quickstart</a>
+      <a class="btn" href="https://github.com/hanklin9188/EdgeFlow">View on GitHub</a>
+      <a class="btn" href="https://github.com/hanklin9188/EdgeFlow/blob/main/docs/IMPLEMENTATION_STATUS.md">Implementation status</a>
+    </div>
+    <div class="pills">
+      <span class="pill"><i class="dot"></i>Local-first · loopback only</span>
+      <span class="pill"><i class="dot"></i>One GPU job at a time</span>
+      <span class="pill"><i class="dot"></i>Every result traceable</span>
+    </div>
+    <div class="flow">
+      <span class="step">Observe</span><span class="arw">→</span>
+      <span class="step">Diagnose</span><span class="arw">→</span>
+      <span class="step">Intervene</span><span class="arw">→</span>
+      <span class="step">Verify</span><span class="arw">→</span>
+      <span class="step last">Synthesize policy</span>
+    </div>
+  </div>
+</div>
+
+<section id="why">
+  <div class="wrap">
+    <p class="eyebrow">What makes it different</p>
+    <h2>A recommendation is a trace, not a badge.</h2>
+    <p class="sub">EdgeFlow never assumes one runtime or one quantization wins. It preserves every per-request measurement and refuses to promote anything that did not survive validation.</p>
+    <div class="grid g4">
+      <div class="card"><span class="k">01</span><h3>Workload-conditioned policy</h3><p>Prompt distribution, output length, concurrency and session length are inputs — not a single blended number.</p></div>
+      <div class="card"><span class="k">02</span><h3>Cold + steady objective</h3><p>Cold start, compile, capture and steady state are stored separately, so amortization is a decision instead of an accident.</p></div>
+      <div class="card"><span class="k">03</span><h3>Causal evidence graph</h3><p>A bottleneck stays a <code>HYPOTHESIS</code> until a matched intervention and a mediator confirm it.</p></div>
+      <div class="card"><span class="k">04</span><h3>Correctness-gated kernels</h3><p>The fused Triton path runs only for a cached <code>PASS</code> on this kernel, GPU, dtype and shape. Otherwise: reference.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="console">
+  <div class="wrap">
+    <p class="eyebrow">The product</p>
+    <h2>A local control console, not a cloud dashboard.</h2>
+    <p class="sub">One command, one browser tab, one machine. Start pinned llama.cpp or vLLM builds, define a workload, screen candidates, submit one controlled GPU benchmark, and read validation verdicts, raw artifacts, evidence and policy.</p>
+    <figure>
+      <img src="assets/console-preview.svg" alt="EdgeFlow Local Control Console interface">
+      <figcaption>The Local Control Console at <code>http://127.0.0.1:8787</code> — production surface, no demo rows.</figcaption>
+    </figure>
+    <div class="grid g3" style="margin-top:24px">
+      <div class="card"><h3>Loopback by construction</h3><p>The server rejects non-loopback hosts, cross-origin writes, bodies over 1 MiB, and any shell, path or environment argument supplied by the browser.</p></div>
+      <div class="card"><h3>One worker, explicit state</h3><p>One managed runtime and one GPU job at a time. Managed runtimes bind <code>127.0.0.1</code> with a random API key held only in process memory.</p></div>
+      <div class="card"><h3>This page is read-only</h3><p>A public site is never a control plane. This page starts no experiments and reads no private artifacts.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="gates">
+  <div class="wrap">
+    <p class="eyebrow">Validation authority</p>
+    <h2>A run is a claim only after every gate holds.</h2>
+    <p class="sub">Summaries are recomputed from raw rows, never trusted from a report. Verdicts are <code>PASS</code>, <code>CONDITIONAL_PASS</code>, <code>FAIL</code>, <code>INVALID</code> and <code>SKIPPED</code> — and failing artifacts stay on disk for audit.</p>
+    <table>
+      <thead><tr><th>Gate</th><th>Enforced invariant</th></tr></thead>
+      <tbody>
+        <tr><td><span class="gate">G0</span>Schema</td><td>Required artifacts, schemas, IDs, canonical hashes, raw JSONL</td></tr>
+        <tr><td><span class="gate">G1</span>Environment</td><td>GPU scope, and no unapproved background GPU process</td></tr>
+        <tr><td><span class="gate">G2</span>Correctness</td><td>Reference parity / no NaN / kernel contract</td></tr>
+        <tr><td><span class="gate">G3</span>Timing</td><td>Warmup split, monotonic timestamps, no profiler contamination</td></tr>
+        <tr><td><span class="gate">G4</span>Stability</td><td>Robust CV, and first-vs-last-third drift ≤ 3%</td></tr>
+        <tr><td><span class="gate">G5</span>Statistics</td><td>≥ 30 engine requests, or ≥ 100 kernel iterations</td></tr>
+        <tr><td><span class="gate">G6</span>Quality</td><td>Profile-specific hard gate; quantized plans cannot bypass it</td></tr>
+        <tr><td><span class="gate">G7</span>Provenance</td><td>Pinned revision, exact command, git and source state</td></tr>
+        <tr><td><span class="gate">G8</span>Eligibility</td><td>Only measured <code>PASS</code> runs may enter a policy</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="architecture">
+  <div class="wrap">
+    <p class="eyebrow">System design</p>
+    <h2>Three planes, one machine.</h2>
+    <p class="sub">The control plane never touches the GPU directly, the data plane never decides what is true, and the evidence plane is the only path to a policy.</p>
+    <figure>
+      <img src="assets/architecture.svg" alt="EdgeFlow architecture: control plane, data plane and evidence plane">
+    </figure>
+  </div>
+</section>
+
+<section id="start">
+  <div class="wrap">
+    <p class="eyebrow">Quickstart</p>
+    <h2>From a cold checkout to a validated run.</h2>
+    <p class="sub">Python 3.11–3.13, an NVIDIA driver, and CUDA-enabled PyTorch. WSL2 Ubuntu or native Ubuntu recommended.</p>
+    <div class="grid g2">
+      <div class="code">
+        <div class="bar">1 · install and inspect<button class="copy">copy</button></div>
+<pre><span class="cmd">uv</span> sync --extra dev
+<span class="cmd">source</span> .venv/bin/activate
+<span class="cmd">edgeflow</span> doctor
+<span class="cmd">edgeflow</span> inspect --json \
+  --output artifacts/hardware_fingerprint.json</pre>
+      </div>
+      <div class="code">
+        <div class="bar">2 · define a controlled workload<button class="copy">copy</button></div>
+<pre><span class="cmd">edgeflow</span> workload create \
+  --model smollm2-360m-instruct \
+  --profile local-agent \
+  --prompt-distribution 32 --output 8 \
+  --concurrency 1 --session-requests 30 \
+  --save configs/generated/smoke-workload.json</pre>
+      </div>
+      <div class="code">
+        <div class="bar">3 · benchmark and validate<button class="copy">copy</button></div>
+<pre><span class="cmd">edgeflow</span> benchmark run \
+  --model-ref HuggingFaceTB/SmolLM2-360M-Instruct \
+  --workload configs/smoke/workload.json \
+  --plan configs/smoke/pytorch-eager.json \
+  --repetitions 30 --warmup 5 --experiment-id E04
+<span class="cmd">edgeflow</span> validate artifacts/&lt;run_id&gt;</pre>
+      </div>
+      <div class="code">
+        <div class="bar">4 · open the console<button class="copy">copy</button></div>
+<pre><span class="cm"># optional: pinned, isolated runtimes</span>
+./scripts/bootstrap_llama_cpp.sh
+./scripts/bootstrap_vllm.sh
+
+<span class="cmd">edgeflow</span> serve --host 127.0.0.1 --port 8787</pre>
+      </div>
+    </div>
+    <p class="sub" style="margin-top:24px">Every run writes its own artifact directory: <code>run_manifest.json</code>, <code>hardware_fingerprint.json</code>, <code>workload.json</code>, <code>execution_plan.json</code>, <code>metrics.jsonl</code>, logs, <code>validation_verdict.json</code> and <code>VALIDATION.md</code>.</p>
+  </div>
+</section>
+
+<section id="honesty">
+  <div class="wrap">
+    <p class="eyebrow">Honest limitations</p>
+    <h2>What is built, and what is not claimed.</h2>
+    <div class="grid g2" style="align-items:start">
+      <div class="note teal">
+        <strong>Engineering, complete on this checkout.</strong>
+        <p style="margin:10px 0 0;color:var(--faint);font-size:14.5px">Fingerprint and doctor, typed contracts, four runtime adapters, exact-token workloads, isolated run artifacts, the G0–G8 engine, robust statistics and paired bootstrap, deterministic diagnosis, decision-list policy, a correctness-cached Triton path, the CLI, the localhost API and the local-first web app.</p>
+      </div>
+      <div class="note">
+        <strong>Research conclusions, deliberately not claimed.</strong>
+        <p style="margin:10px 0 0;color:var(--faint);font-size:14.5px">Cross-runtime verdicts for the primary 3B model, quality datasets, matched interventions, holdout replay and end-to-end kernel integration still require formal GPU experiments. No performance headline is published until it clears G0–G8.</p>
+      </div>
+    </div>
+    <p class="sub" style="margin-top:22px">RTX 4080 SUPER results are never extrapolated to multi-GPU or datacenter GPUs. <code>demo</code>, <code>estimated</code> and profiled latency never appear in a headline.</p>
+  </div>
+</section>
+
+<section id="docs">
+  <div class="wrap">
+    <p class="eyebrow">Documentation</p>
+    <h2>The full research design is public.</h2>
+    <div class="grid g2 docs">
+      <a href="https://github.com/hanklin9188/EdgeFlow/blob/main/docs/00_EXECUTIVE_BLUEPRINT.md"><span class="n">00</span><span><strong>Executive Blueprint</strong><span class="d">Why the project exists and what counts as success</span></span></a>
+      <a href="https://github.com/hanklin9188/EdgeFlow/blob/main/docs/01_SYSTEM_ARCHITECTURE.md"><span class="n">01</span><span><strong>System Architecture</strong><span class="d">Control, data and presentation planes</span></span></a>
+      <a href="https://github.com/hanklin9188/EdgeFlow/blob/main/docs/02_EXPERIMENT_MASTER_PLAN.md"><span class="n">02</span><span><strong>Experiment Master Plan</strong><span class="d">How E00–E30 fit together</span></span></a>
+      <a href="https://github.com/hanklin9188/EdgeFlow/blob/main/docs/03_EXPERIMENT_CATALOG.md"><span class="n">03</span><span><strong>Experiment Catalog</strong><span class="d">Every experiment, hypothesis and exit criterion</span></span></a>
+      <a href="https://github.com/hanklin9188/EdgeFlow/blob/main/docs/05_AUTOTUNING_AND_CAUSAL_METHOD.md"><span class="n">05</span><span><strong>Autotuning &amp; Causal Method</strong><span class="d">Interventions, mediators, policy synthesis</span></span></a>
+      <a href="https://github.com/hanklin9188/EdgeFlow/blob/main/docs/06_PROFILING_AND_KERNEL_PLAN.md"><span class="n">06</span><span><strong>Profiling &amp; Kernel Plan</strong><span class="d">Nsight workflow and the Triton path</span></span></a>
+      <a href="https://github.com/hanklin9188/EdgeFlow/blob/main/docs/07_VALIDATION_AND_STATISTICS.md"><span class="n">07</span><span><strong>Validation &amp; Statistics</strong><span class="d">Gates, robust statistics, paired bootstrap</span></span></a>
+      <a href="https://github.com/hanklin9188/EdgeFlow/blob/main/docs/09_UI_UX_GITHUB_PRESENTATION.md"><span class="n">09</span><span><strong>UI/UX &amp; Presentation</strong><span class="d">Design language and presentation rules</span></span></a>
+      <a href="https://github.com/hanklin9188/EdgeFlow/blob/main/docs/11_REPRODUCIBILITY_RELEASE_SECURITY.md"><span class="n">11</span><span><strong>Reproducibility &amp; Security</strong><span class="d">Release, provenance and data handling</span></span></a>
+      <a href="https://github.com/hanklin9188/EdgeFlow/blob/main/docs/IMPLEMENTATION_STATUS.md"><span class="n">↗</span><span><strong>Implementation Status</strong><span class="d">Engineering done vs experiment outstanding</span></span></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap footrow">
+    <span>Apache License 2.0 · built and verified on a single NVIDIA GeForce RTX 4080 SUPER.</span>
+    <span><a href="https://github.com/hanklin9188/EdgeFlow">GitHub</a> · <a href="https://github.com/hanklin9188/EdgeFlow/blob/main/README.zh-TW.md">繁體中文</a> · <a href="https://github.com/hanklin9188/EdgeFlow/blob/main/SECURITY.md">Security</a></span>
+  </div>
+</footer>
+
+<script>
+const root=document.documentElement, KEY='edgeflow-theme';
+const saved=localStorage.getItem(KEY);
+if(saved) root.dataset.theme=saved;
+else if(window.matchMedia('(prefers-color-scheme: light)').matches) root.dataset.theme='light';
+document.getElementById('theme').addEventListener('click',()=>{
+  root.dataset.theme = root.dataset.theme==='dark' ? 'light' : 'dark';
+  localStorage.setItem(KEY, root.dataset.theme);
+});
+document.querySelectorAll('.copy').forEach(b=>{
+  b.addEventListener('click',async()=>{
+    const pre=b.closest('.code').querySelector('pre');
+    try{ await navigator.clipboard.writeText(pre.innerText); b.textContent='copied'; }
+    catch(e){ b.textContent='select manually'; }
+    setTimeout(()=>b.textContent='copy',1600);
+  });
+});
+</script>
+</body>
+</html>
