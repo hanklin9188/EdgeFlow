@@ -1,0 +1,436 @@
+schema_version: "1.0"
+source_of_truth: specs/validation_requirements.yaml
+status_values: [implemented, partial, planned, deferred]
+kind_values: [hard, advisory]
+release_profiles:
+  engineering_alpha:
+    description: Engineering capability may be released without performance claims.
+  first_evidence:
+    description: Primary-model baseline and cross-runtime evidence release.
+  policy_claim:
+    description: Workload-conditioned deployment-policy claim.
+  causal_claim:
+    description: Profiler-driven causal-diagnosis claim.
+  kernel_claim:
+    description: Custom-kernel end-to-end performance claim.
+  v1_product:
+    description: Product release with usability and clean-environment reproduction.
+
+requirements:
+  - id: VR-001
+    title: Required artifacts, schemas, IDs, and canonical hashes
+    gate: G0
+    kind: hard
+    status: implemented
+    rule: A run is structurally valid only when required artifacts parse, match schemas, share IDs, and match canonical plan/workload hashes.
+    risk: Corrupt or mismatched artifacts could be ranked as one run.
+    implementation:
+      mode: recomputed
+      enforcement_paths: [src/edgeflow/validation/engine.py]
+      test_paths: [tests/test_validation.py]
+    acceptance:
+      executable: true
+      criterion: Missing, malformed, ID-mismatched, or hash-mismatched artifacts produce INVALID.
+    evidence: run_manifest.json, workload.json, execution_plan.json, hardware_fingerprint.json
+    release_gates: [engineering_alpha, first_evidence, policy_claim, causal_claim, kernel_claim, v1_product]
+    owner: validation
+    backlog_ticket: null
+
+  - id: VR-002
+    title: Raw-record and summary recomputation parity
+    gate: G0
+    kind: hard
+    status: partial
+    rule: Every derived summary used for evidence must be independently reproducible from immutable raw rows.
+    risk: Selective aggregation or edited summaries could hide slow or failed repetitions.
+    implementation:
+      mode: partial_recompute
+      enforcement_paths: [src/edgeflow/validation/engine.py, scripts/verify_results.py]
+      test_paths: []
+    acceptance:
+      executable: false
+      criterion: A deliberately altered summary is rejected while intact raw rows regenerate the canonical summary.
+    evidence: metrics.jsonl and regenerated summary
+    release_gates: [first_evidence, policy_claim, causal_claim, kernel_claim, v1_product]
+    owner: validation
+    backlog_ticket: "04"
+
+  - id: VR-003
+    title: Target GPU and background-process integrity
+    gate: G1
+    kind: hard
+    status: implemented
+    rule: The run must match the intended GPU scope and contain no unapproved background GPU compute beyond the selected managed runtime.
+    risk: Uncontrolled contention invalidates performance and stability conclusions.
+    implementation:
+      mode: recomputed
+      enforcement_paths: [src/edgeflow/validation/engine.py]
+      test_paths: [tests/test_validation.py]
+    acceptance:
+      executable: true
+      criterion: Unexpected background GPU processes prevent policy eligibility and intended runtime processes are recognized explicitly.
+    evidence: hardware_fingerprint.json
+    release_gates: [first_evidence, policy_claim, causal_claim, kernel_claim, v1_product]
+    owner: hardware-validation
+    backlog_ticket: null
+
+  - id: VR-004
+    title: Known unprofiled timing boundary
+    gate: G3
+    kind: hard
+    status: implemented
+    rule: Ranked production timing must have positive monotonic boundaries, separated warmup, and no profiler instrumentation.
+    risk: Asynchronous or profiler-contaminated timing can report false speedups.
+    implementation:
+      mode: recomputed
+      enforcement_paths: [src/edgeflow/validation/engine.py]
+      test_paths: [tests/test_validation.py]
+    acceptance:
+      executable: true
+      criterion: Profiled latency, impossible timestamps, missing TPOT, or unknown boundaries produce INVALID.
+    evidence: run_manifest.json and metrics.jsonl
+    release_gates: [first_evidence, policy_claim, causal_claim, kernel_claim, v1_product]
+    owner: metrics-validation
+    backlog_ticket: null
+
+  - id: VR-005
+    title: Exact cross-runtime workload and token parity
+    gate: G2
+    kind: hard
+    status: planned
+    rule: Cross-runtime pairs must use identical prompt token IDs, template hash, BOS/EOS semantics, sampling, seed, and output protocol.
+    risk: Different tasks could be presented as runtime speed differences.
+    implementation:
+      mode: planned
+      enforcement_paths: []
+      test_paths: []
+    acceptance:
+      executable: false
+      criterion: One mismatched request invalidates the comparison while preserving individually valid runs.
+    evidence: paired prompt IDs, tokenizer/template hashes, generation protocol
+    release_gates: [first_evidence, policy_claim, causal_claim, kernel_claim, v1_product]
+    owner: fairness-validation
+    backlog_ticket: "04"
+
+  - id: VR-006
+    title: Same-precision runtime correctness recomputation
+    gate: G2
+    kind: hard
+    status: partial
+    rule: The validator must independently assess no-NaN, greedy agreement, KL summary, top-k overlap, and first divergent token under configured tolerances.
+    risk: A single boolean correctness attestation can hide systematic divergence.
+    implementation:
+      mode: artifact_attestation
+      enforcement_paths: [src/edgeflow/validation/engine.py]
+      test_paths: [tests/test_validation.py]
+    acceptance:
+      executable: false
+      criterion: Corrupted logits or token records are rejected even if correctness.pass is true.
+    evidence: correctness.json plus reference and candidate records
+    release_gates: [first_evidence, policy_claim, causal_claim, kernel_claim, v1_product]
+    owner: correctness-validation
+    backlog_ticket: "04"
+
+  - id: VR-007
+    title: Custom-kernel correctness region and fallback
+    gate: G2
+    kind: hard
+    status: partial
+    rule: A custom kernel may dispatch only inside a GPU, dtype, shape, layout, and version region with a valid correctness certificate; all other regions use the reference fallback.
+    risk: A fast kernel could silently corrupt unsupported shapes.
+    implementation:
+      mode: correctness_cache
+      enforcement_paths: [src/edgeflow/kernels]
+      test_paths: []
+    acceptance:
+      executable: false
+      criterion: Every advertised region passes full correctness and an unregistered region provably takes fallback.
+    evidence: kernel certificate and dispatch record
+    release_gates: [kernel_claim, v1_product]
+    owner: kernel
+    backlog_ticket: "19"
+
+  - id: VR-008
+    title: Stability, drift, clocks, and thermal reporting
+    gate: G4
+    kind: hard
+    status: implemented
+    rule: Formal performance rows must satisfy configured drift, robust variation, clock, and thermal constraints.
+    risk: Thermal or clock drift can reverse small performance rankings.
+    implementation:
+      mode: recomputed
+      enforcement_paths: [src/edgeflow/validation/engine.py]
+      test_paths: [tests/test_validation.py]
+    acceptance:
+      executable: true
+      criterion: Unstable runs remain conditional or invalid and cannot enter policy synthesis.
+    evidence: request-level latency, temperature, clock, and monitor records
+    release_gates: [first_evidence, policy_claim, causal_claim, kernel_claim, v1_product]
+    owner: measurement
+    backlog_ticket: "02"
+
+  - id: VR-009
+    title: Run-type repetition minimum
+    gate: G5
+    kind: hard
+    status: implemented
+    rule: Engine and kernel runs must satisfy the configured minimum number of measured rows.
+    risk: Noisy winners can be selected from insufficient repetitions.
+    implementation:
+      mode: recomputed
+      enforcement_paths: [src/edgeflow/validation/engine.py]
+      test_paths: [tests/test_validation.py]
+    acceptance:
+      executable: true
+      criterion: Fewer than the configured minimum rows blocks PASS and policy eligibility.
+    evidence: metrics.jsonl
+    release_gates: [first_evidence, policy_claim, causal_claim, kernel_claim, v1_product]
+    owner: statistics
+    backlog_ticket: "03"
+
+  - id: VR-010
+    title: Quantized quality recomputation and protocol parity
+    gate: G6
+    kind: hard
+    status: partial
+    rule: Quantized-plan eligibility must be recomputed from task-level quality rows under a named profile and a protocol matching the reference.
+    risk: Latency could be purchased with unreported quality loss or incomparable evaluation.
+    implementation:
+      mode: artifact_attestation
+      enforcement_paths: [src/edgeflow/validation/engine.py]
+      test_paths: []
+    acceptance:
+      executable: false
+      criterion: Missing, protocol-mismatched, or threshold-failing quality blocks policy eligibility for the selected profile.
+    evidence: quality task rows, profile, reference revision
+    release_gates: [first_evidence, policy_claim, causal_claim, kernel_claim, v1_product]
+    owner: quality-validation
+    backlog_ticket: "04"
+
+  - id: VR-011
+    title: Pinned provenance and exact command
+    gate: G7
+    kind: hard
+    status: implemented
+    rule: Formal evidence must record a non-floating model revision, exact command, source type, and repository state.
+    risk: Results cannot be reconstructed or scoped after software/model drift.
+    implementation:
+      mode: recomputed
+      enforcement_paths: [src/edgeflow/validation/engine.py]
+      test_paths: [tests/test_validation.py]
+    acceptance:
+      executable: true
+      criterion: Floating revision or missing command blocks PASS/public eligibility.
+    evidence: run_manifest.json
+    release_gates: [first_evidence, policy_claim, causal_claim, kernel_claim, v1_product]
+    owner: provenance
+    backlog_ticket: null
+
+  - id: VR-012
+    title: Demo and non-measured source isolation
+    gate: G7
+    kind: hard
+    status: implemented
+    rule: Demo, mock, and estimated artifacts may never become policy or public performance evidence.
+    risk: Presentation data could be mistaken for measured results.
+    implementation:
+      mode: recomputed
+      enforcement_paths: [src/edgeflow/validation/engine.py, scripts/verify_results.py]
+      test_paths: [tests/test_validation.py]
+    acceptance:
+      executable: true
+      criterion: source_type other than measured makes policy_eligible and public_claim_eligible false.
+    evidence: run_manifest.json
+    release_gates: [engineering_alpha, first_evidence, policy_claim, causal_claim, kernel_claim, v1_product]
+    owner: provenance
+    backlog_ticket: null
+
+  - id: VR-013
+    title: PASS-only policy eligibility
+    gate: G8
+    kind: hard
+    status: implemented
+    rule: Only measured PASS runs with correctness, stability, repetitions, quality, provenance, and clean state may enter policy synthesis.
+    risk: Conditional or failed evidence could be amplified into deployment decisions.
+    implementation:
+      mode: recomputed
+      enforcement_paths: [src/edgeflow/validation/engine.py]
+      test_paths: [tests/test_validation.py]
+    acceptance:
+      executable: true
+      criterion: Any missing hard prerequisite makes policy_eligible false.
+    evidence: validation_verdict.json
+    release_gates: [policy_claim, causal_claim, kernel_claim, v1_product]
+    owner: validation
+    backlog_ticket: null
+
+  - id: VR-014
+    title: Search and confirmatory holdout separation
+    gate: G5
+    kind: hard
+    status: planned
+    rule: Candidate selection, threshold tuning, and policy construction data must not overlap confirmatory sample IDs or held-out workload buckets.
+    risk: Selection bias can make the chosen plan appear better than it generalizes.
+    implementation:
+      mode: planned
+      enforcement_paths: []
+      test_paths: []
+    acceptance:
+      executable: false
+      criterion: Any overlap invalidates confirmatory claim eligibility and is reported explicitly.
+    evidence: search/holdout sample hashes and bucket roles
+    release_gates: [policy_claim, causal_claim, kernel_claim, v1_product]
+    owner: statistics
+    backlog_ticket: "04"
+
+  - id: VR-015
+    title: Paired uncertainty and practical effect
+    gate: G5
+    kind: hard
+    status: partial
+    rule: Matched performance claims use paired rows, uncertainty intervals, and a preregistered practical-effect threshold.
+    risk: Direction can be selected from noise or tiny non-actionable changes.
+    implementation:
+      mode: library_available
+      enforcement_paths: [src/edgeflow/metrics]
+      test_paths: []
+    acceptance:
+      executable: false
+      criterion: Claim eligibility requires paired analysis when pairing exists and reports neutral effects below threshold.
+    evidence: paired raw rows and bootstrap result
+    release_gates: [first_evidence, policy_claim, causal_claim, kernel_claim, v1_product]
+    owner: statistics
+    backlog_ticket: "04"
+
+  - id: VR-016
+    title: Causal evidence promotion requires mediator and outcome
+    gate: G8
+    kind: hard
+    status: planned
+    rule: Evidence cannot exceed repeated observation unless a preregistered matched intervention changes the expected mediator and unprofiled outcome while correctness and quality pass.
+    risk: Profiler storytelling can be presented as causal explanation.
+    implementation:
+      mode: planned
+      enforcement_paths: []
+      test_paths: []
+    acceptance:
+      executable: false
+      criterion: Outcome-only changes remain E2; unchanged mediator rejects or makes the hypothesis inconclusive.
+    evidence: hypothesis, paired runs, mediator result, outcome result, verdicts
+    release_gates: [causal_claim, kernel_claim, v1_product]
+    owner: evidence
+    backlog_ticket: "04"
+
+  - id: VR-017
+    title: Negative-control or alternative-explanation record
+    gate: G8
+    kind: advisory
+    status: planned
+    rule: Causal evidence records include a negative control or a documented alternative explanation and why it remains plausible or was weakened.
+    risk: A single intervention can have multiple simultaneous mechanisms.
+    implementation:
+      mode: planned
+      enforcement_paths: []
+      test_paths: []
+    acceptance:
+      executable: false
+      criterion: Causal report contains an explicit control/alternative section before public promotion.
+    evidence: evidence record
+    release_gates: [causal_claim, kernel_claim, v1_product]
+    owner: evidence
+    backlog_ticket: "16"
+
+  - id: VR-018
+    title: Public claim scope and support audit
+    gate: G7
+    kind: hard
+    status: planned
+    rule: A public claim names hardware, model revision, workload, timing boundary, uncertainty, quality status, supporting run IDs, and limitations.
+    risk: A valid local result can be overgeneralized into an unsupported universal claim.
+    implementation:
+      mode: planned
+      enforcement_paths: []
+      test_paths: []
+    acceptance:
+      executable: false
+      criterion: Missing scope blocks public_claim_eligible without erasing the internal measurement.
+    evidence: claim record and linked validation verdicts
+    release_gates: [first_evidence, policy_claim, causal_claim, kernel_claim, v1_product]
+    owner: release
+    backlog_ticket: "04"
+
+  - id: VR-019
+    title: Fingerprint drift marks policies stale
+    gate: G8
+    kind: hard
+    status: partial
+    rule: Runtime, driver, model, protocol, or relevant source drift invalidates direct policy use and activates a validated fallback.
+    risk: A recommendation can outlive the environment in which it was measured.
+    implementation:
+      mode: policy_logic
+      enforcement_paths: [src/edgeflow/policy]
+      test_paths: []
+    acceptance:
+      executable: false
+      criterion: A changed fingerprint produces STALE and selects fallback without silent rule use.
+    evidence: policy fingerprint and current fingerprint
+    release_gates: [policy_claim, causal_claim, kernel_claim, v1_product]
+    owner: policy
+    backlog_ticket: "12"
+
+  - id: VR-020
+    title: Cross-runtime fairness artifact required for ranking
+    gate: G8
+    kind: hard
+    status: planned
+    rule: A cross-runtime comparison enters ranking only when a fairness audit explicitly certifies the pair and timing boundary.
+    risk: Individually valid but incomparable runs can create a misleading winner.
+    implementation:
+      mode: planned
+      enforcement_paths: []
+      test_paths: []
+    acceptance:
+      executable: false
+      criterion: Missing or failed fairness artifact blocks pairwise headline and policy use.
+    evidence: fairness_audit.json or equivalent canonical artifact
+    release_gates: [first_evidence, policy_claim, causal_claim, kernel_claim, v1_product]
+    owner: fairness-validation
+    backlog_ticket: "10"
+
+  - id: VR-021
+    title: Raw artifacts are immutable and transformations are linked
+    gate: G0
+    kind: hard
+    status: partial
+    rule: Raw run artifacts are never edited in place; corrections or sanitization create a new artifact with transformation provenance.
+    risk: Post-hoc editing can make validation irreproducible.
+    implementation:
+      mode: process_and_hashes
+      enforcement_paths: [src/edgeflow/experiments, src/edgeflow/storage]
+      test_paths: []
+    acceptance:
+      executable: false
+      criterion: Attempted mutation or checksum mismatch is detected and transformed artifacts link to their source.
+    evidence: checksums and transformation record
+    release_gates: [first_evidence, policy_claim, causal_claim, kernel_claim, v1_product]
+    owner: storage
+    backlog_ticket: "04"
+
+  - id: VR-022
+    title: Capacity failures are not speed results
+    gate: G8
+    kind: hard
+    status: partial
+    rule: OOM, timeout, and resource-limit outcomes are preserved as capacity boundaries and excluded from latency ranking.
+    risk: Failed or truncated runs can appear artificially fast.
+    implementation:
+      mode: run_status
+      enforcement_paths: [src/edgeflow/experiments, src/edgeflow/validation/engine.py]
+      test_paths: []
+    acceptance:
+      executable: false
+      criterion: Capacity outcomes remain visible, never receive a speed score, and influence feasible-region maps.
+    evidence: run status, stderr, partial metrics, capacity record
+    release_gates: [first_evidence, policy_claim, causal_claim, kernel_claim, v1_product]
+    owner: experiments
+    backlog_ticket: "16"
