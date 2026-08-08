@@ -1,64 +1,114 @@
-# Experiment Report: <EID / protocol>
+# Experiment Report · `EXPERIMENT_ID`
 
-## Verdict
-
-Exploratory / PASS / CONDITIONAL_PASS / FAIL / INVALID / INCONCLUSIVE.
-
-## Research question
-
-## Preregistered hypothesis
-
-## Scope
+## Decision Summary
 
 | Field | Value |
 |---|---|
-| Hardware | |
-| Model/tokenizer revision | |
-| Runtime revision | |
-| Workload | |
-| Timing boundary | |
-| Search/holdout role | |
+| Decision | `ACCEPT / REJECT / INCONCLUSIVE` |
+| Evidence level | `E0–E5` |
+| Primary claim | `ONE PRECISE SENTENCE` |
+| Scope | `HARDWARE / MODEL / BACKEND / WORKLOAD` |
+| Supporting run IDs | `RUN_IDS` |
+| Validation verdicts | `LINKS` |
 
-## Method
+## 1. Preregistered Question
 
-### Changed variable
+**Question:**
+`What exact uncertainty does this experiment resolve?`
 
-### Controlled variables
+**Hypothesis:**
+`Directional, falsifiable statement.`
 
-### Randomization and repetitions
+**Null / alternative:**
+`What result would reject or weaken the hypothesis?`
 
-### Correctness and quality
+**Primary outcome:**
+`One metric and aggregation rule.`
 
-### Failure handling
+**Mediator:**
+`Profiler metric expected to change if the mechanism is correct.`
 
-## Raw artifacts
+**Acceptance criterion:**
 
-| Run ID | Role | Artifact/checksum | Validation |
+```text
+Correctness PASS
+AND quality constraint PASS
+AND paired effect exceeds minimum practical effect
+AND confidence interval excludes the equivalence region
+AND mediator changes in the predicted direction
+```
+
+## 2. Design
+
+| Dimension | Baseline | Intervention | Controlled? |
 |---|---|---|---|
+| Hardware fingerprint |  |  | yes |
+| Model and tokenizer |  |  | yes |
+| Prompt IDs and seed |  |  | yes |
+| Prompt/output tokens |  |  | yes |
+| Backend |  |  |  |
+| Changed variable |  |  | **only intended factor** |
+| Cache state |  |  | yes |
+| Run order | randomized block | randomized block | yes |
 
-## Results
+Include the negative control and any intentionally uncontrolled nuisance factor.
+
+## 3. Environment and Provenance
+
+- Hardware fingerprint: `LINK`
+- Git commit / dirty state: `VALUE`
+- Model files hash: `VALUE`
+- Runtime commit/version: `VALUE`
+- Command: `VALUE`
+- Protocol version: `VALUE`
+- Raw artifact directory: `LINK`
+
+## 4. Validation Gates
+
+| Gate | Baseline | Intervention | Notes |
+|---|---|---|---|
+| Schema |  |  |  |
+| Workload parity |  |  |  |
+| Correctness |  |  |  |
+| Timing integrity |  |  |  |
+| Stability / thermal |  |  |  |
+| Quality |  |  |  |
+| Provenance |  |  |  |
+
+## 5. Results
 
 ### Primary outcome
 
-### Uncertainty and practical effect
+Report median, paired delta, percent change, confidence interval, raw sample count, failure rate, and practical-effect threshold.
 
-### Mediator and causal interpretation
+### Mediator
 
-### Negative control / alternatives
+Show whether the proposed mechanism changed. A latency improvement without the expected mediator change cannot automatically support the causal explanation.
 
-### Capacity boundaries and failures
+### Distribution
 
-## Claim decision
+Include ECDF or violin/box-free distribution view, not only a mean bar.
 
-- Evidence level:
-- Permitted claim:
-- Prohibited extrapolations:
-- Staleness triggers:
+## 6. Interpretation
 
-## Deviations and limitations
+Separate these paragraphs explicitly:
 
-## Reproduction
+- **Measured facts:** direct artifact-backed observations.
+- **Supported inference:** mechanism supported by intervention and mediator.
+- **Remaining alternatives:** plausible unresolved explanations.
+- **Generalization boundary:** where this conclusion must not be reused.
+
+## 7. Failure Analysis
+
+Record OOM, timeout, graph break, recompilation, fallback, thermal drift, and skipped samples. Never delete inconvenient runs.
+
+## 8. Decision
+
+`SUPPORTED / REJECTED / INCONCLUSIVE` and exact next action.
+
+## 9. Reproduction
 
 ```bash
-<exact commands>
+edgeflow experiment reproduce --experiment EXPERIMENT_ID --block BLOCK_ID
+edgeflow validate runs/RUN_ID
 ```
