@@ -1,0 +1,84 @@
+name: Formal experiment
+about: Preregister an EdgeFlow experiment block before measured execution
+title: "[Experiment] E__ — "
+labels: ["type:experiment", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Formal performance conclusions require preregistration, raw artifacts, G0–G8 validation, and claim scoping. Do not paste private prompts, model tokens, or profiler binaries.
+  - type: input
+    id: experiment_id
+    attributes:
+      label: Experiment ID and protocol version
+      placeholder: E05 / protocol v1
+    validations:
+      required: true
+  - type: textarea
+    id: research_question
+    attributes:
+      label: Research question and falsifiable hypothesis
+      description: State the null/alternative and the prediction that can fail.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Hardware, model, runtime, and workload scope
+      description: Include pinned revisions, prompt/output distribution, batch, concurrency, session horizon, and timing boundary.
+    validations:
+      required: true
+  - type: textarea
+    id: variables
+    attributes:
+      label: Changed variable and controlled variables
+      description: Name exactly what changes and what must remain matched.
+    validations:
+      required: true
+  - type: textarea
+    id: mediator_outcome
+    attributes:
+      label: Mediator, outcome, quality, and negative control
+      description: Required for causal experiments; otherwise state N/A with reason.
+    validations:
+      required: true
+  - type: textarea
+    id: procedure
+    attributes:
+      label: Procedure, randomization, warmup, repetitions, and failure handling
+    validations:
+      required: true
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Required raw and derived artifacts
+      placeholder: run manifest, raw JSONL, correctness, quality, profiler summary, validation verdict...
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria and permitted claim
+      description: Include practical threshold, uncertainty, validation gates, holdout, and exact claim allowed after closure.
+    validations:
+      required: true
+  - type: textarea
+    id: blockers
+    attributes:
+      label: Blocked by
+      placeholder: "#123, #124 or None — ready to start"
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Preregistration confirmation
+      options:
+        - label: Search and confirmatory data roles are defined.
+          required: true
+        - label: Thresholds will not be relaxed after results are observed without a new protocol version.
+          required: true
+        - label: Profiled timings will not be ranked as production latency.
+          required: true
+        - label: No public claim will be made before executable validation.
+          required: true
